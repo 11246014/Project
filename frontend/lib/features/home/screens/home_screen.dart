@@ -30,8 +30,12 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return const _HomeTab();
       case 1:
-        // W2 完成後替換為 FilterScreen()
-        return _buildPlaceholder('情境篩選器', '（W2 開發中）', Icons.tune_rounded);
+        // 點篩選 Tab 時跳到篩選頁面
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.push(AppRoutes.filter);
+          setState(() => _currentIndex = 0);
+        });
+        return const _HomeTab();
       case 2:
         // W3 完成後替換為 ChatScreen()
         return _buildPlaceholder('AI 導購助理', '（W3 開發中）', Icons.chat_rounded);
