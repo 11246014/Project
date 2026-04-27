@@ -1,8 +1,18 @@
+chat_history = []
 from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
+from fastapi.middleware.cors import CORSMiddleware  
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
@@ -15,22 +25,29 @@ def home():
     return {"message": "Backend2 working"}
 
 
-@app.post("/ai/recommend")
-def ai_recommend(req: UserRequest):
+@app.post("/ai/chat")
+def ai_chat(req: UserRequest):
+    global chat_history
+
+    # 加入使用者訊息
+    chat_history.append(f"使用者: {req.message}")
+
+    # 組合對話
+    conversation = "\n".join(chat_history)
+
     prompt = f"""
-    你是一個購物助理，請把使用者需求轉成商品搜尋條件(JSON)
+    你是一個購物導購助理，請用「繁體中文」回答，並使用台灣用語。
 
-    使用者輸入：
-    {req.message}
+    ⚠️ 規則：
+    - 一律使用繁體中文
+    - 不要出現任何簡體字
+    - 語氣自然，像真人對話
+    - 如果出現簡體字，請自動轉為繁體
 
-    只輸出 JSON，不要任何說明：
+    對話內容：
+    {conversation}
 
-    {{
-        "category": "",
-        "price": "",
-        "color": "",
-        "usage": ""
-    }}
+    請給出自然回應
     """
 
     response = requests.post(
@@ -42,8 +59,11 @@ def ai_recommend(req: UserRequest):
         }
     )
 
-    result = response.json()
+    result = response.json()["response"]
+
+    # 加入AI回應
+    chat_history.append(f"AI: {result}")
 
     return {
-        "result": result["response"]
+        "reply": result
     }
