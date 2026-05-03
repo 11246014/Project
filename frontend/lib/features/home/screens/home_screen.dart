@@ -37,8 +37,11 @@ class _HomeScreenState extends State<HomeScreen> {
         });
         return const _HomeTab();
       case 2:
-        // W3 完成後替換為 ChatScreen()
-        return _buildPlaceholder('AI 導購助理', '（W3 開發中）', Icons.chat_rounded);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.push(AppRoutes.chat);
+          setState(() => _currentIndex = 0);
+        });
+        return const _HomeTab();
       case 3:
         // W4 完成後替換為 ProfileScreen()
         return _buildPlaceholder('個人設定', '（W4 開發中）', Icons.person_rounded);
