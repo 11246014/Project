@@ -8,7 +8,7 @@ import 'features/auth/screens/register_screen.dart';
 import 'features/home/screens/home_screen.dart';
 import 'features/filter/screens/filter_screen.dart';
 import 'features/chat/screens/chat_screen.dart';
-
+import 'features/profile/screens/profile_screen.dart';
 
 /// GoRouter 路由設定
 /// W2 以後新頁面直接在 routes 裡新增 GoRoute 即可
@@ -37,6 +37,7 @@ final _router = GoRouter(
       path: AppRoutes.chat,
       builder: (context, state) => const ChatScreen(),
     ),
+    
     // GoRoute(path: AppRoutes.filter, builder: ...),
     // GoRoute(path: AppRoutes.chat,   builder: ...),
   ],

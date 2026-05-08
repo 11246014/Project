@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../features/profile/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -43,8 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
         return const _HomeTab();
       case 3:
-        // W4 完成後替換為 ProfileScreen()
-        return _buildPlaceholder('個人設定', '（W4 開發中）', Icons.person_rounded);
+        return const ProfileScreen();
       default:
         return const SizedBox();
     }
