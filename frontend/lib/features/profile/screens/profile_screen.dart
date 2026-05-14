@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/custom_button.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_routes.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -306,7 +308,38 @@ class _ProfileScreenState extends State<ProfileScreen>
           CustomButton(
             label: '登出',
             onTap: () {
-              // TODO W2：清除 Token 並跳回登入頁
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: AppColors.surface,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                  title: Text('登出',
+                      style: AppTextStyles.displayMedium.copyWith(fontSize: 16)),
+                  content: Text(
+                    '確定要登出嗎？',
+                    style: AppTextStyles.bodyMedium,
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('取消',
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(color: AppColors.textSecondary)),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        // TODO W2：清除 Token
+                        context.go(AppRoutes.login);
+                      },
+                      child: Text('登出',
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(color: AppColors.error)),
+                    ),
+                  ],
+                ),
+              );
             },
             variant: ButtonVariant.outline,
           ),

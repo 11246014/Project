@@ -11,7 +11,7 @@ class AppTextStyles {
   // ── 大標題 ──────────────────────────────
   /// 頁面主標題，例如「歡迎回來」
   static TextStyle displayLarge = GoogleFonts.sora(
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
     letterSpacing: -0.5,
@@ -19,7 +19,7 @@ class AppTextStyles {
 
   /// 區塊標題，例如「為你推薦」
   static TextStyle displayMedium = GoogleFonts.sora(
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
     letterSpacing: -0.3,
@@ -28,7 +28,7 @@ class AppTextStyles {
   // ── 內文 ────────────────────────────────
   /// 主要說明文字
   static TextStyle bodyLarge = GoogleFonts.dmSans(
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
     height: 1.6,
@@ -36,7 +36,7 @@ class AppTextStyles {
 
   /// 次要說明文字，例如副標、描述
   static TextStyle bodyMedium = GoogleFonts.dmSans(
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
     height: 1.5,
@@ -45,7 +45,7 @@ class AppTextStyles {
   // ── 標籤 / 按鈕 ─────────────────────────
   /// 按鈕文字、重要標籤
   static TextStyle labelLarge = GoogleFonts.sora(
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
     letterSpacing: 0.3,
@@ -53,7 +53,7 @@ class AppTextStyles {
 
   /// 小字提示，例如版權、時間戳記
   static TextStyle caption = GoogleFonts.dmSans(
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: FontWeight.w400,
     color: AppColors.textHint,
   );

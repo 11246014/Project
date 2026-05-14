@@ -184,7 +184,7 @@ class _HomeTabState extends State<_HomeTab> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('你好，使用者 👋', style: AppTextStyles.bodyMedium),
+              Text('您好，使用者 👋', style: AppTextStyles.bodyMedium),
               const SizedBox(height: 4),
               Text('找到你的理想穿戴裝置',
                   style: AppTextStyles.displayMedium),

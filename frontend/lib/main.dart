@@ -37,7 +37,6 @@ final _router = GoRouter(
       path: AppRoutes.chat,
       builder: (context, state) => const ChatScreen(),
     ),
-    
     // GoRoute(path: AppRoutes.filter, builder: ...),
     // GoRoute(path: AppRoutes.chat,   builder: ...),
   ],
@@ -53,7 +52,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'WearAI Shop',
+      title: 'WearWise Shop',
       debugShowCheckedModeBanner: false,
       // 套用深色主題
       theme: AppTheme.darkTheme,

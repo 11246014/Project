@@ -37,7 +37,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // 對話紀錄
   final List<ChatMessage> _messages = [
     ChatMessage(
-      content: '你好！我是 WearAI 助理，請告訴我你想找什麼樣的穿戴裝置？\n\n你可以直接描述需求，例如：「我想找續航力強、有 GPS 的運動手錶，預算 15,000 以內」',
+      content: '你好！我是 WearWise 助理，請告訴我你想找什麼樣的穿戴裝置？\n\n你可以直接描述需求，例如：「我想找續航力強、有 GPS 的運動手錶，預算 15,000 以內」',
       role: MessageRole.ai,
       time: DateTime.now(),
     ),
@@ -181,7 +181,7 @@ class _ChatScreenState extends State<ChatScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('WearAI 助理',
+              Text('WearWise 助理',
                   style: AppTextStyles.labelLarge.copyWith(fontSize: 14)),
               Text('線上服務中',
                   style: AppTextStyles.caption

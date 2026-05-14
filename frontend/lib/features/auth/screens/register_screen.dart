@@ -101,7 +101,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Text('建立帳號', style: AppTextStyles.displayLarge),
                   const SizedBox(height: 8),
                   Text(
-                    '加入 WearAI',
+                    '加入 WearWise',
                     style: AppTextStyles.bodyMedium,
                   ),
                   const SizedBox(height: 40),

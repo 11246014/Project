@@ -175,11 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.watch_outlined,
-            color: Colors.white,
-            size: 26,
-          ),
+          child: Image.asset('assets/images/LOGO.png', width: 26, height: 26), //LOGO
         ),
         const SizedBox(height: 24),
         Text('歡迎回來', style: AppTextStyles.displayLarge),
