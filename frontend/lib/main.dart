@@ -52,7 +52,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'WearWise Shop',
+      title: 'WearWise',
       debugShowCheckedModeBanner: false,
       // 套用深色主題
       theme: AppTheme.darkTheme,

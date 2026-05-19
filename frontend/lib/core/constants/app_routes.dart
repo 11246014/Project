@@ -30,7 +30,5 @@ class AppRoutes {
   /// 購物車
   static const String cart     = '/cart';
 
-  // ── 後台 ────────────────────────────────
-  /// 商品管理後台
-  static const String admin    = '/admin';
+  
 }

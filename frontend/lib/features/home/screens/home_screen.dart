@@ -119,7 +119,7 @@ class _HomeTabState extends State<_HomeTab> {
   int _selectedTagIndex = 0;
 
   // 快速篩選標籤（W2 串接後從 API 取得）
-  final List<String> _tags = ['全部', 'GPS', '血氧', '防水', '續航', '睡眠監測'];
+  final List<String> _tags = ['全部', '手錶', '手環', '戒指'];
 
   // Mock 商品資料（W2 串接 API 後替換）
   final List<Map<String, dynamic>> _mockProducts = [
