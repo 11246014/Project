@@ -42,4 +42,62 @@ class AppColors {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
+
+  // ── 淺色主題專用色彩 ────────────────────────────
+  static const Color lightBackground     = Color(0xFFF8FAFC);
+  static const Color lightSurface        = Color(0xFFFFFFFF);
+  static const Color lightSurfaceVariant = Color(0xFFE8EDF2);
+  static const Color lightTextPrimary    = Color(0xFF0A0A0A);
+  static const Color lightTextSecondary  = Color(0xFF1E293B);
+  static const Color lightTextHint       = Color(0xFF475569);
+  static const Color lightBorder         = Color(0xFFE2E8F0);
+  static const Color lightBorderFocus    = Color(0xFF3B82F6);
+
+  static const LinearGradient lightBackgroundGradient = LinearGradient(
+    colors: [Color(0xFFF8FAFC), Color(0xFFEFF6FF)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  /// 根據 BuildContext 取得當前主題對應的色彩
+  /// 使用方式：AppColors.bg(context)
+  static Color bg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? background
+          : lightBackground;
+
+  static Color cardBg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? surface
+          : lightSurface;
+
+  static Color cardVariant(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? surfaceVariant
+          : lightSurfaceVariant;
+
+  static Color textMain(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? textPrimary
+          : lightTextPrimary;
+
+  static Color textSub(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? textSecondary
+          : lightTextSecondary;
+
+  static Color textPlaceholder(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? textHint
+          : lightTextHint;
+
+  static Color borderColor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? border
+          : lightBorder;
+
+  static LinearGradient bgGradient(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? backgroundGradient
+          : lightBackgroundGradient;
 }

@@ -64,8 +64,8 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Container(
         // 背景漸層
-        decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+        decoration: BoxDecoration(
+          gradient: AppColors.bgGradient(context),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -115,9 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        // TODO：忘記密碼頁面
-                      },
+                      onPressed: () => context.push(AppRoutes.forgotPassword),
                       child: Text(
                         '忘記密碼？',
                         style: AppTextStyles.bodyMedium
@@ -157,36 +155,50 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// 頂部品牌 Logo + 標題
   Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // App 品牌圖示
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-            ],
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // App 品牌 Logo
+      Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.borderColor(context),
+            width: 1.5,
           ),
-          child: Image.asset('assets/images/LOGO.png', width: 26, height: 26), //LOGO
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        const SizedBox(height: 24),
-        Text('歡迎回來', style: AppTextStyles.displayLarge),
-        const SizedBox(height: 8),
-        Text(
-          '登入以探索智慧穿戴裝置推薦',
-          style: AppTextStyles.bodyMedium,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Image.asset(
+            'assets/images/LOGO.png',
+            width: 64,
+            height: 64,
+            fit: BoxFit.contain,
+          ),
         ),
-      ],
-    );
-  }
+      ),
+      const SizedBox(height: 24),
+      Text('歡迎回來', style: AppTextStyles.displayLarge.copyWith(color: AppColors.textMain(context))),
+      const SizedBox(height: 8),
+      Text(
+        '登入以探索智慧穿戴裝置推薦',
+        style: AppTextStyles.bodyLarge.copyWith(
+  color: AppColors.textMain(context),
+),
+      ),
+    ],
+  );
+}
 
   /// 中間分隔線（或）
   Widget _buildDivider() {

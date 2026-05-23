@@ -10,6 +10,9 @@ class AppRoutes {
   /// 註冊頁
   static const String register = '/register';
 
+  ///忘記密碼頁
+  static const String forgotPassword = '/forgot-password';
+  
   // ── 主要頁面 ────────────────────────────
   /// 首頁（商品列表）
   static const String home     = '/home';

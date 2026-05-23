@@ -4,15 +4,17 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/custom_button.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_routes.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/theme_provider.dart';
 
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
@@ -112,7 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bg(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -144,8 +146,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+        color: AppColors.cardBg(context),
+        border: Border(bottom: BorderSide(color: AppColors.borderColor(context))),
       ),
       child: Row(
         children: [
@@ -172,12 +174,16 @@ class _ProfileScreenState extends State<ProfileScreen>
               children: [
                 Text(
                   _user['name'],
-                  style: AppTextStyles.displayMedium.copyWith(fontSize: 18),
+                  style: AppTextStyles.displayMedium.copyWith(
+                    fontSize: 18,
+                    color: AppColors.textMain(context)),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _user['email'],
-                  style: AppTextStyles.bodyMedium,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                  color: AppColors.textMain(context),
+                ),
                 ),
               ],
             ),
@@ -188,9 +194,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             onPressed: () {
               // TODO：編輯個人資料
             },
-            icon: const Icon(
+            icon: Icon(
               Icons.edit_outlined,
-              color: AppColors.textSecondary,
+              color: AppColors.textMain(context),
               size: 20,
             ),
           ),
@@ -202,7 +208,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   /// Tab 列
   Widget _buildTabBar() {
     return Container(
-      color: AppColors.surface,
+      color: AppColors.cardBg(context),
       child: TabBar(
         controller: _tabController,
         labelColor: AppColors.primary,
@@ -228,9 +234,11 @@ class _ProfileScreenState extends State<ProfileScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 偏好標籤
-          Text('我的偏好標籤', style: AppTextStyles.displayMedium.copyWith(fontSize: 16)),
+          Text('我的偏好標籤', style: AppTextStyles.displayMedium.copyWith(
+            fontSize: 16,
+            color: AppColors.textMain(context))),
           const SizedBox(height: 6),
-          Text('點選標籤調整你的推薦偏好', style: AppTextStyles.bodyMedium),
+          Text('點選標籤調整你的推薦偏好', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSub(context))),
           const SizedBox(height: 16),
 
           // 標籤選取區
@@ -249,12 +257,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                       horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: isSelected ? AppColors.primaryGradient : null,
-                    color: isSelected ? null : AppColors.surfaceVariant,
+                    color: isSelected ? null : AppColors.cardVariant(context),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
                           ? AppColors.primary
-                          : AppColors.border,
+                          : AppColors.borderColor(context),
                     ),
                   ),
                   child: Text(
@@ -262,7 +270,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     style: AppTextStyles.caption.copyWith(
                       color: isSelected
                           ? Colors.white
-                          : AppColors.textSecondary,
+                          : AppColors.textMain(context),
                       fontWeight: isSelected
                           ? FontWeight.w600
                           : FontWeight.w400,
@@ -275,7 +283,9 @@ class _ProfileScreenState extends State<ProfileScreen>
           const SizedBox(height: 28),
 
           // 系統設定
-          Text('系統設定', style: AppTextStyles.displayMedium.copyWith(fontSize: 16)),
+          Text('系統設定', style: AppTextStyles.displayMedium.copyWith(
+            fontSize: 16,
+            color: AppColors.textMain(context))),
           const SizedBox(height: 12),
           _buildSettingItem(
             icon: Icons.notifications_outlined,
@@ -290,8 +300,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             icon: Icons.dark_mode_outlined,
             label: '深色模式',
             trailing: Switch(
-              value: true,
-              onChanged: (_) {},
+              // 從 Provider 讀取當前主題狀態
+              value: ref.watch(themeProvider) == ThemeMode.dark,
+              onChanged: (_) => ref.read(themeProvider.notifier).toggle(),
               activeColor: AppColors.primary,
             ),
           ),
@@ -300,7 +311,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             label: '語言設定',
             trailing: Text('繁體中文',
                 style: AppTextStyles.caption
-                    .copyWith(color: AppColors.textSecondary)),
+                    .copyWith(color: AppColors.textMain(context))),
           ),
           const SizedBox(height: 28),
 
@@ -311,21 +322,24 @@ class _ProfileScreenState extends State<ProfileScreen>
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  backgroundColor: AppColors.surface,
+                  backgroundColor: AppColors.cardBg(context),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16)),
                   title: Text('登出',
-                      style: AppTextStyles.displayMedium.copyWith(fontSize: 16)),
+                      style: AppTextStyles.displayMedium.copyWith(fontSize: 16,color: AppColors.textMain(context))),
+                      
                   content: Text(
                     '確定要登出嗎？',
-                    style: AppTextStyles.bodyMedium,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textMain(context)
+),
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
                       child: Text('取消',
                           style: AppTextStyles.bodyMedium
-                              .copyWith(color: AppColors.textSecondary)),
+                              .copyWith(color: AppColors.textMain(context))),
                     ),
                     TextButton(
                       onPressed: () {
@@ -358,17 +372,17 @@ class _ProfileScreenState extends State<ProfileScreen>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.cardBg(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.textSecondary, size: 20),
+          Icon(icon, color: AppColors.textMain(context), size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(label, style: AppTextStyles.bodyMedium
-                .copyWith(color: AppColors.textPrimary)),
+                .copyWith(color: AppColors.textMain(context))),
           ),
           trailing,
         ],
@@ -385,7 +399,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           children: [
             const Icon(Icons.history, size: 48, color: AppColors.textHint),
             const SizedBox(height: 12),
-            Text('還沒有瀏覽紀錄', style: AppTextStyles.bodyMedium),
+            Text('還沒有瀏覽紀錄', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSub(context))),
           ],
         ),
       );
@@ -400,9 +414,9 @@ class _ProfileScreenState extends State<ProfileScreen>
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: AppColors.cardBg(context),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: AppColors.borderColor(context)),
           ),
           child: Row(
             children: [
@@ -411,7 +425,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
+                  color: AppColors.cardVariant(context),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.watch_rounded,
@@ -425,8 +439,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(item['name'],
-                        style: AppTextStyles.bodyLarge
-                            .copyWith(fontWeight: FontWeight.w600, fontSize: 13)),
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textMain(context), fontSize: 15)),
                     const SizedBox(height: 4),
                     Text(
                       (item['tags'] as List<String>).join(' '),
@@ -465,7 +480,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             const Icon(Icons.shopping_cart_outlined,
                 size: 48, color: AppColors.textHint),
             const SizedBox(height: 12),
-            Text('購物車是空的', style: AppTextStyles.bodyMedium),
+            Text('購物車是空的', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSub(context))),
           ],
         ),
       );
@@ -484,9 +499,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: AppColors.cardBg(context),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: AppColors.borderColor(context)),
                 ),
                 child: Row(
                   children: [
@@ -495,7 +510,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceVariant,
+                        color: AppColors.cardVariant(context),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.watch_rounded,
@@ -510,7 +525,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                         children: [
                           Text(item['name'],
                               style: AppTextStyles.bodyLarge.copyWith(
-                                  fontWeight: FontWeight.w600, fontSize: 13)),
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textMain(context), fontSize: 15)),
                           const SizedBox(height: 4),
                           Text(
                             (item['tags'] as List<String>).join(' '),
@@ -539,7 +555,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: Text(
                             '${item['qty']}',
-                            style: AppTextStyles.labelLarge,
+                            style: AppTextStyles.labelLarge.copyWith(
+                              color: AppColors.textMain(context),
+                            ),
                           ),
                         ),
                         _QtyButton(
@@ -559,8 +577,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         Container(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            border: Border(top: BorderSide(color: AppColors.border)),
+            color: AppColors.cardBg(context),
+            border: Border(top: BorderSide(color: AppColors.borderColor(context))),
           ),
           child: Column(
             children: [
@@ -568,7 +586,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('總計', style: AppTextStyles.bodyLarge
-                      .copyWith(fontWeight: FontWeight.w600)),
+                      .copyWith(fontWeight: FontWeight.w600,color: AppColors.textMain(context))),
                   Text(
                     'NT\$ $_cartTotal',
                     style: AppTextStyles.displayMedium
@@ -606,11 +624,11 @@ class _QtyButton extends StatelessWidget {
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
+          color: AppColors.cardVariant(context),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.borderColor(context)),
         ),
-        child: Icon(icon, size: 14, color: AppColors.textSecondary),
+        child: Icon(icon, size: 14, color: AppColors.textMain(context)),
       ),
     );
   }

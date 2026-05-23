@@ -19,7 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bg(context),
       body: SafeArea(child: _buildBody()),
       bottomNavigationBar: _buildBottomNav(),
     );
@@ -58,9 +58,9 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Icon(icon, size: 48, color: AppColors.textHint),
           const SizedBox(height: 16),
-          Text(title, style: AppTextStyles.displayMedium),
+          Text(title, style: AppTextStyles.displayMedium.copyWith(color: AppColors.textMain(context))),
           const SizedBox(height: 8),
-          Text(subtitle, style: AppTextStyles.bodyMedium),
+          Text(subtitle, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSub(context))),
         ],
       ),
     );
@@ -77,9 +77,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.cardBg(context),
         border: Border(
-          top: BorderSide(color: AppColors.border),
+          top: BorderSide(color: AppColors.borderColor(context)),
         ),
       ),
       child: BottomNavigationBar(
@@ -157,7 +157,7 @@ class _HomeTabState extends State<_HomeTab> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-            child: Text('為你推薦', style: AppTextStyles.displayMedium),
+            child: Text('為你推薦', style: AppTextStyles.displayMedium.copyWith(color: AppColors.textMain(context))),
           ),
         ),
 
@@ -184,10 +184,10 @@ class _HomeTabState extends State<_HomeTab> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('您好，使用者 👋', style: AppTextStyles.bodyMedium),
+              Text('您好，使用者 👋', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSub(context))),
               const SizedBox(height: 4),
               Text('找到你的理想穿戴裝置',
-                  style: AppTextStyles.displayMedium),
+                  style: AppTextStyles.displayMedium.copyWith(color: AppColors.textMain(context))),
             ],
           ),
           // 通知鈴鐺
@@ -195,13 +195,13 @@ class _HomeTabState extends State<_HomeTab> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
+              color: AppColors.cardVariant(context),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: AppColors.borderColor(context)),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.notifications_outlined,
-              color: AppColors.textSecondary,
+              color: AppColors.textMain(context),
               size: 20,
             ),
           ),
@@ -243,14 +243,14 @@ class _QuickTag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
         gradient: isSelected ? AppColors.primaryGradient : null,
-        color: isSelected ? null : AppColors.surfaceVariant,
+        color: isSelected ? null : AppColors.cardVariant(context),
         borderRadius: BorderRadius.circular(20),
-        border: isSelected ? null : Border.all(color: AppColors.border),
+        border: isSelected ? null : Border.all(color: AppColors.borderColor(context)),
       ),
       child: Text(
         label,
         style: AppTextStyles.caption.copyWith(
-          color: isSelected ? Colors.white : AppColors.textSecondary,
+          color: isSelected ? Colors.white : AppColors.textMain(context),
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
         ),
       ),
@@ -270,9 +270,9 @@ class _ProductCard extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.cardBg(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
@@ -281,7 +281,7 @@ class _ProductCard extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
+              color: AppColors.cardVariant(context),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -300,8 +300,10 @@ class _ProductCard extends StatelessWidget {
                 // 商品名稱
                 Text(
                   product['name'],
-                  style: AppTextStyles.bodyLarge
-                      .copyWith(fontWeight: FontWeight.w600),
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textMain(context),
+                  ),
                 ),
                 const SizedBox(height: 6),
 
@@ -325,7 +327,7 @@ class _ProductCard extends StatelessWidget {
                     Text(
                       product['price'],
                       style: AppTextStyles.labelLarge
-                          .copyWith(color: AppColors.primary),
+                          .copyWith(color: AppColors.textMain(context)),
                     ),
                     Row(
                       children: [

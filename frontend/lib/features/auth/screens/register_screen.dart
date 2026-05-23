@@ -73,8 +73,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+        decoration: BoxDecoration(
+          gradient: AppColors.bgGradient(context),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -89,20 +89,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // 返回按鈕
                   IconButton(
                     onPressed: () => context.pop(),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back_ios_new,
-                      color: AppColors.textSecondary,
+                      color: AppColors.textMain(context),
                       size: 20,
                     ),
                   ),
                   const SizedBox(height: 16),
 
                   // 頁面標題
-                  Text('建立帳號', style: AppTextStyles.displayLarge),
+                  Text('建立帳號', style: AppTextStyles.displayLarge.copyWith(color: AppColors.textMain(context))),
                   const SizedBox(height: 8),
                   Text(
                     '加入 WearWise',
-                    style: AppTextStyles.bodyMedium,
+                    style: AppTextStyles.bodyLarge.copyWith(
+  color: AppColors.textMain(context),
+),
                   ),
                   const SizedBox(height: 40),
 

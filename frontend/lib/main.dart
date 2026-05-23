@@ -9,9 +9,13 @@ import 'features/home/screens/home_screen.dart';
 import 'features/filter/screens/filter_screen.dart';
 import 'features/chat/screens/chat_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
+import 'features/auth/screens/forgot_password_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/theme/theme_provider.dart';
+
 
 /// GoRouter 路由設定
-/// W2 以後新頁面直接在 routes 裡新增 GoRoute 即可
+/// 新頁面直接在 routes 裡新增 GoRoute 即可
 final _router = GoRouter(
   // App 啟動時第一個顯示的頁面
   initialLocation: AppRoutes.login,
@@ -37,26 +41,36 @@ final _router = GoRouter(
       path: AppRoutes.chat,
       builder: (context, state) => const ChatScreen(),
     ),
+    GoRoute(
+      path: AppRoutes.forgotPassword,
+      builder: (context, state) => const ForgotPasswordScreen(),
+    ),
     // GoRoute(path: AppRoutes.filter, builder: ...),
     // GoRoute(path: AppRoutes.chat,   builder: ...),
   ],
 );
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(child: MyApp()),
+  );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 監聽主題狀態
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp.router(
       title: 'WearWise',
       debugShowCheckedModeBanner: false,
-      // 套用深色主題
-      theme: AppTheme.darkTheme,
-      // 套用路由設定
+      // 同時提供深色和淺色主題
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       routerConfig: _router,
     );
   }

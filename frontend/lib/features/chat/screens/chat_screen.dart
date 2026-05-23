@@ -131,7 +131,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bg(context),
       // 頂部 AppBar
       appBar: _buildAppBar(),
       body: Column(
@@ -150,13 +150,13 @@ class _ChatScreenState extends State<ChatScreen> {
   /// 頂部導覽列
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.cardBg(context),
       elevation: 0,
       leading: IconButton(
         onPressed: () => Navigator.of(context).pop(),
-        icon: const Icon(
+        icon: Icon(
           Icons.arrow_back_ios_new,
-          color: AppColors.textSecondary,
+          color: AppColors.textMain(context),
           size: 18,
         ),
       ),
@@ -182,7 +182,9 @@ class _ChatScreenState extends State<ChatScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('WearWise 助理',
-                  style: AppTextStyles.labelLarge.copyWith(fontSize: 14)),
+                  style: AppTextStyles.labelLarge.copyWith(
+                    fontSize: 14,
+                    color: AppColors.textMain(context))),
               Text('線上服務中',
                   style: AppTextStyles.caption
                       .copyWith(color: AppColors.success)),
@@ -193,7 +195,7 @@ class _ChatScreenState extends State<ChatScreen> {
       centerTitle: false,
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: AppColors.border),
+        child: Container(height: 1, color: AppColors.borderColor(context)),
       ),
     );
   }
@@ -246,19 +248,19 @@ class _ChatScreenState extends State<ChatScreen> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant,
+                    color: AppColors.cardVariant(context),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
                       bottomRight: Radius.circular(16),
                       bottomLeft: Radius.circular(2),
                     ),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: AppColors.borderColor(context)),
                   ),
                   child: Text(
                     message.content,
                     style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.textPrimary),
+                        .copyWith(color: AppColors.textMain(context)),
                   ),
                 ),
 
@@ -337,9 +339,9 @@ class _ChatScreenState extends State<ChatScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.cardBg(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
@@ -348,7 +350,7 @@ class _ChatScreenState extends State<ChatScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
+              color: AppColors.cardVariant(context),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
@@ -367,7 +369,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Text(
                   product['name'],
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textMain(context),
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
@@ -431,9 +433,9 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
+              color: AppColors.cardVariant(context),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: AppColors.borderColor(context)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -452,8 +454,8 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border)),
+        color: AppColors.cardBg(context),
+        border: Border(top: BorderSide(color: AppColors.borderColor(context))),
       ),
       child: Row(
         children: [
@@ -462,25 +464,27 @@ class _ChatScreenState extends State<ChatScreen> {
             child: TextField(
               controller: _inputController,
               style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textPrimary),
+                  .copyWith(color: AppColors.textMain(context)),
               maxLines: 4,
               minLines: 1,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _sendMessage(),
               decoration: InputDecoration(
                 hintText: '輸入您的需求...',
-                hintStyle: AppTextStyles.bodyMedium,
+                hintStyle: AppTextStyles.bodyLarge.copyWith(
+                  color: AppColors.textMain(context),
+                ),
                 filled: true,
-                fillColor: AppColors.surfaceVariant,
+                fillColor: AppColors.cardVariant(context),
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(color: AppColors.borderColor(context)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(color: AppColors.borderColor(context)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),

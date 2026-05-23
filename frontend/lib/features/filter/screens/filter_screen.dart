@@ -257,7 +257,7 @@ class _FilterScreenState extends State<FilterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.bg(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -276,14 +276,18 @@ class _FilterScreenState extends State<FilterScreen> {
                     // 題目標題
                     Text(
                       _currentQuestion.question,
-                      style: AppTextStyles.displayMedium,
+                      style: AppTextStyles.displayMedium.copyWith(
+                        color: AppColors.textMain(context),
+                      ),
                     ),
                     const SizedBox(height: 6),
 
                     // 題目副標
                     Text(
                       _currentQuestion.subtitle,
-                      style: AppTextStyles.bodyMedium,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textMain(context),
+                      ),
                     ),
                     const SizedBox(height: 24),
 
@@ -317,9 +321,9 @@ class _FilterScreenState extends State<FilterScreen> {
               // 返回按鈕
               IconButton(
                 onPressed: _onBack,
-                icon: const Icon(
+                icon: Icon(
                   Icons.arrow_back_ios_new,
-                  color: AppColors.textSecondary,
+                  color: AppColors.textMain(context),
                   size: 18,
                 ),
               ),
@@ -330,7 +334,7 @@ class _FilterScreenState extends State<FilterScreen> {
                   textAlign: TextAlign.center,
                   style: AppTextStyles.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
+                    color: AppColors.textMain(context),
                   ),
                 ),
               ),
@@ -345,7 +349,7 @@ class _FilterScreenState extends State<FilterScreen> {
             borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
               value: _progress,
-              backgroundColor: AppColors.border,
+              backgroundColor: AppColors.borderColor(context),
               valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
               minHeight: 4,
             ),
@@ -368,10 +372,10 @@ class _FilterScreenState extends State<FilterScreen> {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primary.withOpacity(0.12)
-              : AppColors.surface,
+              : AppColors.cardBg(context),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? AppColors.primary : AppColors.borderColor(context),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -387,9 +391,9 @@ class _FilterScreenState extends State<FilterScreen> {
                 option,
                 style: AppTextStyles.bodyLarge.copyWith(
                   color: isSelected
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
-                  fontSize: 14,
+                      ? AppColors.textMain(context)
+                      : AppColors.textSub(context),
+                  fontSize: 16,
                 ),
               ),
             ),
@@ -411,7 +415,7 @@ class _FilterScreenState extends State<FilterScreen> {
           color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(5),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.textHint,
+            color: isSelected ? AppColors.primary : AppColors.textPlaceholder(context),
             width: 1.5,
           ),
         ),
@@ -429,7 +433,7 @@ class _FilterScreenState extends State<FilterScreen> {
           shape: BoxShape.circle,
           color: isSelected ? AppColors.primary : Colors.transparent,
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.textHint,
+            color: isSelected ? AppColors.primary : AppColors.textPlaceholder(context),
             width: 1.5,
           ),
         ),
@@ -450,8 +454,8 @@ class _FilterScreenState extends State<FilterScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
       decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border(top: BorderSide(color: AppColors.border)),
+        color: AppColors.bg(context),
+        border: Border(top: BorderSide(color: AppColors.borderColor(context))),
       ),
       child: CustomButton(
         label: _isLastPage ? '開始推薦' : '下一題',

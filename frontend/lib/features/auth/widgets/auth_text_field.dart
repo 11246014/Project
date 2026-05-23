@@ -47,7 +47,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
         Text(
           widget.label,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
+            color: AppColors.textMain(context),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -60,7 +60,9 @@ class _AuthTextFieldState extends State<AuthTextField> {
           obscureText: widget.isPassword && _obscureText,
           keyboardType: widget.keyboardType,
           validator: widget.validator,
-          style: AppTextStyles.bodyLarge,
+          style: AppTextStyles.bodyLarge.copyWith(
+  color: AppColors.textMain(context),
+),
           decoration: InputDecoration(
             hintText: widget.hint,
 
