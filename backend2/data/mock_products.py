@@ -1,26 +1,43 @@
 mock_products = [
+
     {
         "id": 1,
-        "name": "FitTrack 智慧手環",
-        "price": 1990,
-        "desc": "支援心率監測與睡眠分析"
+        "title": "FitTrack Pro 智慧手環",
+        "price": 2990,
+        "platform": "momo",
+        "category": "運動健康",
+        "desc": "支援心率監測、睡眠追蹤與運動紀錄",
+        "link": "https://momo.com/product1"
     },
+
     {
         "id": 2,
-        "name": "AirBeat 藍牙運動耳機",
-        "price": 2590,
-        "desc": "防水設計，適合運動使用"
+        "title": "SleepRing 智慧戒指",
+        "price": 4590,
+        "platform": "PChome",
+        "category": "睡眠監測",
+        "desc": "主打睡眠分析與壓力監測，外型低調",
+        "link": "https://pchome.com/product2"
     },
+
     {
         "id": 3,
-        "name": "HealthPro 智慧手錶",
-        "price": 4990,
-        "desc": "可監測血氧與運動數據"
+        "title": "RunFree 開放式運動耳機",
+        "price": 1990,
+        "platform": "蝦皮",
+        "category": "運動耳機",
+        "desc": "適合跑步與健身，防水防汗",
+        "link": "https://shopee.tw/product3"
     },
+
     {
         "id": 4,
-        "name": "SleepRing 智慧戒指",
-        "price": 3290,
-        "desc": "專注睡眠品質與健康追蹤"
+        "title": "HealthWatch 智慧手錶",
+        "price": 5990,
+        "platform": "Yahoo購物",
+        "category": "健康監測",
+        "desc": "全天候健康監測與血氧偵測功能",
+        "link": "https://tw.buy.yahoo.com/product4"
     }
+
 ]

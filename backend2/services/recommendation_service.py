@@ -1,10 +1,12 @@
 import json
 
 from services.ollama_service import ask_ollama
-from data.mock_products import mock_products
+from services.search_service import search_products
+from services.keyword_service import extract_keyword
 
 # 簡易聊天記憶
 chat_history = []
+
 
 def recommend_products(user_message):
 
@@ -21,35 +23,11 @@ def recommend_products(user_message):
 
         conversation = "\n".join(chat_history)
 
-        # ===== 商品篩選 =====
+        # ===== 搜尋商品 =====
 
-        filtered_products = []
+        search_keyword = extract_keyword(user_message)
 
-        keywords = [
-            "運動",
-            "健身",
-            "跑步",
-            "睡眠",
-            "健康",
-            "耳機",
-            "手環",
-            "手錶",
-            "減肥",
-            "壓力"
-        ]
-
-        for product in mock_products:
-
-            for keyword in keywords:
-
-                if keyword in user_message:
-
-                    if (
-                        keyword in product["name"]
-                        or keyword in product["desc"]
-                    ):
-
-                        filtered_products.append(product)
+        filtered_products = search_products(search_keyword)
 
         # ===== 如果沒有找到商品 =====
 
@@ -82,7 +60,7 @@ def recommend_products(user_message):
                 "products": []
             }
 
-        # ===== 有找到商品時 =====
+        # ===== 有找到商品 =====
 
         final_prompt = f"""
         你是一位在台灣智慧穿戴專賣店工作的專業店員。
@@ -97,9 +75,8 @@ def recommend_products(user_message):
         3. 像朋友聊天，不要太機器人
         4. 不要一次講太多規格
         5. 如果資訊不足，要主動提問
-        6. 如果使用者只是聊天，也能自然回應
-        7. 推薦時要像真人店員，不要像商品介紹頁
-        8. 回覆控制在 2~4 句
+        6. 推薦時要像真人店員，不要像商品介紹頁
+        7. 回覆控制在 2~4 句
 
         最近對話：
         {conversation}
@@ -107,10 +84,16 @@ def recommend_products(user_message):
         使用者最新訊息：
         {user_message}
 
-        目前符合需求的商品：
+        搜尋到的商品：
         {json.dumps(filtered_products, ensure_ascii=False)}
 
-        請開始自然對話：
+        請參考商品的平台、價格與功能特色。
+
+        請根據商品內容，
+        用自然聊天方式推薦適合的商品。
+
+        不要像商品頁介紹，
+        要像真人店員。
         """
 
         ai_reply = ask_ollama(final_prompt)
