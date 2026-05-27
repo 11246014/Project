@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from routers.search_router import router as search_router
 from routers.ai_router import router as ai_router
 
 app = FastAPI()
@@ -23,3 +23,5 @@ def home():
         "status": "AI Brain Online",
         "version": "W6 Modular Version"
     }
+
+app.include_router(search_router)
