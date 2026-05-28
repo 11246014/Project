@@ -30,7 +30,21 @@ mock_products = [
 
         "link": "https://momo.com/product1",
 
-        "image": "https://via.placeholder.com/300"
+        "image": "https://via.placeholder.com/300",
+
+        "tags": [
+            "#GPS",
+            "#睡眠追蹤",
+            "#運動"
+        ],
+
+        "rating": 4.7,
+
+        "match": 94,
+
+        "reason": "睡眠追蹤功能完整，適合日常健康管理與運動使用",
+
+        "isTop": True
     },
 
     {
@@ -62,7 +76,20 @@ mock_products = [
 
         "link": "https://pchome.com/product2",
 
-        "image": "https://via.placeholder.com/300"
+        "image": "https://via.placeholder.com/300",
+
+        "tags": [
+            "#睡眠分析",
+            "#智慧戒指"
+        ],
+
+        "rating": 4.8,
+
+        "match": 96,
+
+        "reason": "非常適合重視睡眠品質與配戴舒適度的使用者",
+
+        "isTop": False
     },
 
     {
@@ -93,7 +120,20 @@ mock_products = [
 
         "link": "https://shopee.tw/product3",
 
-        "image": "https://via.placeholder.com/300"
+        "image": "https://via.placeholder.com/300",
+
+        "tags": [
+            "#防水",
+            "#運動耳機"
+        ],
+
+        "rating": 4.5,
+
+        "match": 88,
+
+        "reason": "適合平常健身與慢跑時使用，價格也相對親民",
+
+        "isTop": False
     },
 
     {
@@ -124,7 +164,20 @@ mock_products = [
 
         "link": "https://tw.buy.yahoo.com/product4",
 
-        "image": "https://via.placeholder.com/300"
+        "image": "https://via.placeholder.com/300",
+
+        "tags": [
+            "#血氧監測",
+            "#健康分析"
+        ],
+
+        "rating": 4.6,
+
+        "match": 91,
+
+        "reason": "適合平常注重健康數據監控與商務風格的人",
+
+        "isTop": False
     }
 
 ]
