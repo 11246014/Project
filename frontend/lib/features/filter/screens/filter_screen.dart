@@ -250,8 +250,8 @@ class _FilterScreenState extends State<FilterScreen> {
       result['q${i + 1}'] = (_answers[i] ?? {}).toList();
     }
 
-    // 跳回首頁（W2 串接後改為傳參數給 Home 觸發搜尋）
-    context.go(AppRoutes.home);
+    // 跳至推薦結果頁（W2 串接後改為傳參數觸發搜尋）
+    context.go(AppRoutes.recommendation, extra: result);
   }
 
   @override
