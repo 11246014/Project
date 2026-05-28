@@ -19,6 +19,8 @@ class AppRoutes {
 
   /// 情境篩選器
   static const String filter   = '/filter';
+  /// 情境篩選頁
+  static const String recommendation = '/recommendation';
 
   /// AI 聊天導購
   static const String chat     = '/chat';
@@ -32,6 +34,7 @@ class AppRoutes {
 
   /// 購物車
   static const String cart     = '/cart';
+  
 
   
 }

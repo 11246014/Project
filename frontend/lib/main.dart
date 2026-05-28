@@ -12,6 +12,7 @@ import 'features/profile/screens/profile_screen.dart';
 import 'features/auth/screens/forgot_password_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/theme_provider.dart';
+import 'features/filter/screens/recommendation_screen.dart';
 
 
 /// GoRouter 路由設定
@@ -44,6 +45,13 @@ final _router = GoRouter(
     GoRoute(
       path: AppRoutes.forgotPassword,
       builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.recommendation,
+      builder: (context, state) {
+        final result = state.extra as Map<String, dynamic>? ?? {};
+        return RecommendationScreen(result: result);
+      },
     ),
     // GoRoute(path: AppRoutes.filter, builder: ...),
     // GoRoute(path: AppRoutes.chat,   builder: ...),
