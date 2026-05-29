@@ -1,4 +1,4 @@
-from data.mock_products import mock_products
+from services.web_search_service import web_search_products
 
 
 def search_products(keyword):
@@ -9,15 +9,19 @@ def search_products(keyword):
 
     keywords = keyword.split()
 
-    for product in mock_products:
+    # ===== 呼叫 web search =====
+
+    products = web_search_products(keyword)
+
+    for product in products:
 
         product_text = (
-            product["title"]
-            + product["desc"]
-            + product["category"]
+            product.get("title", "")
+            + product.get("desc", "")
+            + product.get("category", "")
         )
 
-        # ===== 任一關鍵字符合就加入 =====
+        # ===== 任一關鍵字符合 =====
 
         for word in keywords:
 
