@@ -20,6 +20,7 @@ def recommend_products(user_message):
         chat_history.append(f"使用者: {user_message}")
 
         # 只保留最近 6 句
+
         chat_history = chat_history[-6:]
 
         conversation = "\n".join(chat_history)
@@ -28,9 +29,17 @@ def recommend_products(user_message):
 
         search_keyword = extract_keyword(user_message)
 
+        print("======")
+        print("User:", user_message)
+        print("Keyword:", search_keyword)
+        print("======")
+
         # ===== 搜尋商品 =====
 
         filtered_products = search_products(search_keyword)
+
+        print("搜尋結果數量:", len(filtered_products))
+        print(filtered_products)
 
         # ===== 沒找到商品 =====
 
@@ -102,8 +111,6 @@ def recommend_products(user_message):
         # ===== 記錄 AI 回覆 =====
 
         chat_history.append(f"AI: {ai_reply}")
-
-        # ===== 回傳前端格式 =====
 
         return {
 
