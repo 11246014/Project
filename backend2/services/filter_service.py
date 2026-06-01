@@ -20,7 +20,7 @@ def filter_products(filters):
         # ===== 價格篩選 =====
 
         price_match = (
-            product["price"] <= max_price
+            product.get("price", 0) <= max_price
         )
 
         # ===== 全部符合 =====
