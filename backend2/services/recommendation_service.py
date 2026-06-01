@@ -3,6 +3,7 @@ import json
 from services.ollama_service import ask_ollama
 from services.search_service import search_products
 from services.keyword_service import extract_keyword
+from services.product_formatter import format_product
 
 # ===== 簡易聊天記憶 =====
 
@@ -25,7 +26,7 @@ def recommend_products(user_message):
 
         conversation = "\n".join(chat_history)
 
-        # ===== AI 提取搜尋關鍵字 =====
+        # ===== 提取搜尋關鍵字 =====
 
         search_keyword = extract_keyword(user_message)
 
@@ -41,9 +42,22 @@ def recommend_products(user_message):
         print("搜尋結果數量:", len(filtered_products))
         print(filtered_products)
 
+        # ===== 商品格式統一 =====
+
+        formatted_products = []
+
+        for product in filtered_products:
+
+            formatted_products.append(
+                format_product(product)
+            )
+
+        print("格式化後商品數量:", len(formatted_products))
+        print(formatted_products)
+
         # ===== 沒找到商品 =====
 
-        if not filtered_products:
+        if not formatted_products:
 
             final_prompt = f"""
             你是一位台灣智慧穿戴裝置專賣店店員。
@@ -69,9 +83,7 @@ def recommend_products(user_message):
             chat_history.append(f"AI: {ai_reply}")
 
             return {
-
                 "summary": ai_reply,
-
                 "products": []
             }
 
@@ -100,7 +112,7 @@ def recommend_products(user_message):
         {user_message}
 
         搜尋到的商品：
-        {json.dumps(filtered_products, ensure_ascii=False)}
+        {json.dumps(formatted_products, ensure_ascii=False)}
 
         請根據商品內容，
         生成一段自然推薦摘要。
@@ -112,20 +124,17 @@ def recommend_products(user_message):
 
         chat_history.append(f"AI: {ai_reply}")
 
+        # ===== 回傳前端格式 =====
+
         return {
-
             "summary": ai_reply,
-
-            "products": filtered_products
+            "products": formatted_products
         }
 
     except Exception as e:
 
         return {
-
             "summary": "不好意思，目前推薦系統有點忙碌，請稍後再試～",
-
             "products": [],
-
             "error": str(e)
         }
