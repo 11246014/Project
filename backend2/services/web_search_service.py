@@ -28,15 +28,22 @@ def clean_price(price_text):
     if not price_text:
         return 0
 
-    numbers = re.sub(
-        r"[^\d]",
-        "",
-        str(price_text)
-    )
-
     try:
-        return int(numbers)
-    except:
+
+        text = str(price_text)
+
+        # 移除貨幣符號與逗號
+        text = text.replace("$", "")
+        text = text.replace("NT$", "")
+        text = text.replace(",", "")
+
+        # 取整數部分
+        value = float(text)
+
+        return int(value)
+
+    except Exception:
+
         return 0
 
 
@@ -157,7 +164,14 @@ def remove_duplicate_brand(products):
 
 def web_search_products(keyword):
 
+    print("=" * 50)
     print(f"[Web Search] {keyword}")
+
+    print(
+        f"[SERPAPI_KEY Loaded] {SERPAPI_KEY[:10]}..."
+        if SERPAPI_KEY
+        else "[SERPAPI_KEY NOT FOUND]"
+    )
 
     url = "https://serpapi.com/search"
 
@@ -176,47 +190,73 @@ def web_search_products(keyword):
 
     try:
 
+        print("[SerpAPI Request Start]")
+
         response = requests.get(
             url,
             params=params,
-            timeout=15
+            timeout=30
         )
+
+        print("[SerpAPI Response OK]")
+
+        print(
+            f"[Status Code] {response.status_code}"
+        )
+
+        print("[Response Preview]")
+        print(response.text[:1000])
 
         data = response.json()
 
-        products = []
-
-        for item in data.get(
+        shopping_results = data.get(
             "shopping_results",
             []
-        )[:10]:
+        )
+
+        print(
+            f"[Shopping Results Count] {len(shopping_results)}"
+        )
+
+        products = []
+
+        for item in shopping_results[:10]:
+
+            print("=" * 30)
+            print(item.get("title"))
+            print(item.get("price"))
 
             product = clean_product(
                 item,
                 keyword
             )
 
-            # 過濾異常價格
+            print("Clean Price:", product["price"])
 
             if product["price"] > 30000:
+
+                print("Price Filtered")
+
                 continue
 
             products.append(product)
 
-        # 品牌去重複
+        print(
+            f"[Before Dedup] {len(products)}"
+        )
 
         products = remove_duplicate_brand(
             products
         )
 
-        # 評分排序
+        print(
+            f"[After Dedup] {len(products)}"
+        )
 
         products.sort(
             key=lambda x: x["rating"],
             reverse=True
         )
-
-        # 第一名標記
 
         if products:
 
@@ -228,6 +268,8 @@ def web_search_products(keyword):
             f"[Web Search] 找到 {len(products)} 筆商品"
         )
 
+        print("=" * 50)
+
         return products
 
     except Exception as e:
@@ -235,5 +277,7 @@ def web_search_products(keyword):
         print(
             f"[Web Search Error] {e}"
         )
+
+        print("=" * 50)
 
         return []
