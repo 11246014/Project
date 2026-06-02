@@ -36,3 +36,13 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 @app.get("/products")
 def products(db: Session = Depends(get_db)):
     return crud.get_products(db)
+
+@app.post("/products")
+def create_product(
+    product: schemas.ProductCreate,
+    db: Session = Depends(get_db)
+):
+    return crud.create_product(
+        db,
+        product
+    )

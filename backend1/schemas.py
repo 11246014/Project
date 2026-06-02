@@ -10,3 +10,12 @@ class ProductCreate(BaseModel):
     name: str
     price: int
     description: str
+
+class ProductResponse(BaseModel):
+    id: int
+    name: str
+    price: int
+    description: str
+
+    class Config:
+        from_attributes = True
