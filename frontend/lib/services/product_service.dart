@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import '../core/constants/api_config.dart';
 
 class ProductService {
-  static final _dio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
+  static final _dio = Dio(BaseOptions(baseUrl: ApiConfig.dbBaseUrl));
 
   // 取得所有商品
   static Future<List<Map<String, dynamic>>> getProducts() async {

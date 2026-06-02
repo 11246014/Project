@@ -95,6 +95,7 @@ class MyApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'WearWise',
       debugShowCheckedModeBanner: false,
+      // 同時提供深色和淺色主題
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,

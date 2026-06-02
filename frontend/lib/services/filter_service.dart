@@ -3,7 +3,7 @@ import '../core/constants/api_config.dart';
 
 class FilterService {
   static final _dio = Dio(BaseOptions(
-    baseUrl: ApiConfig.baseUrl,
+    baseUrl: ApiConfig.aiBaseUrl,
     // Ollama 比較慢，timeout 設長一點
     connectTimeout: const Duration(seconds: 30),
     receiveTimeout: const Duration(seconds: 60),

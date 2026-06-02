@@ -3,7 +3,7 @@ import '../core/constants/api_config.dart';
 
 class ChatService {
   static final _dio = Dio(BaseOptions(
-    baseUrl: ApiConfig.baseUrl,
+    baseUrl: ApiConfig.aiBaseUrl,
     connectTimeout: const Duration(seconds: 30),
     receiveTimeout: const Duration(seconds: 60),
   ));
