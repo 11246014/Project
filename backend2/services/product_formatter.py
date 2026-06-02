@@ -4,7 +4,7 @@ def format_product(product):
 
         "name": product.get("title", ""),
 
-        "price": f"NT$ {product.get('price', 0)}",
+        "price": product.get("price", 0),
 
         "tags": product.get("tags", []),
 
