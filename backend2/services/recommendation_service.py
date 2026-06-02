@@ -4,6 +4,7 @@ from services.ollama_service import ask_ollama
 from services.keyword_service import extract_keyword
 from services.web_search_service import web_search_products
 from services.product_formatter import format_product
+from services.product_analyzer_service import analyze_product
 
 # ===== 簡易聊天記憶 =====
 
@@ -41,8 +42,24 @@ def recommend_products(user_message):
             search_keyword
         )
 
+        analyzed_products = []
+
+        for product in filtered_products:
+
+            analyzed_products.append(
+                analyze_product(product)
+            )
+
+        filtered_products = analyzed_products
+
+        filtered_products = analyzed_products
+
+        print("===== Analyze Result =====")
+
+        for p in filtered_products:
+            print(p)
+
         print("搜尋結果數量:", len(filtered_products))
-        print(filtered_products)
 
         # ===== 沒找到商品 =====
 
