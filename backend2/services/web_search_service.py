@@ -1,23 +1,87 @@
-from data.mock_products import mock_products
+import os
+import requests
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 
 
 def web_search_products(keyword):
 
-    results = []
+    print(f"[Web Search] {keyword}")
 
-    keyword = keyword.lower()
+    url = "https://serpapi.com/search"
 
-    for product in mock_products:
+    params = {
+        "engine": "google_shopping",
+        "q": keyword,
+        "api_key": SERPAPI_KEY,
+        "gl": "tw",
+        "hl": "zh-tw"
+    }
 
-        text = f"""
-        {product.get("title", "")}
-        {product.get("desc", "")}
-        {product.get("category", "")}
-        {product.get("platform", "")}
-        """
+    response = requests.get(
+        url,
+        params=params
+    )
 
-        if keyword in text.lower():
+    data = response.json()
 
-            results.append(product)
+    products = []
 
-    return results
+    for item in data.get(
+        "shopping_results",
+        []
+    )[:5]:
+
+        products.append({
+
+            "title": item.get(
+                "title",
+                ""
+            ),
+
+            "price": item.get(
+                "price",
+                0
+            ),
+
+            "platform": item.get(
+                "source",
+                ""
+            ),
+
+            "desc": item.get(
+                "snippet",
+                ""
+            ),
+
+            "link": item.get(
+                "link",
+                ""
+            ),
+
+            "image": item.get(
+                "thumbnail",
+                ""
+            ),
+
+            "tags": [],
+
+            "rating": item.get(
+                "rating",
+                0
+            ),
+
+            "match": 90,
+
+            "reason": "符合搜尋需求",
+
+            "isTop": False
+        })
+
+    print(f"[Web Search] 找到 {len(products)} 筆商品")
+
+    return products

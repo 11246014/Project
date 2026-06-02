@@ -1,8 +1,8 @@
 import json
 
 from services.ollama_service import ask_ollama
-from services.search_service import search_products
 from services.keyword_service import extract_keyword
+from services.web_search_service import web_search_products
 from services.product_formatter import format_product
 
 # ===== 簡易聊天記憶 =====
@@ -26,7 +26,7 @@ def recommend_products(user_message):
 
         conversation = "\n".join(chat_history)
 
-        # ===== 提取搜尋關鍵字 =====
+        # ===== AI 提取搜尋關鍵字 =====
 
         search_keyword = extract_keyword(user_message)
 
@@ -35,29 +35,18 @@ def recommend_products(user_message):
         print("Keyword:", search_keyword)
         print("======")
 
-        # ===== 搜尋商品 =====
+        # ===== Web Search =====
 
-        filtered_products = search_products(search_keyword)
+        filtered_products = web_search_products(
+            search_keyword
+        )
 
         print("搜尋結果數量:", len(filtered_products))
         print(filtered_products)
 
-        # ===== 商品格式統一 =====
-
-        formatted_products = []
-
-        for product in filtered_products:
-
-            formatted_products.append(
-                format_product(product)
-            )
-
-        print("格式化後商品數量:", len(formatted_products))
-        print(formatted_products)
-
         # ===== 沒找到商品 =====
 
-        if not formatted_products:
+        if not filtered_products:
 
             final_prompt = f"""
             你是一位台灣智慧穿戴裝置專賣店店員。
@@ -78,16 +67,26 @@ def recommend_products(user_message):
 
             ai_reply = ask_ollama(final_prompt)
 
-            # ===== 記錄 AI 回覆 =====
-
             chat_history.append(f"AI: {ai_reply}")
 
             return {
+
                 "summary": ai_reply,
+
                 "products": []
             }
 
-        # ===== 有找到商品 =====
+        # ===== 商品格式統一 =====
+
+        formatted_products = []
+
+        for product in filtered_products:
+
+            formatted_products.append(
+                format_product(product)
+            )
+
+        # ===== AI 推薦 =====
 
         final_prompt = f"""
         你是一位在台灣智慧穿戴專賣店工作的專業店員。
@@ -127,14 +126,19 @@ def recommend_products(user_message):
         # ===== 回傳前端格式 =====
 
         return {
+
             "summary": ai_reply,
+
             "products": formatted_products
         }
 
     except Exception as e:
 
         return {
+
             "summary": "不好意思，目前推薦系統有點忙碌，請稍後再試～",
+
             "products": [],
+
             "error": str(e)
         }
