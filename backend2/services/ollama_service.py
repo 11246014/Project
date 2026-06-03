@@ -2,7 +2,7 @@ import requests
 
 from config.settings import OLLAMA_URL, MODEL_NAME
 
-def ask_ollama(prompt, timeout=20):
+def ask_ollama(prompt, timeout=120):
 
     response = requests.post(
         OLLAMA_URL,
