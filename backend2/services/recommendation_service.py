@@ -16,11 +16,63 @@ from services.db_search_service import search_db_products
 chat_history = []
 
 
+# =========================
+# 判斷是否為商品需求
+# =========================
+
+def is_product_request(message):
+
+    keywords = [
+
+        "手錶",
+        "手環",
+        "耳機",
+        "穿戴",
+
+        "推薦",
+        "想找",
+
+        "運動",
+        "睡眠",
+        "GPS",
+
+        "健康",
+        "智慧"
+    ]
+
+    for keyword in keywords:
+
+        if keyword in message:
+
+            return True
+
+    return False
+
+
 def recommend_products(user_message):
 
     global chat_history
 
     try:
+
+        # =========================
+        # 非商品需求
+        # =========================
+
+        if not is_product_request(user_message):
+
+            return {
+
+                "summary": (
+                    "您好～我是 WearWise 智慧穿戴助手！\n"
+                    "您可以直接輸入：\n"
+                    "『推薦運動手錶』\n"
+                    "『睡眠監測手環』\n"
+                    "『GPS智慧手錶』"
+                ),
+
+                "products": []
+            }
 
         # =========================
         # 記錄聊天
@@ -76,7 +128,6 @@ def recommend_products(user_message):
 
             # =========================
             # 只分析前 3 筆商品
-            # 避免 Ollama timeout
             # =========================
 
             analyzed_products = []
@@ -97,8 +148,7 @@ def recommend_products(user_message):
                 )
 
             # =========================
-            # 只覆蓋前 3 筆
-            # 保留其餘商品
+            # 覆蓋前 3 筆
             # =========================
 
             for idx, analyzed in enumerate(
@@ -154,10 +204,6 @@ def recommend_products(user_message):
                 "可以再試試其他關鍵字。"
             )
 
-            chat_history.append(
-                f"AI: {ai_reply}"
-            )
-
             return {
 
                 "summary": ai_reply,
@@ -166,24 +212,24 @@ def recommend_products(user_message):
             }
 
         # =========================
-        # 商品格式統一
+        # 固定只回傳 3 筆
         # =========================
 
         formatted_products = []
 
-        for product in filtered_products:
+        for product in filtered_products[:3]:
 
             formatted_products.append(
                 format_product(product)
             )
 
         # =========================
-        # 建立商品摘要
+        # 商品摘要
         # =========================
 
         product_text = ""
 
-        for product in formatted_products[:3]:
+        for product in formatted_products:
 
             product_text += f"""
 
@@ -198,7 +244,7 @@ def recommend_products(user_message):
         print(product_text)
 
         # =========================
-        # AI 推薦
+        # AI Summary
         # =========================
 
         final_prompt = f"""
@@ -232,10 +278,6 @@ def recommend_products(user_message):
             ai_reply = ask_ollama(
                 final_prompt
             )
-
-            # =========================
-            # 防止 Ollama 回空字串
-            # =========================
 
             if not ai_reply.strip():
 

@@ -53,6 +53,34 @@ BAD_KEYWORDS = [
     "耳機殼"
 ]
 
+# =========================
+# 穿戴裝置白名單
+# =========================
+
+WEARABLE_KEYWORDS = [
+
+    "智慧手錶",
+    "智慧手環",
+    "運動手錶",
+
+    "GPS",
+    "Watch",
+    "watch",
+
+    "Fit",
+    "Band",
+
+    "Garmin",
+    "Samsung",
+    "Apple Watch",
+
+    "Amazfit",
+    "Fitbit",
+    "Huawei",
+
+    "穿戴"
+]
+
 
 # =========================
 # 清理價格
@@ -180,7 +208,7 @@ def clean_title(title):
 
         cleaned
     )
-    
+
     # =========================
     # 移除超長英文商品代碼
     # =========================
@@ -191,7 +219,6 @@ def clean_title(title):
 
     for word in words:
 
-        # 英數混合且過長
         if (
             len(word) >= 15
             and re.search(r"[A-Z]", word)
@@ -328,6 +355,28 @@ def clean_product(
             )
 
             return None
+
+    # =========================
+    # 非穿戴商品過濾
+    # =========================
+
+    is_wearable = False
+
+    for keyword in WEARABLE_KEYWORDS:
+
+        if keyword.lower() in clean_name.lower():
+
+            is_wearable = True
+
+            break
+
+    if not is_wearable:
+
+        print(
+            f"[Not Wearable] {clean_name}"
+        )
+
+        return None
 
     return {
 
