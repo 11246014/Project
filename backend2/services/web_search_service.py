@@ -28,6 +28,20 @@ KNOWN_BRANDS = [
     "realme"
 ]
 
+# =========================
+# 不需要的配件關鍵字
+# =========================
+
+BAD_KEYWORDS = [
+
+    "錶帶",
+    "保護貼",
+    "保護殼",
+    "充電線",
+    "配件",
+    "皮帶"
+]
+
 
 # =========================
 # 清理價格
@@ -91,6 +105,10 @@ def clean_title(title):
 
     cleaned = title
 
+    # =========================
+    # 移除促銷文字
+    # =========================
+
     for pattern in patterns:
 
         cleaned = re.sub(
@@ -98,6 +116,22 @@ def clean_title(title):
             "",
             cleaned
         )
+
+    # =========================
+    # 去除括號後面關鍵字堆疊
+    # =========================
+
+    if "(" in cleaned:
+
+        cleaned = cleaned.split("(")[0]
+
+    if "（" in cleaned:
+
+        cleaned = cleaned.split("（")[0]
+
+    # =========================
+    # 清理空白
+    # =========================
 
     cleaned = " ".join(
         cleaned.split()
@@ -107,7 +141,7 @@ def clean_title(title):
 
 
 # =========================
-# 偵測品牌
+# 品牌偵測
 # =========================
 
 def detect_brand(title):
@@ -150,7 +184,7 @@ def generate_reason(
 
 
 # =========================
-# 清理商品資料
+# 商品資料清理
 # =========================
 
 def clean_product(
@@ -179,6 +213,20 @@ def clean_product(
     clean_name = clean_title(
         raw_title
     )
+
+    # =========================
+    # 過濾配件商品
+    # =========================
+
+    for word in BAD_KEYWORDS:
+
+        if word in clean_name:
+
+            print(
+                f"[Accessory Filtered] {clean_name}"
+            )
+
+            return None
 
     return {
 
@@ -233,7 +281,7 @@ def clean_product(
 
 
 # =========================
-# 品牌去重複
+# 品牌去重
 # =========================
 
 def remove_duplicate_brand(
@@ -277,7 +325,7 @@ def remove_duplicate_brand(
 
 
 # =========================
-# SerpAPI 商品搜尋
+# Web Search
 # =========================
 
 def web_search_products(
@@ -341,14 +389,6 @@ def web_search_products(
             f"{response.status_code}"
         )
 
-        print(
-            "[Response Preview]"
-        )
-
-        print(
-            response.text[:1000]
-        )
-
         data = response.json()
 
         shopping_results = data.get(
@@ -380,6 +420,14 @@ def web_search_products(
                 keyword
             )
 
+            # =========================
+            # 配件被過濾
+            # =========================
+
+            if not product:
+
+                continue
+
             print(
                 "Clean Title:",
                 product["title"]
@@ -391,7 +439,7 @@ def web_search_products(
             )
 
             # =========================
-            # 過濾過高價格
+            # 過高價格過濾
             # =========================
 
             if product["price"] > 30000:
@@ -403,7 +451,7 @@ def web_search_products(
                 continue
 
             # =========================
-            # 過濾空商品名稱
+            # 空標題過濾
             # =========================
 
             if not product["title"]:
