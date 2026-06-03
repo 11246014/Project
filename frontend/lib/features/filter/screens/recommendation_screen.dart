@@ -33,28 +33,36 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
 
     // 判斷是從篩選器跳過來（需要打 API）還是直接有結果
     if (widget.result['loading'] == true) {
-      // 從篩選器跳過來，自己打 API
-      _fetchRecommendation(widget.result['message'] as String);
+      // 從篩選器跳過來，現在傳入的是 Map 格式的 filters，不是單一字串
+      final filters = widget.result['filters'] as Map<String, dynamic>? ?? {};
+      _fetchRecommendation(filters);
     } else {
-      // 直接有結果的情況（保留舊的進入方式相容性）
-      _summary = widget.result['summary'] as String? ?? '';
+      // 直接有結果的情況。
+      // 為了防呆與向下相容，同時支援後端新的 Key ('reply', 'results') 與舊的 Key ('summary', 'products')
+      _summary = (widget.result['reply'] ?? widget.result['summary']) as String? ?? '';
       _products = List<Map<String, dynamic>>.from(
-          widget.result['products'] ?? []);
+          widget.result['results'] ?? widget.result['products'] ?? []);
     }
   }
 
   /// 打 API 取得推薦結果
-  Future<void> _fetchRecommendation(String message) async {
+  // 參數型別從 String message 改為 Map<String, dynamic> filters
+  Future<void> _fetchRecommendation(Map<String, dynamic> filters) async {
     setState(() => _isLoading = true);
 
     try {
-      final response = await FilterService.recommend(message);
+      // 將結構化的 filters 傳給 Service
+      final response = await FilterService.recommend(filters);
 
       if (mounted) {
         setState(() {
-          _summary = response['summary'] as String? ?? '';
+          // 對接 filter_router.py 的回傳格式
+          // 後端回傳的是 {"success": True, "reply": "...", "results": [...]}
+          _summary = (response['reply'] ?? response['summary']) as String? ?? '';
+          
           _products = List<Map<String, dynamic>>.from(
-              response['products'] ?? []);
+              response['results'] ?? response['products'] ?? []);
+              
           _isLoading = false;
         });
       }
