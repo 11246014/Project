@@ -273,7 +273,9 @@ class RecommendationScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      (product['tags'] as List<String>).join(' '),
+                      ((product['tags'] as List<dynamic>?) ?? [])
+                          .map((e) => e.toString())
+                          .join(' '),
                       style: AppTextStyles.caption
                           .copyWith(color: AppColors.accent),
                     ),

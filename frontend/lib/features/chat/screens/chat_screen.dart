@@ -364,7 +364,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  (product['tags'] as List<String>).join(' '),
+                  ((product['tags'] as List<dynamic>?) ?? [])
+                      .map((e) => e.toString())
+                      .join(' '),
                   style: AppTextStyles.caption
                       .copyWith(color: AppColors.accent),
                 ),
