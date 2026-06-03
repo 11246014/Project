@@ -61,24 +61,49 @@ WEARABLE_KEYWORDS = [
 
     "智慧手錶",
     "智慧手環",
+    "智慧腕錶",
+
+    "智能手錶",
+    "智能手表",
+
     "運動手錶",
 
-    "GPS",
-    "Watch",
-    "watch",
+    "smartwatch",
 
-    "Fit",
-    "Band",
+    "watch fit",
 
-    "Garmin",
-    "Samsung",
-    "Apple Watch",
+    "galaxy watch",
 
-    "Amazfit",
-    "Fitbit",
-    "Huawei",
+    "apple watch",
+
+    "garmin",
+
+    "amazfit",
+
+    "fitbit",
+
+    "huawei",
 
     "穿戴"
+]
+
+# =========================
+# 額外智慧手錶白名單
+# =========================
+
+SMARTWATCH_KEYWORDS = [
+
+    "智慧手錶",
+    "智能手錶",
+    "智慧腕錶",
+
+    "smartwatch",
+
+    "watch fit",
+
+    "galaxy watch",
+
+    "apple watch"
 ]
 
 
@@ -130,10 +155,6 @@ def clean_title(title):
 
     cleaned = str(title)
 
-    # =========================
-    # 移除促銷標籤
-    # =========================
-
     patterns = [
 
         r"\[.*?\]",
@@ -171,10 +192,6 @@ def clean_title(title):
             flags=re.IGNORECASE
         )
 
-    # =========================
-    # 去除括號後堆疊文字
-    # =========================
-
     if "(" in cleaned:
 
         cleaned = cleaned.split("(")[0]
@@ -182,10 +199,6 @@ def clean_title(title):
     if "（" in cleaned:
 
         cleaned = cleaned.split("（")[0]
-
-    # =========================
-    # 英文品牌自動斷詞
-    # =========================
 
     cleaned = re.sub(
 
@@ -196,10 +209,6 @@ def clean_title(title):
         cleaned
     )
 
-    # =========================
-    # 長英文數字代碼移除
-    # =========================
-
     cleaned = re.sub(
 
         r"[A-Z0-9\-]{12,}",
@@ -208,10 +217,6 @@ def clean_title(title):
 
         cleaned
     )
-
-    # =========================
-    # 移除超長英文商品代碼
-    # =========================
 
     words = cleaned.split()
 
@@ -231,10 +236,6 @@ def clean_title(title):
 
     cleaned = " ".join(filtered_words)
 
-    # =========================
-    # 中文名稱修正
-    # =========================
-
     replacements = {
 
         "智慧型手錶": "智慧手錶",
@@ -249,10 +250,6 @@ def clean_title(title):
             old,
             new
         )
-
-    # =========================
-    # 清理空白
-    # =========================
 
     cleaned = re.sub(
 
@@ -357,20 +354,26 @@ def clean_product(
             return None
 
     # =========================
-    # 非穿戴商品過濾
+    # 穿戴裝置過濾
     # =========================
 
-    is_wearable = False
+    title_lower = clean_name.lower()
 
-    for keyword in WEARABLE_KEYWORDS:
+    is_wearable = any(
 
-        if keyword.lower() in clean_name.lower():
+        keyword.lower() in title_lower
 
-            is_wearable = True
+        for keyword in WEARABLE_KEYWORDS
+    )
 
-            break
+    smartwatch_match = any(
 
-    if not is_wearable:
+        keyword.lower() in title_lower
+
+        for keyword in SMARTWATCH_KEYWORDS
+    )
+
+    if not is_wearable and not smartwatch_match:
 
         print(
             f"[Not Wearable] {clean_name}"
@@ -447,10 +450,6 @@ def remove_duplicate_brand(
             "Other"
         )
 
-        # =========================
-        # Other 不去重
-        # =========================
-
         if brand == "Other":
 
             brand_products[
@@ -498,16 +497,6 @@ def web_search_products(
         f"[Web Search] {keyword}"
     )
 
-    print(
-
-        f"[SERPAPI_KEY Loaded] "
-        f"{SERPAPI_KEY[:10]}..."
-
-        if SERPAPI_KEY
-
-        else "[SERPAPI_KEY NOT FOUND]"
-    )
-
     url = (
         "https://serpapi.com/search"
     )
@@ -527,10 +516,6 @@ def web_search_products(
 
     try:
 
-        print(
-            "[SerpAPI Request Start]"
-        )
-
         response = requests.get(
 
             url,
@@ -538,15 +523,6 @@ def web_search_products(
             params=params,
 
             timeout=30
-        )
-
-        print(
-            "[SerpAPI Response OK]"
-        )
-
-        print(
-            f"[Status Code] "
-            f"{response.status_code}"
         )
 
         data = response.json()
@@ -580,10 +556,6 @@ def web_search_products(
                 keyword
             )
 
-            # =========================
-            # 配件被過濾
-            # =========================
-
             if not product:
 
                 continue
@@ -598,27 +570,11 @@ def web_search_products(
                 product["price"]
             )
 
-            # =========================
-            # 價格過高過濾
-            # =========================
-
             if product["price"] > 30000:
-
-                print(
-                    "Price Filtered"
-                )
 
                 continue
 
-            # =========================
-            # 空標題過濾
-            # =========================
-
             if not product["title"]:
-
-                print(
-                    "Empty Title Filtered"
-                )
 
                 continue
 
@@ -640,20 +596,12 @@ def web_search_products(
             f"{len(products)}"
         )
 
-        # =========================
-        # 評分排序
-        # =========================
-
         products.sort(
 
             key=lambda x: x["rating"],
 
             reverse=True
         )
-
-        # =========================
-        # Top Product
-        # =========================
 
         if products:
 
@@ -672,7 +620,7 @@ def web_search_products(
 
         print("=" * 50)
 
-        return products
+        return products[:3]
 
     except Exception as e:
 

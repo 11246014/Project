@@ -90,9 +90,11 @@ def build_search_keyword(filters):
         ""
     )
 
-    if os_type:
+    if "iOS" in os_type:
+        keywords.append("iPhone")
 
-        keywords.append(os_type)
+    elif "Android" in os_type:
+        keywords.append("Android")
 
     # =========================
     # 最後組字串
