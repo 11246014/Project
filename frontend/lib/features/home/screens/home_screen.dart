@@ -6,6 +6,8 @@ import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../features/profile/screens/profile_screen.dart';
 import '../../../services/product_service.dart';
+import '../../../core/constants/app_formatters.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -119,10 +121,10 @@ class _HomeTab extends StatefulWidget {
 class _HomeTabState extends State<_HomeTab> {
   int _selectedTagIndex = 0;
 
-  // 快速篩選標籤（W2 串接後從 API 取得）
+  // 快速篩選標籤（串接後從 API 取得）
   final List<String> _tags = ['全部', '手錶', '手環', '戒指'];
 
-  // Mock 商品資料（W2 串接 API 後替換）
+  // Mock 商品資料（串接 API 後替換）
   List<Map<String, dynamic>> _products = [];
   List<Map<String, dynamic>> _filteredProducts = [];
 
@@ -320,9 +322,9 @@ class _ProductCard extends StatelessWidget {
                 // 規格標籤
                 Wrap(
                   spacing: 6,
-                  children: (product['tags'] as List<String>)
+                  children: ((product['tags'] as List<dynamic>?) ?? [])
                       .map((tag) => Text(
-                            tag,
+                            tag.toString(),
                             style: AppTextStyles.caption
                                 .copyWith(color: AppColors.accent),
                           ))
@@ -335,7 +337,7 @@ class _ProductCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      product['price'],
+                      AppFormatters.formatPrice(product['price']),
                       style: AppTextStyles.labelLarge
                           .copyWith(color: AppColors.textMain(context)),
                     ),
@@ -345,7 +347,7 @@ class _ProductCard extends StatelessWidget {
                             color: AppColors.warning, size: 14),
                         const SizedBox(width: 2),
                         Text(
-                          '${product['rating']}',
+                          product['rating'] == 0.0 ? 'N/A' : '${product['rating']}',
                           style: AppTextStyles.caption,
                         ),
                       ],
