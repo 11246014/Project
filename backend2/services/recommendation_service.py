@@ -6,6 +6,7 @@ from services.web_search_service import web_search_products
 from services.product_formatter import format_product
 from services.product_analyzer_service import analyze_product
 
+
 # ===== 簡易聊天記憶 =====
 
 chat_history = []
@@ -19,17 +20,21 @@ def recommend_products(user_message):
 
         # ===== 記錄聊天 =====
 
-        chat_history.append(f"使用者: {user_message}")
-
-        # 只保留最近 6 句
+        chat_history.append(
+            f"使用者: {user_message}"
+        )
 
         chat_history = chat_history[-6:]
 
-        conversation = "\n".join(chat_history)
+        conversation = "\n".join(
+            chat_history
+        )
 
-        # ===== AI 提取搜尋關鍵字 =====
+        # ===== Keyword =====
 
-        search_keyword = extract_keyword(user_message)
+        search_keyword = extract_keyword(
+            user_message
+        )
 
         print("======")
         print("User:", user_message)
@@ -42,6 +47,12 @@ def recommend_products(user_message):
             search_keyword
         )
 
+        print(
+            f"搜尋結果數量: {len(filtered_products)}"
+        )
+
+        # ===== Product Analyzer =====
+
         analyzed_products = []
 
         for product in filtered_products:
@@ -52,39 +63,42 @@ def recommend_products(user_message):
 
         filtered_products = analyzed_products
 
-        filtered_products = analyzed_products
-
         print("===== Analyze Result =====")
 
         for p in filtered_products:
             print(p)
-
-        print("搜尋結果數量:", len(filtered_products))
 
         # ===== 沒找到商品 =====
 
         if not filtered_products:
 
             final_prompt = f"""
-            你是一位台灣智慧穿戴裝置專賣店店員。
+你是一位台灣智慧穿戴裝置專賣店店員。
 
-            使用繁體中文與自然聊天口氣。
+使用繁體中文與自然聊天口氣。
 
-            使用者剛剛說：
-            {user_message}
+最近對話：
+{conversation}
 
-            最近對話：
-            {conversation}
+使用者最新訊息：
+{user_message}
 
-            請自然回應使用者，
-            並進一步了解需求。
+目前尚未找到符合條件的商品。
 
-            不要急著推商品。
-            """
+請：
+1. 自然回覆使用者
+2. 詢問需求
+3. 不要推薦不存在的商品
+4. 控制在3句內
+"""
 
-            ai_reply = ask_ollama(final_prompt)
+            ai_reply = ask_ollama(
+                final_prompt
+            )
 
-            chat_history.append(f"AI: {ai_reply}")
+            chat_history.append(
+                f"AI: {ai_reply}"
+            )
 
             return {
 
@@ -103,44 +117,83 @@ def recommend_products(user_message):
                 format_product(product)
             )
 
+        # ===== 建立商品摘要 =====
+
+        product_text = ""
+
+        for idx, product in enumerate(
+            formatted_products[:3],
+            start=1
+        ):
+
+            product_text += f"""
+商品{idx}
+
+名稱：
+{product.get('name', '')}
+
+價格：
+{product.get('price', 0)}
+
+評分：
+{product.get('rating', 0)}
+
+推薦理由：
+{product.get('reason', '')}
+
+"""
+
+        print("===== Product Summary =====")
+        print(product_text)
+
         # ===== AI 推薦 =====
 
         final_prompt = f"""
-        你是一位在台灣智慧穿戴專賣店工作的專業店員。
+你是一位台灣智慧穿戴裝置專業導購員。
 
-        你的任務不是直接推銷商品，
-        而是像真人店員一樣理解客人需求，
-        再慢慢推薦適合的產品。
+請根據使用者需求與商品資料進行推薦。
 
-        規則：
+使用者需求：
+{user_message}
 
-        1. 使用繁體中文
-        2. 使用自然台灣口語
-        3. 像朋友聊天
-        4. 不要太像機器人
-        5. 不要一次講太多規格
-        6. 回覆控制在 2~4 句
+最近對話：
+{conversation}
 
-        最近對話：
-        {conversation}
+商品資料：
+{product_text}
 
-        使用者最新訊息：
-        {user_message}
+規則：
 
-        搜尋到的商品：
-        {json.dumps(formatted_products, ensure_ascii=False)}
+1. 必須提到商品名稱
+2. 必須說明推薦原因
+3. 優先推薦最符合需求的商品
+4. 可提到價格或評分
+5. 使用繁體中文
+6. 不要反問問題
+7. 不要要求補充資訊
+8. 不要說自己是AI
+9. 控制在150字內
 
-        請根據商品內容，
-        生成一段自然推薦摘要。
-        """
+輸出範例：
 
-        ai_reply = ask_ollama(final_prompt)
+根據您的需求，Garmin Forerunner 570 是最推薦的選擇，具備完整跑步功能且評價優異。若希望兼顧價格與健康監測功能，Samsung Galaxy Watch8 也是不錯的選擇。
 
-        # ===== 記錄 AI 回覆 =====
+請直接輸出推薦內容。
+"""
 
-        chat_history.append(f"AI: {ai_reply}")
+        ai_reply = ask_ollama(
+            final_prompt
+        )
 
-        # ===== 回傳前端格式 =====
+        # ===== AI回覆記錄 =====
+
+        chat_history.append(
+            f"AI: {ai_reply}"
+        )
+
+        chat_history = chat_history[-6:]
+
+        # ===== 回傳前端 =====
 
         return {
 
@@ -150,6 +203,10 @@ def recommend_products(user_message):
         }
 
     except Exception as e:
+
+        print(
+            f"[Recommendation Error] {e}"
+        )
 
         return {
 
