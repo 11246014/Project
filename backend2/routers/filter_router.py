@@ -1,9 +1,11 @@
 from fastapi import APIRouter
 
 from services.filter_service import filter_products
+
 from services.filter_recommend_service import (
     generate_filter_recommendation
 )
+
 from services.product_formatter import (
     format_product
 )
@@ -16,7 +18,19 @@ def product_filter(filters: dict):
 
     try:
 
-        # ===== 商品篩選 =====
+        # =========================
+        # 印出前端送來的清單資料
+        # =========================
+
+        print("\n====== 前端清單資料 ======")
+
+        print(filters)
+
+        print("==========================\n")
+
+        # =========================
+        # 商品篩選
+        # =========================
 
         results = filter_products(
             filters
@@ -26,7 +40,17 @@ def product_filter(filters: dict):
             f"[Filter] 找到 {len(results)} 筆商品"
         )
 
-        # ===== 統一商品格式 =====
+        # =========================
+        # 印出篩選結果
+        # =========================
+
+        for product in results:
+
+            print(product.get("title"))
+
+        # =========================
+        # 統一商品格式
+        # =========================
 
         formatted_results = []
 
@@ -36,7 +60,9 @@ def product_filter(filters: dict):
                 format_product(product)
             )
 
-        # ===== AI 推薦文字 =====
+        # =========================
+        # AI 推薦文字
+        # =========================
 
         try:
 
@@ -58,7 +84,9 @@ def product_filter(filters: dict):
                 "但已先列出符合條件的商品。"
             )
 
-        # ===== 回傳前端 =====
+        # =========================
+        # 回傳前端
+        # =========================
 
         return {
 
