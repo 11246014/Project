@@ -60,8 +60,10 @@ def recommend_products(user_message):
 
         for product in filtered_products:
 
+            analyzed = analyze_product(product)
+
             analyzed_products.append(
-                analyze_product(product)
+                analyzed
             )
 
         filtered_products = analyzed_products
@@ -77,13 +79,15 @@ def recommend_products(user_message):
 
             try:
 
-                asyncio.run(
-                    save_product(product)
-                )
+                if product.get("title"):
 
-                print(
-                    f"[Saved] {product.get('title')}"
-                )
+                    asyncio.run(
+                        save_product(product)
+                    )
+
+                    print(
+                        f"[Saved] {product.get('title')}"
+                    )
 
             except Exception as e:
 

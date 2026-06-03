@@ -8,9 +8,6 @@ load_dotenv()
 
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 
-search_cache = {}
-
-
 KNOWN_BRANDS = [
     "Apple",
     "Samsung",
@@ -163,15 +160,6 @@ def remove_duplicate_brand(products):
         brand_products.values()
     )
 
-# ===== Cache =====
-
-    if keyword in search_cache:
-
-        print(
-            f"[Cache Hit] {keyword}"
-        )
-
-        return search_cache[keyword]
 
 def web_search_products(keyword):
 

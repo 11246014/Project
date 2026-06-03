@@ -6,6 +6,21 @@ def format_product(product):
 
         "price": product.get("price", 0),
 
+        "product_type": product.get(
+            "product_type",
+            ""
+        ),
+
+        "usage": product.get(
+            "usage",
+            []
+        ),
+
+        "features": product.get(
+            "features",
+            []
+        ),
+
         "tags": product.get("tags", []),
 
         "rating": product.get("rating", 0),
