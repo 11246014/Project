@@ -1,46 +1,69 @@
-import httpx
+import requests
 
 BASE_URL = "https://champion-sandpit-rash.ngrok-free.dev"
 
 
-async def get_db_products():
-
-    async with httpx.AsyncClient() as client:
-
-        response = await client.get(
-            f"{BASE_URL}/products"
-        )
-
-        return response.json()
-
-
 async def save_product(product):
 
-    payload = {
+    try:
 
-        "name": product.get(
-            "title",
-            ""
-        ),
+        payload = {
 
-        "price": int(
-            product.get(
+            "name": product.get(
+                "title",
+                ""
+            ),
+
+            "price": product.get(
                 "price",
                 0
+            ),
+
+            "description": product.get(
+                "desc",
+                ""
+            ),
+
+            "platform": product.get(
+                "platform",
+                ""
+            ),
+
+            "image": product.get(
+                "image",
+                ""
+            ),
+
+            "rating": int(
+                product.get(
+                    "rating",
+                    0
+                )
+            ),
+
+            "reason": product.get(
+                "reason",
+                ""
             )
-        ),
+        }
 
-        "description": product.get(
-            "desc",
-            ""
-        )
-    }
+        response = requests.post(
 
-    async with httpx.AsyncClient() as client:
-
-        response = await client.post(
             f"{BASE_URL}/products",
-            json=payload
+
+            json=payload,
+
+            timeout=10
         )
 
-        return response.json()
+        print(
+            f"[Save Product] {response.status_code}"
+        )
+
+        print(response.text)
+
+    except Exception as e:
+
+        print(
+            f"[Save Error] {e}"
+        )
