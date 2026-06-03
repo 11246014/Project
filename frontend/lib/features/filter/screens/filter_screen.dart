@@ -244,27 +244,33 @@ class _FilterScreenState extends State<FilterScreen> {
     }
   }
 
-  /// 完成篩選，整理答案並跳回首頁
+  /// 完成篩選，整理答案並跳回推薦頁
   Future<void> _onFinish() async {
-  // 整理 8 題答案成自然語言
-    final q1 = (_answers[0] ?? {}).join('、');
-    final q2 = (_answers[1] ?? {}).join('、');
-    final q3 = (_answers[2] ?? {}).isNotEmpty ? (_answers[2] ?? {}).first : '';
-    final q4 = (_answers[3] ?? {}).isNotEmpty ? (_answers[3] ?? {}).first : '';
-    final q5 = (_answers[4] ?? {}).isNotEmpty ? (_answers[4] ?? {}).first : '';
-    final q6 = (_answers[5] ?? {}).isNotEmpty ? (_answers[5] ?? {}).first : '';
-    final q7 = (_answers[6] ?? {}).isNotEmpty ? (_answers[6] ?? {}).first : '';
-    final q8 = (_answers[7] ?? {}).join('、');
+    // 解析預算為整數 max_price (這部分保留，因為後端做價格過濾通常需要數值)
+    final budgetString = (_answers[3] ?? {}).isNotEmpty ? _answers[3]!.first : '';
+    int maxPrice = 999999; // 預設無上限
+    if (budgetString.contains('5,000')) {
+      maxPrice = 5000;
+    } else if (budgetString.contains('15,000')) {
+      maxPrice = 15000;
+    } else if (budgetString.contains('30,000') && !budgetString.contains('以上')) {
+      maxPrice = 30000;
+    }
 
-    // 整理成自然語言傳給 AI
-    final message = '使用情境：$q1。需要功能：$q2。'
-        '充電頻率：$q3。預算：$q4。'
-        '偏好系統：$q5。裝置類型：$q6。'
-        '外型風格：$q7。最在意：$q8。';
+    // 組裝成 JSON 結構 (Map)，將畫面上的選項原封不動送給後端 AI
+    final filters = {
+      "usage": (_answers[0] ?? {}).isNotEmpty ? _answers[0]!.first : "",
+      "max_price": maxPrice,
+      "features": (_answers[1] ?? {}).toList(),
+      "battery": (_answers[2] ?? {}).isNotEmpty ? _answers[2]!.first : "",
+      "os": (_answers[4] ?? {}).isNotEmpty ? _answers[4]!.first : "",
+      "device_type": (_answers[5] ?? {}).isNotEmpty ? _answers[5]!.first : "",
+      "style": (_answers[6] ?? {}).isNotEmpty ? _answers[6]!.first : "",
+      "core_factors": (_answers[7] ?? {}).toList(),
+    };
 
-    // 直接跳頁
-    context.go(AppRoutes.recommendation, extra: {'message': message, 'loading': true});
-    
+    // 跳轉到推薦頁，並傳遞 filters
+    context.go(AppRoutes.recommendation, extra: {'filters': filters, 'loading': true});
   }
 
   @override
