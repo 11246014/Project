@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/custom_button.dart';
+import '../../../core/constants/app_formatters.dart';
 
 class RecommendationScreen extends StatelessWidget {
   // 從篩選器傳來的 AI 推薦結果
@@ -281,7 +282,7 @@ class RecommendationScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          product['price'],
+                          AppFormatters.formatPrice(product['price']),
                           style: AppTextStyles.labelLarge.copyWith(
                             color: AppColors.primary,
                             fontSize: 13,

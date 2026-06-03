@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../services/chat_service.dart';
+import '../../../core/constants/app_formatters.dart';
 
 /// 訊息角色
 enum MessageRole { user, ai }
@@ -372,7 +373,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      product['price'],
+                      AppFormatters.formatPrice(product['price']),
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
