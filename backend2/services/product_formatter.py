@@ -1,6 +1,8 @@
 def format_product(product):
 
-    # ===== Features 轉 Tags =====
+    # =========================
+    # Features 轉 Tags
+    # =========================
 
     features = product.get(
         "features",
@@ -23,12 +25,40 @@ def format_product(product):
             []
         )
 
+    # =========================
+    # 圖片處理
+    # =========================
+
+    image = product.get(
+        "image",
+        ""
+    )
+
+    # 防止 None
+    if not image:
+
+        image = ""
+
+    # =========================
+    # 商品名稱過長處理
+    # =========================
+
+    name = product.get(
+        "title",
+        ""
+    )
+
+    if len(name) > 45:
+
+        name = name[:45] + "..."
+
+    # =========================
+    # 回傳格式
+    # =========================
+
     return {
 
-        "name": product.get(
-            "title",
-            ""
-        ),
+        "name": name,
 
         "price": product.get(
             "price",
@@ -79,8 +109,5 @@ def format_product(product):
             ""
         ),
 
-        "image": product.get(
-            "image",
-            ""
-        )
+        "image": image
     }
