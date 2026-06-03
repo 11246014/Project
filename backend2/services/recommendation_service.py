@@ -83,9 +83,14 @@ def recommend_products(user_message):
 
             for product in filtered_products[:3]:
 
+                print("\n[Analyze Start]")
+                print(product.get("title"))
+
                 analyzed = analyze_product(
                     product
                 )
+
+                print("[Analyze End]")
 
                 analyzed_products.append(
                     analyzed
@@ -144,28 +149,9 @@ def recommend_products(user_message):
 
         if not filtered_products:
 
-            final_prompt = f"""
-你是一位台灣智慧穿戴裝置專賣店店員。
-
-使用繁體中文與自然聊天口氣。
-
-最近對話：
-{conversation}
-
-使用者最新訊息：
-{user_message}
-
-目前尚未找到符合條件的商品。
-
-請：
-1. 自然回覆使用者
-2. 詢問需求
-3. 不要推薦不存在的商品
-4. 控制在3句內
-"""
-
-            ai_reply = ask_ollama(
-                final_prompt
+            ai_reply = (
+                "目前尚未找到符合需求的商品，"
+                "可以再試試其他關鍵字。"
             )
 
             chat_history.append(
@@ -197,21 +183,14 @@ def recommend_products(user_message):
 
         product_text = ""
 
-        for idx, product in enumerate(
-            formatted_products[:3],
-            start=1
-        ):
+        for product in formatted_products[:3]:
 
             product_text += f"""
-商品{idx}
 
-名稱：
+商品名稱：
 {product.get('name', '')}
 
-價格：
-{product.get('price', 0)}
-
-推薦理由：
+推薦原因：
 {product.get('reason', '')}
 """
 
@@ -225,23 +204,51 @@ def recommend_products(user_message):
         final_prompt = f"""
 你是智慧穿戴商品推薦助手。
 
-請根據使用者需求推薦商品。
+請根據使用者需求，
+自然介紹商品。
+
+規則：
+
+1. 每個商品單獨一段
+2. 不要使用「商品1、商品2」
+3. 用聊天口氣
+4. 說明商品適合什麼需求
+5. 不需要重複價格
+6. 不需要列功能清單
+7. 使用繁體中文
+8. 控制在150字內
 
 使用者需求：
 {user_message}
 
 商品資料：
 {product_text}
-
-請用繁體中文簡短推薦，
-控制在100字內。
 """
 
         try:
 
+            print("\n[Summary Start]")
+
             ai_reply = ask_ollama(
                 final_prompt
             )
+
+            # =========================
+            # 防止 Ollama 回空字串
+            # =========================
+
+            if not ai_reply.strip():
+
+                ai_reply = (
+                    "已為您整理幾款符合需求的商品，"
+                    "可以參考下方推薦。"
+                )
+
+            print(
+                f"[Summary Content] {ai_reply}"
+            )
+
+            print("[Summary End]")
 
         except Exception as e:
 
