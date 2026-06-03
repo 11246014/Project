@@ -5,6 +5,9 @@ from services.keyword_service import extract_keyword
 from services.web_search_service import web_search_products
 from services.product_formatter import format_product
 from services.product_analyzer_service import analyze_product
+from services.backend1_client import save_product
+
+import asyncio
 
 
 # ===== 簡易聊天記憶 =====
@@ -67,30 +70,50 @@ def recommend_products(user_message):
 
         for p in filtered_products:
             print(p)
+        
+        # ===== 存進 Backend1 =====
+
+        for product in filtered_products:
+
+            try:
+
+                asyncio.run(
+                    save_product(product)
+                )
+
+                print(
+                    f"[Saved] {product.get('title')}"
+                )
+
+            except Exception as e:
+
+                print(
+                    f"[Save Error] {e}"
+                )
 
         # ===== 沒找到商品 =====
 
         if not filtered_products:
 
             final_prompt = f"""
-你是一位台灣智慧穿戴裝置專賣店店員。
+            你是一位台灣智慧穿戴裝置專賣店店員。
 
-使用繁體中文與自然聊天口氣。
+            使用繁體中文與自然聊天口氣。
 
-最近對話：
-{conversation}
+            最近對話：
+            {conversation}
 
-使用者最新訊息：
-{user_message}
+            使用者最新訊息：
+            {user_message}
 
-目前尚未找到符合條件的商品。
+            目前尚未找到符合條件的商品。
 
-請：
-1. 自然回覆使用者
-2. 詢問需求
-3. 不要推薦不存在的商品
-4. 控制在3句內
-"""
+            請：
+            1. 自然回覆使用者
+            2. 詢問需求
+            3. 不要推薦不存在的商品
+            4. 控制在3句內
+            """
 
             ai_reply = ask_ollama(
                 final_prompt
