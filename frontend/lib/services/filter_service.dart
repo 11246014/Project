@@ -11,7 +11,7 @@ class FilterService {
 
   // 把問卷答案送給 AI，取得推薦商品
   static Future<Map<String, dynamic>> recommend(String message) async {
-    final res = await _dio.post('/ai/recommend', data: {
+    final res = await _dio.post('/products/filter', data: {
       'message': message,
     });
     return res.data;

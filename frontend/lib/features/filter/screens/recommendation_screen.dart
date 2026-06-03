@@ -5,21 +5,71 @@ import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../core/constants/app_formatters.dart';
+import '../../../services/filter_service.dart';
 
-class RecommendationScreen extends StatelessWidget {
-  // 從篩選器傳來的 AI 推薦結果
+//  StatefulWidget，讓頁面自己打 API
+class RecommendationScreen extends StatefulWidget {
   final Map<String, dynamic> result;
 
   const RecommendationScreen({super.key, required this.result});
 
-  // Mock 推薦商品（串接後從 result 取得）
+  @override
+  State<RecommendationScreen> createState() => _RecommendationScreenState();
+}
 
-  // AI 推薦摘要（串接後從 result['summary'] 取得）
-  String get _summary =>
-      result['summary'] as String? ?? '正在為你分析推薦結果...';
-       
-  List<Map<String, dynamic>>get _products =>
-    List<Map<String, dynamic>>.from(result['products']??[]);
+class _RecommendationScreenState extends State<RecommendationScreen> {
+  // 是否正在等待 AI 回應
+  bool _isLoading = false;
+
+  // AI 推薦摘要
+  String _summary = '';
+
+  // 推薦商品列表
+  List<Map<String, dynamic>> _products = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 判斷是從篩選器跳過來（需要打 API）還是直接有結果
+    if (widget.result['loading'] == true) {
+      // 從篩選器跳過來，自己打 API
+      _fetchRecommendation(widget.result['message'] as String);
+    } else {
+      // 直接有結果的情況（保留舊的進入方式相容性）
+      _summary = widget.result['summary'] as String? ?? '';
+      _products = List<Map<String, dynamic>>.from(
+          widget.result['products'] ?? []);
+    }
+  }
+
+  /// 打 API 取得推薦結果
+  Future<void> _fetchRecommendation(String message) async {
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await FilterService.recommend(message);
+
+      if (mounted) {
+        setState(() {
+          _summary = response['summary'] as String? ?? '';
+          _products = List<Map<String, dynamic>>.from(
+              response['products'] ?? []);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('推薦失敗，請稍後再試'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,72 +80,99 @@ class RecommendationScreen extends StatelessWidget {
           children: [
             // 頂部標題列
             _buildHeader(context),
-            // 內容
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // AI 推薦摘要
-                    _buildAiSummary(context),
-                    const SizedBox(height: 16),
 
-                    // 推薦商品標題
-                    Row(
-                      children: [
-                        Text(
-                          '推薦商品',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textSub(context),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // 商品數量 badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
+            // 內容區域
+            Expanded(
+              child: _isLoading
+                  // 等待時顯示 loading 畫面
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(
                             color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Text(
-                            '${_products.length} 款',
-                            style: AppTextStyles.caption.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
+                          const SizedBox(height: 16),
+                          Text(
+                            'AI 正在為你分析推薦中...',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textSub(context),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
+                          const SizedBox(height: 8),
+                          Text(
+                            '需要一點時間，請稍候',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSub(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  // 有結果時顯示內容
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // AI 推薦摘要
+                          _buildAiSummary(context),
+                          const SizedBox(height: 16),
 
-                    // 商品卡片列表
-                    ..._products
-                    .take(3)
-                    .map(
-                      (product) => _buildProductCard(context, product),
-                    ),
+                          // 推薦商品標題
+                          Row(
+                            children: [
+                              Text(
+                                '推薦商品',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.textSub(context),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // 商品數量 badge
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${_products.take(3).length} 款',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
 
-                    // 重新篩選按鈕
-                    const SizedBox(height: 8),
-                    CustomButton(
-                      label: '重新篩選',
-                      onTap: () => context.go(AppRoutes.filter),
-                      variant: ButtonVariant.outline,
+                          // 商品卡片列表（最多3個）
+                          ..._products
+                              .take(3)
+                              .map((product) =>
+                                  _buildProductCard(context, product)),
+
+                          // 重新篩選按鈕
+                          const SizedBox(height: 8),
+                          CustomButton(
+                            label: '重新篩選',
+                            onTap: () => context.go(AppRoutes.filter),
+                            variant: ButtonVariant.outline,
+                          ),
+                          const SizedBox(height: 8),
+                          CustomButton(
+                            label: '回到首頁',
+                            onTap: () => context.go(AppRoutes.home),
+                            variant: ButtonVariant.ghost,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    CustomButton(
-                      label: '回到首頁',
-                      onTap: () => context.go(AppRoutes.home),
-                      variant: ButtonVariant.ghost,
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
             ),
           ],
         ),
@@ -109,7 +186,8 @@ class RecommendationScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 20, 12),
       decoration: BoxDecoration(
         color: AppColors.cardBg(context),
-        border: Border(bottom: BorderSide(color: AppColors.borderColor(context))),
+        border:
+            Border(bottom: BorderSide(color: AppColors.borderColor(context))),
       ),
       child: Row(
         children: [
@@ -185,11 +263,14 @@ class RecommendationScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  _summary,
+                  // summary 是空的時顯示預設文字
+                  _summary.isEmpty ? '已為你找到以下推薦商品' : _summary,
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textMain(context),
                     height: 1.6,
                   ),
+                  maxLines: 5,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -202,8 +283,8 @@ class RecommendationScreen extends StatelessWidget {
   /// 商品推薦卡片
   Widget _buildProductCard(
       BuildContext context, Map<String, dynamic> product) {
-    final isTop = product['isTop'] as bool;
-    final match = product['match'] as int;
+    final isTop = product['isTop'] as bool? ?? false;
+    final match = product['match'] as int? ?? 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -244,7 +325,7 @@ class RecommendationScreen extends StatelessWidget {
           // 商品資訊列
           Row(
             children: [
-              // 商品圖示
+              // 商品圖片
               Container(
                 width: 52,
                 height: 52,
@@ -254,7 +335,8 @@ class RecommendationScreen extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: (product['image'] != null && product['image'].toString().isNotEmpty)
+                  child: (product['image'] != null &&
+                          product['image'].toString().isNotEmpty)
                       ? Image.network(
                           product['image'].toString(),
                           fit: BoxFit.cover,
@@ -279,14 +361,14 @@ class RecommendationScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      product['name'],
+                      product['name'].toString(),
                       style: AppTextStyles.bodyLarge.copyWith(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                         color: AppColors.textMain(context),
                       ),
-                      maxLines: 2,                        // 最多兩行
-                      overflow: TextOverflow.ellipsis,    // 超過顯示...
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -365,7 +447,7 @@ class RecommendationScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              product['reason'],
+              product['reason'].toString(),
               style: AppTextStyles.caption.copyWith(
                 color: AppColors.textSub(context),
                 height: 1.5,
@@ -378,7 +460,6 @@ class RecommendationScreen extends StatelessWidget {
           CustomButton(
             label: '加入購物車',
             onTap: () {
-              // TODO：加入購物車邏輯
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('已加入購物車：${product['name']}'),
