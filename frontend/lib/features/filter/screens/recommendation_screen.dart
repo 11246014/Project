@@ -73,7 +73,9 @@ class RecommendationScreen extends StatelessWidget {
                     const SizedBox(height: 12),
 
                     // 商品卡片列表
-                    ..._products.map(
+                    ..._products
+                    .take(3)
+                    .map(
                       (product) => _buildProductCard(context, product),
                     ),
 
@@ -250,10 +252,23 @@ class RecommendationScreen extends StatelessWidget {
                   color: AppColors.cardVariant(context),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
-                  Icons.watch_rounded,
-                  color: AppColors.primary,
-                  size: 26,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: (product['image'] != null && product['image'].toString().isNotEmpty)
+                      ? Image.network(
+                          product['image'].toString(),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.watch_rounded,
+                            color: AppColors.primary,
+                            size: 26,
+                          ),
+                        )
+                      : Icon(
+                          Icons.watch_rounded,
+                          color: AppColors.primary,
+                          size: 26,
+                        ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -270,10 +285,13 @@ class RecommendationScreen extends StatelessWidget {
                         fontSize: 14,
                         color: AppColors.textMain(context),
                       ),
+                      maxLines: 2,                        // 最多兩行
+                      overflow: TextOverflow.ellipsis,    // 超過顯示...
                     ),
                     const SizedBox(height: 4),
                     Text(
                       ((product['tags'] as List<dynamic>?) ?? [])
+                          .take(3)
                           .map((e) => e.toString())
                           .join(' '),
                       style: AppTextStyles.caption

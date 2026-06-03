@@ -6,7 +6,7 @@ class FilterService {
     baseUrl: ApiConfig.aiBaseUrl,
     // Ollama 比較慢，timeout 設長一點
     connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 60),
+    receiveTimeout: const Duration(minutes: 5),
   ));
 
   // 把問卷答案送給 AI，取得推薦商品

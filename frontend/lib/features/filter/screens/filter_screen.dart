@@ -262,28 +262,9 @@ class _FilterScreenState extends State<FilterScreen> {
         '偏好系統：$q5。裝置類型：$q6。'
         '外型風格：$q7。最在意：$q8。';
 
-    setState(() => _isLoading = true);
-
-    try {
-      // 送給後端 AI 推薦
-      final response = await FilterService.recommend(message);
-
-      if (mounted) {
-        // 把推薦結果傳到首頁顯示
-        context.go(AppRoutes.recommendation, extra: response);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('推薦失敗，請稍後再試'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    // 直接跳頁
+    context.go(AppRoutes.recommendation, extra: {'message': message, 'loading': true});
+    
   }
 
   @override

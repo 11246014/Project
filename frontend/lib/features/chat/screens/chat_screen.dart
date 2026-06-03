@@ -102,6 +102,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _scrollToBottom();
       }
           } catch (e) {
+            debugPrint('ChatService Error: $e');
             if (mounted) {
               setState(() {
                 _messages.add(ChatMessage(
@@ -249,13 +250,18 @@ class _ChatScreenState extends State<ChatScreen> {
                     message.content,
                     style: AppTextStyles.bodyMedium
                         .copyWith(color: AppColors.textMain(context)),
+                    maxLines: 5,        // 最多顯示5行
+                    overflow: TextOverflow.ellipsis,
+
                   ),
                 ),
 
-                // 商品推薦卡片（如果有）
+                // 商品推薦卡片
                 if (message.products != null) ...[
                   const SizedBox(height: 8),
-                  ...message.products!.map(
+                  ...message.products!
+                  .take(3)  // 最多顯示3個
+                  .map(
                     (product) => _buildProductCard(product),
                   ),
                 ],
@@ -341,10 +347,24 @@ class _ChatScreenState extends State<ChatScreen> {
               color: AppColors.cardVariant(context),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(
-              Icons.watch_rounded,
-              color: AppColors.primary,
-              size: 24,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: (product['image'] != null && product['image'].toString().isNotEmpty)
+                  ? Image.network(
+                      product['image'].toString(),
+                      fit: BoxFit.cover,
+                      // 圖片載入失敗時顯示 icon
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.watch_rounded,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                    )
+                  : Icon(
+                      Icons.watch_rounded,
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
             ),
           ),
           const SizedBox(width: 10),
@@ -356,15 +376,19 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Text(
                   product['name'],
+                  
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textMain(context),
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    fontSize: 15,
                   ),
+                  maxLines: 2, // 最多兩行
+                  overflow: TextOverflow.ellipsis,// 超過顯示...
                 ),
                 const SizedBox(height: 3),
                 Text(
                   ((product['tags'] as List<dynamic>?) ?? [])
+                      .take(3)  // 最多取3個
                       .map((e) => e.toString())
                       .join(' '),
                   style: AppTextStyles.caption
