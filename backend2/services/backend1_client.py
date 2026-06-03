@@ -3,6 +3,10 @@ import requests
 BASE_URL = "https://champion-sandpit-rash.ngrok-free.dev"
 
 
+# =========================
+# 儲存商品
+# =========================
+
 async def save_product(product):
 
     try:
@@ -43,7 +47,7 @@ async def save_product(product):
 
             "reason": product.get(
                 "reason",
-                ""
+                    ""
             )
         }
 
@@ -60,10 +64,36 @@ async def save_product(product):
             f"[Save Product] {response.status_code}"
         )
 
-        print(response.text)
-
     except Exception as e:
 
         print(
             f"[Save Error] {e}"
         )
+
+
+# =========================
+# 查詢資料庫商品
+# =========================
+
+async def get_db_products(keyword):
+
+    try:
+
+        response = requests.get(
+
+            f"{BASE_URL}/products",
+
+            timeout=10
+        )
+
+        data = response.json()
+
+        return data
+
+    except Exception as e:
+
+        print(
+            f"[DB Search Error] {e}"
+        )
+
+        return []
