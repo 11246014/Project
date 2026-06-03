@@ -29,7 +29,7 @@ KNOWN_BRANDS = [
 ]
 
 # =========================
-# 配件過濾
+# 配件 / 非手錶黑名單
 # =========================
 
 BAD_KEYWORDS = [
@@ -50,7 +50,14 @@ BAD_KEYWORDS = [
     "腕帶",
 
     "手機殼",
-    "耳機殼"
+    "耳機殼",
+
+    "臂帶",
+    "胸帶",
+    "感測器",
+
+    "襪子",
+    "鞋子"
 ]
 
 # =========================
@@ -70,6 +77,8 @@ WEARABLE_KEYWORDS = [
 
     "smartwatch",
 
+    "watch",
+
     "watch fit",
 
     "galaxy watch",
@@ -84,26 +93,42 @@ WEARABLE_KEYWORDS = [
 
     "huawei",
 
-    "穿戴"
+    "xiaomi watch",
+
+    "mi watch",
+
+    "穿戴",
+
+    "腕錶"
 ]
 
 # =========================
-# 額外智慧手錶白名單
+# 智慧手錶強化白名單
 # =========================
 
 SMARTWATCH_KEYWORDS = [
 
     "智慧手錶",
+
     "智能手錶",
+
     "智慧腕錶",
 
     "smartwatch",
+
+    "watch",
 
     "watch fit",
 
     "galaxy watch",
 
-    "apple watch"
+    "apple watch",
+
+    "garmin",
+
+    "huawei watch",
+
+    "xiaomi watch"
 ]
 
 
@@ -340,15 +365,15 @@ def clean_product(
     )
 
     # =========================
-    # 配件過濾
+    # 黑名單過濾
     # =========================
 
     for word in BAD_KEYWORDS:
 
-        if word in clean_name:
+        if word.lower() in clean_name.lower():
 
             print(
-                f"[Accessory Filtered] {clean_name}"
+                f"[Filtered] {clean_name}"
             )
 
             return None
