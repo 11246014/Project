@@ -180,6 +180,29 @@ def clean_title(title):
 
         cleaned
     )
+    
+    # =========================
+    # 移除超長英文商品代碼
+    # =========================
+
+    words = cleaned.split()
+
+    filtered_words = []
+
+    for word in words:
+
+        # 英數混合且過長
+        if (
+            len(word) >= 15
+            and re.search(r"[A-Z]", word)
+            and re.search(r"\d", word)
+        ):
+
+            continue
+
+        filtered_words.append(word)
+
+    cleaned = " ".join(filtered_words)
 
     # =========================
     # 中文名稱修正
