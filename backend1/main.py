@@ -323,3 +323,62 @@ def products(
 ):
 
     return crud.get_products(db)
+#修改商品
+@app.put("/products/{product_id}")
+def update_product(
+    product_id: int,
+    product_data: ProductCreate
+):
+
+    db = SessionLocal()
+
+    product = (
+        db.query(Product)
+        .filter(Product.id == product_id)
+        .first()
+    )
+
+    if not product:
+        raise HTTPException(
+            status_code=404,
+            detail="商品不存在"
+        )
+
+    product.name = product_data.name
+    product.price = product_data.price
+    product.stock = product_data.stock
+    product.description = product_data.description
+
+    db.commit()
+
+    db.close()
+
+    return {
+        "message": "商品更新成功"
+    }
+#刪除商品
+@app.delete("/products/{product_id}")
+def delete_product(product_id: int):
+
+    db = SessionLocal()
+
+    product = (
+        db.query(Product)
+        .filter(Product.id == product_id)
+        .first()
+    )
+
+    if not product:
+        raise HTTPException(
+            status_code=404,
+            detail="商品不存在"
+        )
+
+    db.delete(product)
+    db.commit()
+
+    db.close()
+
+    return {
+        "message": "商品刪除成功"
+    }
