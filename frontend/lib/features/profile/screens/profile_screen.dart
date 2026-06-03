@@ -7,6 +7,7 @@ import '../../../core/constants/app_routes.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/theme_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../../services/user_service.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -19,12 +20,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // Mock 使用者資料（W2 串接後從 API 取得）
-  final Map<String, dynamic> _user = {
-    'name': '使用者',
-    'email': 'user@email.com',
-    'avatar': null,
-  };
+  // 串接後從 API 取得
+Map<String, dynamic> _user = {
+  'name': '載入中...',
+  'email': '',
+  'avatar': null,
+};
 
   // 偏好標籤選取狀態
   final Map<String, bool> _preferTags = {
@@ -86,7 +87,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadUserInfo();
   }
+
+  Future<void> _loadUserInfo() async {
+  try {
+    final user = await UserService.getMe();
+    if (mounted) {
+      setState(() {
+        _user = {
+          'name': user['username'] ?? '使用者',
+          'email': user['email'] ?? '',
+          'avatar': null,
+        };
+      });
+    }
+  } catch (e) {
+    // 載入失敗就保留預設值，不影響畫面
+    debugPrint('載入使用者資訊失敗：$e');
+  }
+}
 
   @override
   void dispose() {

@@ -90,7 +90,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         setState(() {
           _messages.add(ChatMessage(
-            content: response['reply'],
+            content: response['summary'] ?? '目前沒有回應，請稍後再試',
             role: MessageRole.ai,
             time: DateTime.now(),
             products: List<Map<String, dynamic>>.from(
