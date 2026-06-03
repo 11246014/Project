@@ -246,20 +246,32 @@ class _FilterScreenState extends State<FilterScreen> {
 
   /// 完成篩選，整理答案並跳回推薦頁
   Future<void> _onFinish() async {
-    // 解析預算為整數 max_price (這部分保留，因為後端做價格過濾通常需要數值)
+    // 取得預算選項的完整字串
     final budgetString = (_answers[3] ?? {}).isNotEmpty ? _answers[3]!.first : '';
-    int maxPrice = 999999; // 預設無上限
-    if (budgetString.contains('5,000')) {
-      maxPrice = 5000;
-    } else if (budgetString.contains('15,000')) {
-      maxPrice = 15000;
-    } else if (budgetString.contains('30,000') && !budgetString.contains('以上')) {
+    
+    // 初始化區間預設值 (0 ~ 999999 代表不限預算)
+    int minPrice = 0;
+    int maxPrice = 999999; 
+
+    // 「完全比對」選項字串
+    if (budgetString == 'NT\$30,000 以上') {
+      minPrice = 30000;
+      maxPrice = 999999;
+    } else if (budgetString == 'NT\$15,000 – 30,000') {
+      minPrice = 15000;
       maxPrice = 30000;
+    } else if (budgetString == 'NT\$5,000 – 15,000') {
+      minPrice = 5000;
+      maxPrice = 15000;
+    } else if (budgetString == 'NT\$1,000 – 5,000') {
+      minPrice = 1000;
+      maxPrice = 5000;
     }
 
-    // 組裝成 JSON 結構 (Map)，將畫面上的選項原封不動送給後端 AI
+    // 抓取畫面選項，組裝成 JSON 結構
     final filters = {
       "usage": (_answers[0] ?? {}).isNotEmpty ? _answers[0]!.first : "",
+      "min_price": minPrice,
       "max_price": maxPrice,
       "features": (_answers[1] ?? {}).toList(),
       "battery": (_answers[2] ?? {}).isNotEmpty ? _answers[2]!.first : "",
@@ -269,10 +281,9 @@ class _FilterScreenState extends State<FilterScreen> {
       "core_factors": (_answers[7] ?? {}).toList(),
     };
 
-    // 跳轉到推薦頁，並傳遞 filters
+    // 傳遞給推薦頁
     context.go(AppRoutes.recommendation, extra: {'filters': filters, 'loading': true});
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
