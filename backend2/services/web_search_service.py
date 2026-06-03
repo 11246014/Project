@@ -91,6 +91,9 @@ def clean_title(title):
 
     patterns = [
 
+        r"\[.*?\]",
+        r"【.*?】",
+
         r"\d+號前最高回饋\$?\d+",
         r"滿額送.*?",
         r"限時優惠",
@@ -99,7 +102,6 @@ def clean_title(title):
         r"現貨",
         r"快速出貨",
         r"蝦皮直送",
-        r"【.*?】",
         r"\(.*?回饋.*?\)",
     ]
 
@@ -297,11 +299,15 @@ def remove_duplicate_brand(
             "Other"
         )
 
-        if brand not in brand_products:
+        if brand == "Other":
 
             brand_products[
-                brand
+                f"Other_{len(brand_products)}"
             ] = product
+
+        elif brand not in brand_products:
+
+            brand_products[brand] = product
 
         else:
 
