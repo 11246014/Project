@@ -29,18 +29,28 @@ KNOWN_BRANDS = [
 ]
 
 # =========================
-# 不需要的配件關鍵字
+# 配件過濾
 # =========================
 
 BAD_KEYWORDS = [
 
     "錶帶",
+    "表帶",
     "皮帶",
     "皮带",
+
     "保護貼",
     "保護殼",
+
     "充電線",
-    "配件"
+    "充電器",
+
+    "配件",
+    "替換帶",
+    "腕帶",
+
+    "手機殼",
+    "耳機殼"
 ]
 
 
@@ -82,7 +92,7 @@ def clean_price(price_text):
 
 
 # =========================
-# 清理商品名稱
+# 商品名稱清理
 # =========================
 
 def clean_title(title):
@@ -90,38 +100,51 @@ def clean_title(title):
     if not title:
         return ""
 
+    cleaned = str(title)
+
+    # =========================
+    # 移除促銷標籤
+    # =========================
+
     patterns = [
 
         r"\[.*?\]",
         r"【.*?】",
+        r"\(.*?回饋.*?\)",
 
-        r"\d+號前最高回饋\$?\d+",
-        r"滿額送.*?",
+        r"\d+號前最高回饋\$?\d*",
+        r"最高回饋\$?\d*",
+
         r"限時優惠",
         r"官方旗艦館",
-        r"免運",
-        r"現貨",
-        r"快速出貨",
         r"蝦皮直送",
-        r"\(.*?回饋.*?\)",
+        r"快速出貨",
+        r"現貨",
+        r"買一送一",
+        r"熱銷推薦",
+        r"優惠到",
+        r"超值優惠",
+        r"免運",
+
+        r"聖誕禮物",
+        r"交換禮物",
     ]
-
-    cleaned = title
-
-    # =========================
-    # 移除促銷文字
-    # =========================
 
     for pattern in patterns:
 
         cleaned = re.sub(
+
             pattern,
+
             "",
-            cleaned
+
+            cleaned,
+
+            flags=re.IGNORECASE
         )
 
     # =========================
-    # 去除括號後面關鍵字堆疊
+    # 去除括號後堆疊文字
     # =========================
 
     if "(" in cleaned:
@@ -133,27 +156,67 @@ def clean_title(title):
         cleaned = cleaned.split("（")[0]
 
     # =========================
-    # 清理空白
-    # =========================
-
-    cleaned = " ".join(
-        cleaned.split()
-    )
-
-    return cleaned.strip()
-
-    # =========================
-    # 移除長英文代碼
+    # 英文品牌自動斷詞
     # =========================
 
     cleaned = re.sub(
 
-        r"[A-Z0-9]{10,}",
+        r"([a-z])([A-Z])",
+
+        r"\1 \2",
+
+        cleaned
+    )
+
+    # =========================
+    # 長英文數字代碼移除
+    # =========================
+
+    cleaned = re.sub(
+
+        r"[A-Z0-9\-]{12,}",
 
         "",
 
         cleaned
     )
+
+    # =========================
+    # 中文名稱修正
+    # =========================
+
+    replacements = {
+
+        "智慧型手錶": "智慧手錶",
+        "智能手表": "智慧手錶",
+        "智能手錶": "智慧手錶",
+        "智慧腕錶": "智慧手錶",
+    }
+
+    for old, new in replacements.items():
+
+        cleaned = cleaned.replace(
+            old,
+            new
+        )
+
+    # =========================
+    # 清理空白
+    # =========================
+
+    cleaned = re.sub(
+
+        r"\s+",
+
+        " ",
+
+        cleaned
+    )
+
+    cleaned = cleaned.strip()
+
+    return cleaned
+
 
 # =========================
 # 品牌偵測
@@ -230,7 +293,7 @@ def clean_product(
     )
 
     # =========================
-    # 過濾配件商品
+    # 配件過濾
     # =========================
 
     for word in BAD_KEYWORDS:
@@ -312,6 +375,10 @@ def remove_duplicate_brand(
             "Other"
         )
 
+        # =========================
+        # Other 不去重
+        # =========================
+
         if brand == "Other":
 
             brand_products[
@@ -320,7 +387,9 @@ def remove_duplicate_brand(
 
         elif brand not in brand_products:
 
-            brand_products[brand] = product
+            brand_products[
+                brand
+            ] = product
 
         else:
 
@@ -458,7 +527,7 @@ def web_search_products(
             )
 
             # =========================
-            # 過高價格過濾
+            # 價格過高過濾
             # =========================
 
             if product["price"] > 30000:
