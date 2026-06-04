@@ -818,6 +818,22 @@ def filter_products(filters):
                 original_products[:3]
             )
 
+            # =========================
+            # 補算 Feature Score
+            # =========================
+
+            for product in filtered_products:
+
+                score = calculate_feature_score(
+
+                    product,
+
+                    filters
+                )
+
+                product[
+                    "feature_score"
+                ] = score
 
         # =========================
         # AI Rerank
