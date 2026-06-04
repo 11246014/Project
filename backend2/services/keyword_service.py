@@ -63,7 +63,20 @@ style:
 - 時尚
 - 運動
 
-範例：
+重要規則：
+
+1. 只能提取使用者明確提到的需求
+2. 禁止根據品牌推測功能
+3. 禁止根據常識補充功能
+4. 未提及欄位請填空
+5. features 只能包含使用者實際提到的功能
+6. 若使用者只提到品牌名稱，不可自行補充功能
+7. 若無法判斷 usage，請填 ""
+8. 若無法判斷 style，請填 ""
+9. 若無法判斷 os，請填 ""
+10. 禁止猜測 GPS、ECG、血氧、防水等功能
+
+範例1：
 
 使用者：
 推薦適合 iPhone 的 GPS 睡眠監測手錶
@@ -77,6 +90,56 @@ style:
     "os":"iOS",
     "style":""
 }}
+
+範例2：
+
+使用者：
+Apple Watch
+
+回傳：
+
+{{
+    "product_type":"智慧手錶",
+    "usage":"",
+    "features":[],
+    "os":"iOS",
+    "style":""
+}}
+
+範例3：
+
+使用者：
+Garmin
+
+回傳：
+
+{{
+    "product_type":"智慧手錶",
+    "usage":"",
+    "features":[],
+    "os":"",
+    "style":""
+}}
+
+範例4：
+
+使用者：
+我要 GPS
+
+回傳：
+
+{{
+    "product_type":"",
+    "usage":"",
+    "features":["GPS"],
+    "os":"",
+    "style":""
+}}
+
+禁止輸出任何解釋文字。
+禁止輸出 Markdown。
+禁止輸出 ```json。
+只允許輸出 JSON。
 """
 
         response = ask_ollama(prompt)
@@ -84,6 +147,10 @@ style:
         print("\n========== Keyword Raw ==========")
         print(response)
         print("=================================\n")
+
+        print("\n========== Parsed ==========")
+        print(data)
+        print("============================\n")
 
         if "```json" in response:
             response = response.replace(
