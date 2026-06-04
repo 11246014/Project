@@ -58,7 +58,7 @@ def is_product_request(message):
 
             return True
 
-    return False
+    return True
 
 
 def recommend_products(user_message):

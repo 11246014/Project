@@ -33,16 +33,58 @@ async def search_db_products(keyword):
             {product.get("description", "")}
             """.lower()
 
-            match_count = 0
+            score = 0
 
             for k in keywords:
 
-                if k in text:
+                if k not in text:
+                    continue
 
-                    match_count += 1
+                # =====================
+                # 品牌 / 生態系
+                # =====================
 
-            # 至少命中一個關鍵字
-            if match_count >= 1:
+                if k in [
+                    "apple",
+                    "watch",
+                    "iphone",
+                    "garmin",
+                    "amazfit",
+                    "samsung",
+                    "galaxy",
+                    "huawei"
+                ]:
+
+                    score += 30
+
+                # =====================
+                # 功能關鍵字
+                # =====================
+
+                elif k in [
+                    "gps",
+                    "睡眠監測",
+                    "心率",
+                    "血氧",
+                    "ecg",
+                    "防水"
+                ]:
+
+                    score += 15
+
+                # =====================
+                # 一般關鍵字
+                # =====================
+
+                else:
+
+                    score += 5
+
+            # =====================
+            # 至少命中一個條件
+            # =====================
+
+            if score > 0:
 
                 matched.append({
 
@@ -68,13 +110,10 @@ async def search_db_products(keyword):
                         5
                     ),
 
-                    "match": 100 + (
-                        match_count * 10
-                    ),
+                    "match": score,
 
                     "reason": (
-                        f"資料庫命中 "
-                        f"{match_count} 個條件"
+                        f"資料庫匹配分數 {score}"
                     ),
 
                     "isTop": False,
@@ -88,6 +127,20 @@ async def search_db_products(keyword):
 
                     "link": ""
                 })
+
+        # =====================
+        # 依 match 排序
+        # =====================
+
+        matched.sort(
+
+            key=lambda x: x.get(
+                "match",
+                0
+            ),
+
+            reverse=True
+        )
 
         print(
             f"[DB Match] {len(matched)} 筆"
