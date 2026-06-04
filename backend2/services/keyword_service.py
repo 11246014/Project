@@ -271,4 +271,6 @@ style:
             f"[Keyword Extraction Error] {e}"
         )
 
-    return user_message.strip()
+        return ""
+
+    return ""

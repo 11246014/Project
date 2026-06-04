@@ -99,6 +99,10 @@ def recommend_products(user_message):
             conversation
         )
 
+        if not search_keyword:
+
+            search_keyword = user_message
+
         print("\n====== Recommend Start ======")
         print(f"User: {user_message}")
         print(f"Keyword: {search_keyword}")
