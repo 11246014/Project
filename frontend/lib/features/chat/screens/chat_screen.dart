@@ -250,8 +250,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     message.content,
                     style: AppTextStyles.bodyMedium
                         .copyWith(color: AppColors.textMain(context)),
-                    maxLines: 5,        // 最多顯示5行
-                    overflow: TextOverflow.ellipsis,
+                    
 
                   ),
                 ),
