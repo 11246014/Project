@@ -274,9 +274,14 @@ Garmin
                 "iPhone"
             )
 
-            query_parts.append(
-                "Apple Watch"
-            )
+            if (
+                "apple watch"
+                not in user_message.lower()
+            ):
+
+                query_parts.append(
+                    "Apple Watch"
+                )
 
         elif os_type == "Android":
 
@@ -284,17 +289,14 @@ Garmin
                 "Android"
             )
 
-            query_parts.append(
-                "Galaxy Watch"
-            )
-        # =====================
-        # Style
-        # =====================
+            if (
+                "galaxy watch"
+                not in user_message.lower()
+            ):
 
-        style = data.get(
-            "style",
-            ""
-        )
+                query_parts.append(
+                    "Galaxy Watch"
+                )
 
         if style == "商務":
 
