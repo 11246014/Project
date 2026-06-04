@@ -148,10 +148,6 @@ Garmin
         print(response)
         print("=================================\n")
 
-        print("\n========== Parsed ==========")
-        print(data)
-        print("============================\n")
-
         if "```json" in response:
             response = response.replace(
                 "```json",
@@ -167,6 +163,10 @@ Garmin
         data = json.loads(
             response.strip()
         )
+
+        print("\n========== Parsed ==========")
+        print(data)
+        print("============================\n")
 
         query_parts = []
 
