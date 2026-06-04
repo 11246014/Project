@@ -95,6 +95,10 @@ def recommend_products(user_message):
         # Keyword Extraction
         # =========================
 
+        print("\n========== Conversation ==========")
+        print(conversation)
+        print("==================================\n")
+        
         search_keyword = extract_keyword(
             conversation
         )
