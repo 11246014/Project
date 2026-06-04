@@ -14,6 +14,26 @@ def extract_keyword(user_message):
 
     try:
 
+        # =====================
+        # 品牌直通
+        # =====================
+
+        msg = user_message.lower().strip()
+
+        if msg == "apple watch":
+            return "Apple Watch"
+
+        if msg == "garmin":
+            return "Garmin"
+
+        if msg == "amazfit":
+            return "Amazfit"
+
+        if msg == "galaxy watch":
+            return "Galaxy Watch"
+
+        
+        ...
         prompt = f"""
 你是智慧穿戴商品需求分析助手。
 
@@ -285,9 +305,7 @@ Garmin
 
         elif os_type == "Android":
 
-            query_parts.append(
-                "Android"
-            )
+            ...
 
             if (
                 "galaxy watch"
@@ -297,6 +315,15 @@ Garmin
                 query_parts.append(
                     "Galaxy Watch"
                 )
+
+        # =====================
+        # Style
+        # =====================
+
+        style = data.get(
+            "style",
+            ""
+        )
 
         if style == "商務":
 
@@ -315,7 +342,6 @@ Garmin
             query_parts.append(
                 "時尚手錶"
             )
-
         # =====================
         # 去重
         # =====================
