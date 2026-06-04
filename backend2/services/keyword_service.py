@@ -81,6 +81,10 @@ style:
 
         response = ask_ollama(prompt)
 
+        print("\n========== Keyword Raw ==========")
+        print(response)
+        print("=================================\n")
+
         if "```json" in response:
             response = response.replace(
                 "```json",
