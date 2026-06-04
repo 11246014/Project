@@ -186,7 +186,7 @@ Garmin
 
 回傳：
 
-{
+{{
     "product_type":"智慧手錶",
     "usage":"運動",
     "features":[],
@@ -194,7 +194,7 @@ Garmin
     "style":"",
     "budget_min":10000,
     "budget_max":20000
-}
+}}
 """
 
         response = ask_ollama(prompt)
