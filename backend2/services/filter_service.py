@@ -791,6 +791,34 @@ def filter_products(filters):
             )
 
             # =========================
+            # 先過 OS / Style
+            # =========================
+
+            fallback_products = []
+
+            for product in original_products:
+
+                if not os_match(
+                    product,
+                    os_type
+                ):
+                    continue
+
+                if not negative_match(
+                    product,
+                    style
+                ):
+                    continue
+
+                fallback_products.append(
+                    product
+                )
+
+            original_products = (
+                fallback_products
+            )
+
+            # =========================
             # 先排除太離譜便宜的商品
             # =========================
 
@@ -817,25 +845,19 @@ def filter_products(filters):
             # =========================
 
             original_products.sort(
+                key=lambda p: (
 
-                key=lambda p:
+                    p.get("price", 0) < min_price,
 
-                min(
-
-                    abs(
-                        p.get(
-                            "price",
-                            0
+                    min(
+                        abs(
+                            p.get("price", 0)
+                            - min_price
+                        ),
+                        abs(
+                            p.get("price", 0)
+                            - max_price
                         )
-                        - min_price
-                    ),
-
-                    abs(
-                        p.get(
-                            "price",
-                            0
-                        )
-                        - max_price
                     )
                 )
             )

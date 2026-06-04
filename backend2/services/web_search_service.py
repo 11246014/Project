@@ -124,6 +124,14 @@ WEARABLE_KEYWORDS = [
     "huawei band",
 
     "smart band",
+
+    "fit3",
+
+    "fit 3",
+
+    "galaxy fit3",
+    
+    "samsung fit"
 ]
 
 # =========================
