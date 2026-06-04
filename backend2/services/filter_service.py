@@ -265,8 +265,15 @@ def build_search_keyword(filters):
         "device_type",
         ""
     )
+    if device_type == "手環":
 
-    if device_type:
+        keywords.append("智慧手環")
+
+    elif device_type == "手錶":
+
+        keywords.append("智慧手錶")
+
+    else:
 
         keywords.append(device_type)
 
@@ -717,6 +724,10 @@ def filter_products(filters):
 
         filtered_products = []
 
+        original_products = products.copy()
+
+        budget_fallback = False
+
         for product in products:
 
             price = product.get(
@@ -766,6 +777,47 @@ def filter_products(filters):
             filtered_products.append(
                 product
             )
+
+        # =========================
+        # Budget Fallback
+        # =========================
+
+        if len(filtered_products) == 0:
+
+            budget_fallback = True
+
+            print(
+                "[Budget Fallback]"
+            )
+
+            original_products.sort(
+
+                key=lambda p:
+
+                min(
+
+                    abs(
+                        p.get(
+                            "price",
+                            0
+                        )
+                        - min_price
+                    ),
+
+                    abs(
+                        p.get(
+                            "price",
+                            0
+                        )
+                        - max_price
+                    )
+                )
+            )
+
+            filtered_products = (
+                original_products[:3]
+            )
+
 
         # =========================
         # AI Rerank
