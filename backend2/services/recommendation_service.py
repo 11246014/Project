@@ -232,9 +232,15 @@ def recommend_products(user_message):
 
         product_text = ""
 
-        for product in formatted_products:
+        for idx, product in enumerate(
+            formatted_products,
+            start=1
+        ):
 
             product_text += f"""
+
+推薦順位：
+{idx}
 
 商品名稱：
 {product.get('name', '')}
@@ -268,6 +274,12 @@ def recommend_products(user_message):
 規則：
 
 1. 每個商品獨立介紹
+
+11. 商品介紹順序必須依照推薦順位
+
+12. 第一順位優先介紹
+
+13. 不可自行更改推薦順序
 
 2. 優先連結使用者需求
 
