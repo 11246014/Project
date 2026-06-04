@@ -645,7 +645,7 @@ def web_search_products(
 
         print("=" * 50)
 
-        return products[:3]
+        return products
 
     except Exception as e:
 

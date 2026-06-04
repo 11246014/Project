@@ -178,32 +178,78 @@ def recommend_products(user_message):
                 f"[Web Search] 找到 {len(filtered_products)} 筆商品"
             )
 
-            # =========================
-            # Budget Filter
-            # =========================
+        # =========================
+        # Budget Filter
+        # =========================
 
-            if budget_max > 0:
+        budget_fallback = False
 
-                before_count = len(
-                    filtered_products
+        original_products = (
+            filtered_products.copy()
+        )
+
+        if budget_max > 0:
+
+            before_count = len(
+                filtered_products
+            )
+
+            filtered_products = [
+
+                p for p in filtered_products
+
+                if budget_min <=
+                p.get(
+                    "price",
+                    0
                 )
+                <= budget_max
+            ]
 
-                filtered_products = [
+            print(
+                f"[Budget Filter] "
+                f"{before_count} -> "
+                f"{len(filtered_products)}"
+            )
 
-                    p for p in filtered_products
+            # =========================
+            # 沒找到符合預算
+            # =========================
 
-                    if budget_min <=
-                    p.get(
-                        "price",
-                        0
-                    )
-                    <= budget_max
-                ]
+            if len(filtered_products) == 0:
+
+                budget_fallback = True
 
                 print(
-                    f"[Budget Filter] "
-                    f"{before_count} -> "
-                    f"{len(filtered_products)}"
+                    "[Budget Fallback]"
+                )
+
+                original_products.sort(
+
+                    key=lambda p:
+
+                    min(
+
+                        abs(
+                            p.get(
+                                "price",
+                                0
+                            )
+                            - budget_min
+                        ),
+
+                        abs(
+                            p.get(
+                                "price",
+                                0
+                            )
+                            - budget_max
+                        )
+                    )
+                )
+
+                filtered_products = (
+                    original_products[:3]
                 )
             # =========================
             # 只分析前 3 筆商品
@@ -535,9 +581,28 @@ def recommend_products(user_message):
 
             print("\n[Summary Start]")
 
+            budget_notice = ""
+
+            if budget_fallback:
+
+                budget_notice = (
+
+                    f"未找到完全符合 "
+                    f"{budget_min}~{budget_max} 元"
+                    f"預算的商品，"
+                    f"以下推薦價格最接近需求的商品。\n\n"
+                )
+
             ai_reply = ask_ollama(
                 final_prompt
             )
+
+            if budget_notice:
+
+                ai_reply = (
+                    budget_notice
+                    + ai_reply
+                )
 
             if not ai_reply.strip():
 
@@ -562,7 +627,6 @@ def recommend_products(user_message):
                 "目前 AI 推薦暫時無法產生，"
                 "但已列出符合需求的商品。"
             )
-
         # =========================
         # AI 回覆記錄
         # =========================
@@ -581,7 +645,10 @@ def recommend_products(user_message):
 
         return {
 
-            "summary": ai_reply,
+            "summary": (
+                budget_notice
+                + ai_reply
+            ),
 
             "products": formatted_products
         }
