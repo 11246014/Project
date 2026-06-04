@@ -15,6 +15,8 @@ from services.db_search_service import search_db_products
 
 chat_history = []
 
+# Keyword 專用記憶
+user_history = []
 
 # =========================
 # 判斷是否為商品需求
@@ -52,7 +54,8 @@ def is_product_request(message):
 def recommend_products(user_message):
 
     global chat_history
-
+    global user_history
+    
     try:
 
         # =========================
@@ -98,7 +101,7 @@ def recommend_products(user_message):
         print("\n========== Conversation ==========")
         print(conversation)
         print("==================================\n")
-        
+
         search_keyword = extract_keyword(
             conversation
         )

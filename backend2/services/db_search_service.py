@@ -7,7 +7,22 @@ async def search_db_products(keyword):
 
         products = await get_db_products()
 
-        keyword = keyword.lower()
+        print("\n===== DB Products =====")
+
+        for product in products:
+
+            print(
+                product.get(
+                    "name",
+                    ""
+                )
+            )
+
+        print(
+            f"\n[DB Keyword] {keyword}"
+        )
+
+        keywords = keyword.lower().split()
 
         matched = []
 
@@ -16,9 +31,18 @@ async def search_db_products(keyword):
             text = f"""
             {product.get("name", "")}
             {product.get("description", "")}
-            """
+            """.lower()
 
-            if keyword in text.lower():
+            match_count = 0
+
+            for k in keywords:
+
+                if k in text:
+
+                    match_count += 1
+
+            # 至少命中一個關鍵字
+            if match_count >= 1:
 
                 matched.append({
 
@@ -39,20 +63,35 @@ async def search_db_products(keyword):
 
                     "platform": "MySQL",
 
-                    "rating": 5,
+                    "rating": product.get(
+                        "rating",
+                        5
+                    ),
 
-                    "match": 100,
+                    "match": 100 + (
+                        match_count * 10
+                    ),
 
-                    "reason": "來自資料庫商品",
+                    "reason": (
+                        f"資料庫命中 "
+                        f"{match_count} 個條件"
+                    ),
 
                     "isTop": False,
 
                     "tags": [],
 
-                    "image": "",
+                    "image": product.get(
+                        "image",
+                        ""
+                    ),
 
                     "link": ""
                 })
+
+        print(
+            f"[DB Match] {len(matched)} 筆"
+        )
 
         return matched
 
