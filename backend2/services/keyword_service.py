@@ -48,7 +48,9 @@ def extract_keyword(user_message):
     "usage":"",
     "features":[],
     "os":"",
-    "style":""
+    "style":"",
+    "budget_min":0,
+    "budget_max":0
 }}
 
 規則：
@@ -82,6 +84,22 @@ style:
 - 商務
 - 時尚
 - 運動
+
+budget_min:
+最低預算
+
+budget_max:
+最高預算
+
+如果使用者提到：
+
+1000以下
+5000內
+1萬到2萬
+10000~20000
+預算15000
+
+請轉換成 budget_min / budget_max
 
 重要規則：
 
@@ -160,6 +178,23 @@ Garmin
 禁止輸出 Markdown。
 禁止輸出 ```json。
 只允許輸出 JSON。
+
+範例5：
+
+使用者：
+我想找一萬到兩萬的運動手錶
+
+回傳：
+
+{
+    "product_type":"智慧手錶",
+    "usage":"運動",
+    "features":[],
+    "os":"",
+    "style":"",
+    "budget_min":10000,
+    "budget_max":20000
+}
 """
 
         response = ask_ollama(prompt)
@@ -183,9 +218,15 @@ Garmin
         data = json.loads(
             response.strip()
         )
-
         print("\n========== Parsed ==========")
         print(data)
+
+        print(
+            f"Budget: "
+            f"{data.get('budget_min')} ~ "
+            f"{data.get('budget_max')}"
+        )
+
         print("============================\n")
 
         query_parts = []
