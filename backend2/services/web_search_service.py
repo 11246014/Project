@@ -100,7 +100,7 @@ WEARABLE_KEYWORDS = [
     "穿戴",
 
     "腕錶",
-    
+
     "手環",
 
     "智慧手環",
@@ -114,6 +114,16 @@ WEARABLE_KEYWORDS = [
     "xiaomi band",
 
     "mi band",
+
+    "galaxy fit",
+
+    "fit3",
+
+    "fit 3",
+
+    "huawei band",
+
+    "smart band",
 ]
 
 # =========================

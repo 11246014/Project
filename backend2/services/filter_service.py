@@ -790,6 +790,32 @@ def filter_products(filters):
                 "[Budget Fallback]"
             )
 
+            # =========================
+            # 先排除太離譜便宜的商品
+            # =========================
+
+            near_budget = [
+
+                p for p in original_products
+
+                if p.get(
+                    "price",
+                    0
+                ) >= min_price * 0.7
+            ]
+
+            if near_budget:
+
+                original_products = near_budget
+
+            print(
+                f"[Near Budget] {len(original_products)}"
+            )
+
+            # =========================
+            # 找最接近預算
+            # =========================
+
             original_products.sort(
 
                 key=lambda p:
@@ -819,21 +845,17 @@ def filter_products(filters):
             )
 
             # =========================
-            # 補算 Feature Score
+            # 補算 feature score
             # =========================
 
             for product in filtered_products:
 
                 score = calculate_feature_score(
-
                     product,
-
                     filters
                 )
 
-                product[
-                    "feature_score"
-                ] = score
+                product["feature_score"] = score
 
         # =========================
         # AI Rerank
