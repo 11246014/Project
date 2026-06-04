@@ -8,11 +8,11 @@ import '../../../shared/widgets/custom_button.dart';
 import '../../../services/filter_service.dart';
 
 /// 篩選器資料模型
-/// [question]   題目標題
-/// [subtitle]   題目副標（提示文字）
-/// [options]    選項列表
+/// [question]    題目標題
+/// [subtitle]    題目副標（提示文字）
+/// [options]     選項列表
 /// [multiSelect] 是否可複選
-/// [maxSelect]  最多可選幾個（複選限制用）
+/// [maxSelect]   最多可選幾個（複選限制用）
 class FilterQuestion {
   final String question;
   final String subtitle;
@@ -228,32 +228,37 @@ class _FilterScreenState extends State<FilterScreen> {
     }
 
     if (_isLastPage) {
-      // 全部完成，整理答案傳給首頁
+      // 全部完成，整理答案傳給推薦頁
       _onFinish();
     } else {
       setState(() => _currentPage++);
     }
   }
 
-  /// 上一題
+  /// 返回上一題或離開篩選頁
+  /// 此方法同時被左上角箭頭按鈕、PopScope（物理返回鍵、iOS 右滑）呼叫
+  /// 確保所有返回方式行為一致
   void _onBack() {
     if (_currentPage == 0) {
+      // 第一題才真正離開 FilterScreen
       context.pop();
     } else {
+      // 其他題回到上一題，保留已填答案
       setState(() => _currentPage--);
     }
   }
 
-  /// 完成篩選，整理答案並跳回推薦頁
+  /// 完成篩選，整理答案並跳到推薦頁
   Future<void> _onFinish() async {
     // 取得預算選項的完整字串
-    final budgetString = (_answers[3] ?? {}).isNotEmpty ? _answers[3]!.first : '';
-    
+    final budgetString =
+        (_answers[3] ?? {}).isNotEmpty ? _answers[3]!.first : '';
+
     // 初始化區間預設值 (0 ~ 999999 代表不限預算)
     int minPrice = 0;
-    int maxPrice = 999999; 
+    int maxPrice = 999999;
 
-    // 「完全比對」選項字串
+    // 完全比對選項字串，轉換成數字區間
     if (budgetString == 'NT\$30,000 以上') {
       minPrice = 30000;
       maxPrice = 999999;
@@ -268,79 +273,112 @@ class _FilterScreenState extends State<FilterScreen> {
       maxPrice = 5000;
     }
 
-    // 抓取畫面選項，組裝成 JSON 結構
+    // 抓取畫面選項，組裝成 JSON 結構傳給後端
     final filters = {
-      "usage": (_answers[0] ?? {}).isNotEmpty ? _answers[0]!.first : "",
+      "usage":
+          (_answers[0] ?? {}).isNotEmpty ? _answers[0]!.first : "",
       "min_price": minPrice,
       "max_price": maxPrice,
       "features": (_answers[1] ?? {}).toList(),
-      "battery": (_answers[2] ?? {}).isNotEmpty ? _answers[2]!.first : "",
+      "battery":
+          (_answers[2] ?? {}).isNotEmpty ? _answers[2]!.first : "",
       "os": (_answers[4] ?? {}).isNotEmpty ? _answers[4]!.first : "",
-      "device_type": (_answers[5] ?? {}).isNotEmpty ? _answers[5]!.first : "",
-      "style": (_answers[6] ?? {}).isNotEmpty ? _answers[6]!.first : "",
+      "device_type":
+          (_answers[5] ?? {}).isNotEmpty ? _answers[5]!.first : "",
+      "style":
+          (_answers[6] ?? {}).isNotEmpty ? _answers[6]!.first : "",
       "core_factors": (_answers[7] ?? {}).toList(),
     };
 
-    // 傳遞給推薦頁
-    context.go(AppRoutes.recommendation, extra: {'filters': filters, 'loading': true});
+    // 傳遞給推薦頁，由推薦頁自行打 API
+    context.go(
+      AppRoutes.recommendation,
+      extra: {'filters': filters, 'loading': true},
+    );
   }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg(context),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 頂部進度區
-            _buildHeader(),
+    // ── PopScope：攔截所有系統層級的返回手勢 ──────────────
+    //
+    // 問題背景：
+    //   Flutter 的 Scaffold 預設允許系統返回（Android 物理鍵、iOS 右滑），
+    //   會直接 pop 整個 FilterScreen，跳過我們自訂的 _onBack() 邏輯。
+    //   這會導致使用者填到第 5 題時，不小心滑到邊緣就整份問卷消失。
+    //
+    // PopScope 說明：
+    //   canPop: false       → 告訴 Flutter「這個頁面現在不准直接 pop」
+    //   onPopInvoked(false) → 系統嘗試 pop 但被攔截時觸發，交給 _onBack() 處理
+    //   onPopInvoked(true)  → 實際發生 pop 時觸發（canPop:false 下不會出現）
+    //
+    // 注意：WillPopScope 在 Flutter 3.12+ 已 deprecated，改用 PopScope。
+    // ─────────────────────────────────────────────────────
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (bool didPop) {
+        // didPop = false：系統想 pop 但被攔截 → 交給自訂邏輯
+        // didPop = true ：已經 pop 出去（canPop:false 下理論上不發生）
+        if (!didPop) {
+          _onBack();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.bg(context),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // 頂部進度區（含返回箭頭、步驟數、進度條）
+              _buildHeader(),
 
-            // 選項列表（可捲動，Q2 選項較多）
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
+              // 選項列表（可捲動，Q2 選項較多）
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 8),
 
-                    // 題目標題
-                    Text(
-                      _currentQuestion.question,
-                      style: AppTextStyles.displayMedium.copyWith(
-                        color: AppColors.textMain(context),
+                      // 題目標題
+                      Text(
+                        _currentQuestion.question,
+                        style: AppTextStyles.displayMedium.copyWith(
+                          color: AppColors.textMain(context),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
+                      const SizedBox(height: 6),
 
-                    // 題目副標
-                    Text(
-                      _currentQuestion.subtitle,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textMain(context),
+                      // 題目副標
+                      Text(
+                        _currentQuestion.subtitle,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: AppColors.textMain(context),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // 選項按鈕列表
-                    ..._currentQuestion.options.map(
-                      (option) => _buildOptionButton(option),
-                    ),
+                      // 選項按鈕列表
+                      ..._currentQuestion.options.map(
+                        (option) => _buildOptionButton(option),
+                      ),
 
-                    const SizedBox(height: 24),
-                  ],
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // 底部導覽按鈕
-            _buildBottomNav(),
-          ],
+              // 底部「下一題 / 開始推薦」按鈕
+              _buildBottomNav(),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  /// 頂部：返回 + 進度條 + 步驟數
+  /// 頂部：返回箭頭 + 步驟數 + 進度條
+  /// 返回箭頭呼叫 _onBack()，與 PopScope 行為完全一致
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 24, 16),
@@ -348,7 +386,7 @@ class _FilterScreenState extends State<FilterScreen> {
         children: [
           Row(
             children: [
-              // 返回按鈕
+              // 返回按鈕：呼叫 _onBack()，與物理返回鍵行為相同
               IconButton(
                 onPressed: _onBack,
                 icon: Icon(
@@ -357,7 +395,8 @@ class _FilterScreenState extends State<FilterScreen> {
                   size: 18,
                 ),
               ),
-              // 步驟數
+
+              // 步驟數（置中）
               Expanded(
                 child: Text(
                   '${_currentPage + 1} / ${_questions.length}',
@@ -368,7 +407,8 @@ class _FilterScreenState extends State<FilterScreen> {
                   ),
                 ),
               ),
-              // 右側佔位，讓步驟數置中
+
+              // 右側佔位，讓步驟數視覺上置中
               const SizedBox(width: 48),
             ],
           ),
@@ -380,7 +420,8 @@ class _FilterScreenState extends State<FilterScreen> {
             child: LinearProgressIndicator(
               value: _progress,
               backgroundColor: AppColors.borderColor(context),
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(AppColors.primary),
               minHeight: 4,
             ),
           ),
@@ -389,7 +430,9 @@ class _FilterScreenState extends State<FilterScreen> {
     );
   }
 
-  /// 選項按鈕
+  /// 單個選項按鈕
+  /// 已選狀態：藍色邊框 + 淡藍底色
+  /// 未選狀態：灰色邊框 + 卡片底色
   Widget _buildOptionButton(String option) {
     final isSelected = _currentAnswers.contains(option);
 
@@ -405,13 +448,14 @@ class _FilterScreenState extends State<FilterScreen> {
               : AppColors.cardBg(context),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.borderColor(context),
+            color:
+                isSelected ? AppColors.primary : AppColors.borderColor(context),
             width: isSelected ? 1.5 : 1,
           ),
         ),
         child: Row(
           children: [
-            // 選取指示器
+            // 選取指示器（複選：方框勾勾 / 單選：圓形）
             _buildIndicator(isSelected),
             const SizedBox(width: 12),
 
@@ -433,7 +477,7 @@ class _FilterScreenState extends State<FilterScreen> {
     );
   }
 
-  /// 複選用勾勾方框 / 單選用圓形
+  /// 複選用方框勾勾 / 單選用圓形指示器
   Widget _buildIndicator(bool isSelected) {
     if (_currentQuestion.multiSelect) {
       // 複選：方形 checkbox
@@ -445,7 +489,9 @@ class _FilterScreenState extends State<FilterScreen> {
           color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(5),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.textPlaceholder(context),
+            color: isSelected
+                ? AppColors.primary
+                : AppColors.textPlaceholder(context),
             width: 1.5,
           ),
         ),
@@ -463,7 +509,9 @@ class _FilterScreenState extends State<FilterScreen> {
           shape: BoxShape.circle,
           color: isSelected ? AppColors.primary : Colors.transparent,
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.textPlaceholder(context),
+            color: isSelected
+                ? AppColors.primary
+                : AppColors.textPlaceholder(context),
             width: 1.5,
           ),
         ),
@@ -479,13 +527,14 @@ class _FilterScreenState extends State<FilterScreen> {
     }
   }
 
-  /// 底部：下一題 / 開始推薦 按鈕
+  /// 底部導覽按鈕：最後一題顯示「開始推薦」，其他顯示「下一題」
   Widget _buildBottomNav() {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
       decoration: BoxDecoration(
         color: AppColors.bg(context),
-        border: Border(top: BorderSide(color: AppColors.borderColor(context))),
+        border:
+            Border(top: BorderSide(color: AppColors.borderColor(context))),
       ),
       child: CustomButton(
         label: _isLastPage ? '開始推薦' : '下一題',

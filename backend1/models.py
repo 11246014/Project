@@ -2,7 +2,8 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
-    Text
+    Text,
+    ForeignKey
 )
 
 from database import Base
@@ -11,6 +12,7 @@ from pydantic import (
     BaseModel,
     EmailStr
 )
+from typing import Optional
 
 
 # =========================
@@ -88,3 +90,18 @@ class Product(Base):
     reason = Column(
         Text
     )
+class Tag(Base):
+    __tablename__ = "tags"
+    id = Column(Integer, primary_key=True)
+    tag_name = Column(String(255))
+
+class ProductTag(Base):
+    __tablename__ = "product_tags"
+
+    product_id = Column(Integer, ForeignKey("products.id"), primary_key=True)
+    tag_id = Column(Integer, ForeignKey("tag.id"), primary_key=True)
+
+class PromptTemplateCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    template: str
