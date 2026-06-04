@@ -236,6 +236,15 @@ def recommend_products(user_message):
 商品名稱：
 {product.get('name', '')}
 
+價格：
+{product.get('price', '')}
+
+平台：
+{product.get('platform', '')}
+
+評分：
+{product.get('rating', '')}
+
 推薦原因：
 {product.get('reason', '')}
 """
@@ -248,29 +257,45 @@ def recommend_products(user_message):
         # =========================
 
         final_prompt = f"""
-你是智慧穿戴商品推薦助手。
+你是 WearWise 智慧穿戴推薦顧問。
 
-請根據使用者需求，
-自然介紹商品。
+請根據使用者需求與商品資料，
+用自然聊天方式推薦商品。
 
 規則：
 
-1. 每個商品單獨一段
-2. 不要使用「商品1、商品2」
-3. 用聊天口氣
-4. 說明商品適合什麼需求
-5. 不需要重複價格
-6. 不需要列功能清單
-7. 使用繁體中文
-8. 控制在150字內
+1. 每個商品獨立介紹
 
-使用者需求：
+2. 優先連結使用者需求
+
+3. 說明為什麼適合
+
+4. 可以提到價格是否符合需求
+
+5. 不要逐條列功能
+
+6. 不要說商品1商品2
+
+7. 不要重複商品名稱
+
+8. 使用繁體中文
+
+9. 像真人推薦
+
+10. 控制在200字內
+
+聊天紀錄：
+
+{conversation}
+
+目前使用者最新需求：
+
 {user_message}
 
 商品資料：
+
 {product_text}
 """
-
         try:
 
             print("\n[Summary Start]")
