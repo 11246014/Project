@@ -35,6 +35,7 @@ class ProductService {
       'tags': _extractTags(desc),   // 從描述文字抽出標籤
       'rating': 0.0,                // Backend1 沒有評分，先給 0
       'type': type,                 // 給首頁 tag 篩選用
+      'image': raw['image']?.toString() ?? '',
     };
   }
 

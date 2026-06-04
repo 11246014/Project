@@ -18,31 +18,31 @@ import 'features/profile/screens/profile_screen.dart';
 /// GoRouter 路由設定
 /// 新頁面直接在 routes 裡新增 GoRoute 即可
 final _router = GoRouter(
-  initialLocation: AppRoutes.home,
-  // redirect: (context, state) async {
-  //   final token = await const FlutterSecureStorage().read(key: 'token');
-  //   final isLoggedIn = token != null && token.isNotEmpty;
+  initialLocation: AppRoutes.login,
+  redirect: (context, state) async {
+    final token = await const FlutterSecureStorage().read(key: 'token');
+    final isLoggedIn = token != null && token.isNotEmpty;
 
-  //   // 不需要登入就能進入的頁面
-  //   final isOnPublicPage =
-  //       state.matchedLocation == AppRoutes.login ||
-  //       state.matchedLocation == AppRoutes.register ||
-  //       state.matchedLocation == AppRoutes.forgotPassword; // ← 正確用 || 串接
+    // 不需要登入就能進入的頁面
+    final isOnPublicPage =
+        state.matchedLocation == AppRoutes.login ||
+        state.matchedLocation == AppRoutes.register ||
+        state.matchedLocation == AppRoutes.forgotPassword; // ← 正確用 || 串接
 
-  //   // 沒有 Token 且不在公開頁 → 強制去登入頁
-  //   if (!isLoggedIn && !isOnPublicPage) return AppRoutes.login;
+    // 沒有 Token 且不在公開頁 → 強制去登入頁
+    if (!isLoggedIn && !isOnPublicPage) return AppRoutes.login;
 
-  //   // 有 Token 且在登入／註冊頁 → 直接進首頁
-  //   // 注意：忘記密碼頁即使已登入也可以進，所以不擋
-  //   if (isLoggedIn &&
-  //       (state.matchedLocation == AppRoutes.login ||
-  //        state.matchedLocation == AppRoutes.register)) {
-  //     return AppRoutes.home;
-  //   }
+    // 有 Token 且在登入／註冊頁 → 直接進首頁
+    // 注意：忘記密碼頁即使已登入也可以進，所以不擋
+    if (isLoggedIn &&
+        (state.matchedLocation == AppRoutes.login ||
+         state.matchedLocation == AppRoutes.register)) {
+      return AppRoutes.home;
+    }
 
-  //   // 其他情況不做跳轉
-  //   return null;
-  // },
+    // 其他情況不做跳轉
+    return null;
+  },
   routes: [
     GoRoute(
       path: AppRoutes.login,
