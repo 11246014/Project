@@ -425,6 +425,12 @@ def recommend_products(user_message):
 
 10. 控制在200字內
 
+11. 不可自行推測商品支援性或規格
+
+12. 只能根據提供的商品資料介紹
+
+13. 若資料未提及，禁止自行補充
+
 聊天紀錄：
 
 {conversation}
