@@ -59,7 +59,10 @@ def recommend_products(user_message):
         # 非商品需求
         # =========================
 
-        if not is_product_request(user_message):
+        if (
+            not is_product_request(user_message)
+            and len(chat_history) <= 1
+        ):
 
             return {
 
@@ -93,7 +96,7 @@ def recommend_products(user_message):
         # =========================
 
         search_keyword = extract_keyword(
-            user_message
+            conversation
         )
 
         print("\n====== Recommend Start ======")
