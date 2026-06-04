@@ -121,6 +121,15 @@ class _HomeTab extends StatefulWidget {
 class _HomeTabState extends State<_HomeTab> {
   int _selectedTagIndex = 0;
 
+  /// 是否正在從 API 載入商品
+  bool _isLoading = true;
+
+  /// API 是否發生錯誤
+  bool _hasError = false;
+
+  /// 錯誤訊息內容（方便 debug 或顯示給使用者）
+  String _errorMessage = '';
+
   // 快速篩選標籤（串接後從 API 取得）
   final List<String> _tags = ['全部', '手錶', '手環', '戒指'];
 
@@ -135,14 +144,27 @@ class _HomeTabState extends State<_HomeTab> {
   }
 
   Future<void> _loadProducts() async {
+    // 開始載入前，重置狀態
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+      _errorMessage = '';
+    });
+    setState(() => _isLoading = true);
+
     try {
       final products = await ProductService.getProducts();
       setState(() {
         _products = products;
         _filteredProducts = products;
+        _isLoading = false; // 載入完成
       });
     } catch (e) {
-      // 載入失敗保持空列表
+      setState(() {
+      _isLoading = false;
+      _hasError = true;
+      _errorMessage = e.toString(); //  記錄原因
+      });
     }
   }
   
@@ -164,17 +186,168 @@ class _HomeTabState extends State<_HomeTab> {
           ),
         ),
 
-        // 商品卡片列表
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) =>
-                _ProductCard(product: _filteredProducts[index]),
-            childCount: _filteredProducts.length,
+        // ── 根據狀態顯示不同內容 ──────────────────────
+        if (_isLoading)
+          // 狀態一：載入中，顯示轉圈
+          const SliverFillRemaining(
+            child: Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+              ),
+            ),
+          )
+        else if (_hasError)
+          // 狀態二：發生錯誤
+          SliverFillRemaining(
+            child: _buildErrorState(),
+          )
+        else if (_filteredProducts.isEmpty)
+          // 狀態三：沒有資料（API 成功但無商品，或篩選後為空）
+          SliverFillRemaining(
+            child: _buildEmptyState(),
+          )
+        else
+          // 狀態四：正常顯示商品列表
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) =>
+                  _ProductCard(product: _filteredProducts[index]),
+              childCount: _filteredProducts.length,
+            ),
           ),
-        ),
 
         const SliverToBoxAdapter(child: SizedBox(height: 20)),
       ],
+    );
+  }
+
+  /// 錯誤狀態畫面
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 錯誤圖示
+            Icon(
+              Icons.wifi_off_rounded,
+              size: 56,
+              color: AppColors.textHint,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '載入商品失敗',
+              style: AppTextStyles.displayMedium.copyWith(
+                fontSize: 18,
+                color: AppColors.textMain(context),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '請確認網路連線後重試',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSub(context),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            // 重新載入按鈕
+            GestureDetector(
+              onTap: _loadProducts, // ← 點了就重新打 API
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '重新載入',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 空列表狀態畫面（API 成功但沒商品，或 tag 篩選後無結果）
+  Widget _buildEmptyState() {
+    // 判斷是「篩選後為空」還是「本來就沒資料」
+    final bool isFiltered = _selectedTagIndex != 0;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isFiltered
+                  ? Icons.search_off_rounded   // 篩選無結果
+                  : Icons.inventory_2_outlined, // 本來就沒資料
+              size: 56,
+              color: AppColors.textHint,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isFiltered ? '找不到符合的商品' : '目前沒有商品',
+              style: AppTextStyles.displayMedium.copyWith(
+                fontSize: 18,
+                color: AppColors.textMain(context),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isFiltered
+                  ? '試試選擇「全部」或其他類別'
+                  : '請稍後再回來看看',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSub(context),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            // 篩選後為空，顯示「查看全部」按鈕
+            if (isFiltered) ...[
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () {
+                  // 重置回「全部」tab
+                  setState(() {
+                    _selectedTagIndex = 0;
+                    _filteredProducts = _products;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.primary, width: 1.5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '查看全部商品',
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.primary,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 

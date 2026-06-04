@@ -59,7 +59,10 @@ def recommend_products(user_message):
         # 非商品需求
         # =========================
 
-        if not is_product_request(user_message):
+        if (
+            not is_product_request(user_message)
+            and len(chat_history) <= 1
+        ):
 
             return {
 
@@ -93,8 +96,12 @@ def recommend_products(user_message):
         # =========================
 
         search_keyword = extract_keyword(
-            user_message
+            conversation
         )
+
+        if not search_keyword:
+
+            search_keyword = user_message
 
         print("\n====== Recommend Start ======")
         print(f"User: {user_message}")
@@ -210,6 +217,115 @@ def recommend_products(user_message):
 
                 "products": []
             }
+        # =========================
+        # Feature Weighting Lite
+        # =========================
+
+        conversation_text = conversation.lower()
+
+        for product in filtered_products:
+
+            score = product.get(
+                "match",
+                0
+            )
+
+            features_text = " ".join(
+                product.get(
+                    "features",
+                    []
+                )
+            ).lower()
+
+            title_text = str(
+                product.get(
+                    "title",
+                    ""
+                )
+            ).lower()
+
+            # ===== GPS =====
+
+            if "gps" in conversation_text:
+
+                if "gps" in features_text:
+
+                    score += 15
+
+            # ===== 睡眠 =====
+
+            if (
+                "睡眠" in conversation_text
+                or "sleep" in conversation_text
+            ):
+
+                if "睡眠" in features_text:
+
+                    score += 15
+
+            # ===== 心率 =====
+
+            if "心率" in conversation_text:
+
+                if "心率" in features_text:
+
+                    score += 10
+
+            # ===== 血氧 =====
+
+            if "血氧" in conversation_text:
+
+                if "血氧" in features_text:
+
+                    score += 10
+
+            # ===== ECG =====
+
+            if "ecg" in conversation_text:
+
+                if (
+                    "ecg" in features_text
+                    or "心電圖" in features_text
+                ):
+
+                    score += 20
+
+            # ===== iPhone =====
+
+            if (
+                "iphone" in conversation_text
+                or "ios" in conversation_text
+            ):
+
+                if "apple" in title_text:
+
+                    score += 15
+
+            product["match"] = score
+
+        # =========================
+        # 重新排序
+        # =========================
+
+        filtered_products.sort(
+
+            key=lambda x: x.get(
+                "match",
+                0
+            ),
+
+            reverse=True
+        )
+
+        print("\n===== ReRank Result =====")
+
+        for product in filtered_products[:5]:
+
+            print(
+                product.get("title"),
+                product.get("match")
+            )
+                
 
         # =========================
         # 固定只回傳 3 筆
@@ -222,6 +338,23 @@ def recommend_products(user_message):
             formatted_products.append(
                 format_product(product)
             )
+        # =========================
+        # 保底處理
+        # =========================
+
+        if len(formatted_products) == 0:
+
+            ai_reply = (
+                "條件較嚴格，目前未找到完全符合的商品，"
+                "建議放寬部分條件後再試試。"
+            )
+
+            return {
+
+                "summary": ai_reply,
+
+                "products": []
+            }
 
         # =========================
         # 商品摘要
@@ -229,12 +362,27 @@ def recommend_products(user_message):
 
         product_text = ""
 
-        for product in formatted_products:
+        for idx, product in enumerate(
+            formatted_products,
+            start=1
+        ):
 
             product_text += f"""
 
+推薦順位：
+{idx}
+
 商品名稱：
 {product.get('name', '')}
+
+價格：
+{product.get('price', '')}
+
+平台：
+{product.get('platform', '')}
+
+評分：
+{product.get('rating', '')}
 
 推薦原因：
 {product.get('reason', '')}
@@ -248,29 +396,57 @@ def recommend_products(user_message):
         # =========================
 
         final_prompt = f"""
-你是智慧穿戴商品推薦助手。
+你是 WearWise 智慧穿戴推薦顧問。
 
-請根據使用者需求，
-自然介紹商品。
+請根據使用者需求與商品資料，
+用自然聊天方式推薦商品。
 
 規則：
 
-1. 每個商品單獨一段
-2. 不要使用「商品1、商品2」
-3. 用聊天口氣
-4. 說明商品適合什麼需求
-5. 不需要重複價格
-6. 不需要列功能清單
-7. 使用繁體中文
-8. 控制在150字內
+1. 每個商品獨立介紹
 
-使用者需求：
+11. 商品介紹順序必須依照推薦順位
+
+12. 第一順位優先介紹
+
+13. 不可自行更改推薦順序
+
+2. 優先連結使用者需求
+
+3. 說明為什麼適合
+
+4. 可以提到價格是否符合需求
+
+5. 不要逐條列功能
+
+6. 不要說商品1商品2
+
+7. 不要重複商品名稱
+
+8. 使用繁體中文
+
+9. 像真人推薦
+
+10. 控制在200字內
+
+11. 不可自行推測商品支援性或規格
+
+12. 只能根據提供的商品資料介紹
+
+13. 若資料未提及，禁止自行補充
+
+聊天紀錄：
+
+{conversation}
+
+目前使用者最新需求：
+
 {user_message}
 
 商品資料：
+
 {product_text}
 """
-
         try:
 
             print("\n[Summary Start]")

@@ -353,6 +353,20 @@ class _ChatScreenState extends State<ChatScreen> {
                   ? Image.network(
                       product['image'].toString(),
                       fit: BoxFit.cover,
+                      // 新增 loadingBuilder
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
+                        );
+                      },
                       // 圖片載入失敗時顯示 icon
                       errorBuilder: (context, error, stackTrace) => Icon(
                         Icons.watch_rounded,
