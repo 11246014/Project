@@ -203,12 +203,19 @@ style:
                 "iPhone"
             )
 
+            query_parts.append(
+                "Apple Watch"
+            )
+
         elif os_type == "Android":
 
             query_parts.append(
                 "Android"
             )
 
+            query_parts.append(
+                "Galaxy Watch"
+            )
         # =====================
         # Style
         # =====================
@@ -218,10 +225,22 @@ style:
             ""
         )
 
-        if style:
+        if style == "商務":
 
             query_parts.append(
-                style
+                "商務手錶"
+            )
+
+        elif style == "運動":
+
+            query_parts.append(
+                "運動手錶"
+            )
+
+        elif style == "時尚":
+
+            query_parts.append(
+                "時尚手錶"
             )
 
         # =====================
