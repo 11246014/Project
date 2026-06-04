@@ -334,6 +334,23 @@ def recommend_products(user_message):
             formatted_products.append(
                 format_product(product)
             )
+        # =========================
+        # 保底處理
+        # =========================
+
+        if len(formatted_products) == 0:
+
+            ai_reply = (
+                "條件較嚴格，目前未找到完全符合的商品，"
+                "建議放寬部分條件後再試試。"
+            )
+
+            return {
+
+                "summary": ai_reply,
+
+                "products": []
+            }
 
         # =========================
         # 商品摘要
