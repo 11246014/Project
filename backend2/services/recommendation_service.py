@@ -120,13 +120,33 @@ def recommend_products(user_message):
         print(conversation)
         print("==================================\n")
 
-        search_keyword = extract_keyword(
+        keyword_result = extract_keyword(
             conversation
+        )
+
+        search_keyword = keyword_result.get(
+            "keyword",
+            ""
+        )
+
+        budget_min = keyword_result.get(
+            "budget_min",
+            0
+        )
+
+        budget_max = keyword_result.get(
+            "budget_max",
+            0
         )
 
         if not search_keyword:
 
             search_keyword = user_message
+
+        print(
+            f"[Budget] "
+            f"{budget_min} ~ {budget_max}"
+        )
 
         print("\n====== Recommend Start ======")
         print(f"User: {user_message}")
@@ -158,6 +178,33 @@ def recommend_products(user_message):
                 f"[Web Search] 找到 {len(filtered_products)} 筆商品"
             )
 
+            # =========================
+            # Budget Filter
+            # =========================
+
+            if budget_max > 0:
+
+                before_count = len(
+                    filtered_products
+                )
+
+                filtered_products = [
+
+                    p for p in filtered_products
+
+                    if budget_min <=
+                    p.get(
+                        "price",
+                        0
+                    )
+                    <= budget_max
+                ]
+
+                print(
+                    f"[Budget Filter] "
+                    f"{before_count} -> "
+                    f"{len(filtered_products)}"
+                )
             # =========================
             # 只分析前 3 筆商品
             # =========================

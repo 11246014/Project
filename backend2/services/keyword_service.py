@@ -403,7 +403,20 @@ Garmin
                 f"[Keyword Extraction] {search_keyword}"
             )
 
-            return search_keyword
+            return {
+
+                "keyword": search_keyword,
+
+                "budget_min": data.get(
+                    "budget_min",
+                    0
+                ),
+
+                "budget_max": data.get(
+                    "budget_max",
+                    0
+                )
+            }
 
     except Exception as e:
 
@@ -411,6 +424,20 @@ Garmin
             f"[Keyword Extraction Error] {e}"
         )
 
-        return ""
+        return {
 
-    return ""
+            "keyword": "",
+
+            "budget_min": 0,
+
+            "budget_max": 0
+        }
+
+    return {
+
+        "keyword": "",
+
+        "budget_min": 0,
+
+        "budget_max": 0
+    }
