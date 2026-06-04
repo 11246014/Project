@@ -213,6 +213,115 @@ def recommend_products(user_message):
 
                 "products": []
             }
+        # =========================
+        # Feature Weighting Lite
+        # =========================
+
+        conversation_text = conversation.lower()
+
+        for product in filtered_products:
+
+            score = product.get(
+                "match",
+                0
+            )
+
+            features_text = " ".join(
+                product.get(
+                    "features",
+                    []
+                )
+            ).lower()
+
+            title_text = str(
+                product.get(
+                    "title",
+                    ""
+                )
+            ).lower()
+
+            # ===== GPS =====
+
+            if "gps" in conversation_text:
+
+                if "gps" in features_text:
+
+                    score += 15
+
+            # ===== 睡眠 =====
+
+            if (
+                "睡眠" in conversation_text
+                or "sleep" in conversation_text
+            ):
+
+                if "睡眠" in features_text:
+
+                    score += 15
+
+            # ===== 心率 =====
+
+            if "心率" in conversation_text:
+
+                if "心率" in features_text:
+
+                    score += 10
+
+            # ===== 血氧 =====
+
+            if "血氧" in conversation_text:
+
+                if "血氧" in features_text:
+
+                    score += 10
+
+            # ===== ECG =====
+
+            if "ecg" in conversation_text:
+
+                if (
+                    "ecg" in features_text
+                    or "心電圖" in features_text
+                ):
+
+                    score += 20
+
+            # ===== iPhone =====
+
+            if (
+                "iphone" in conversation_text
+                or "ios" in conversation_text
+            ):
+
+                if "apple" in title_text:
+
+                    score += 15
+
+            product["match"] = score
+
+        # =========================
+        # 重新排序
+        # =========================
+
+        filtered_products.sort(
+
+            key=lambda x: x.get(
+                "match",
+                0
+            ),
+
+            reverse=True
+        )
+
+        print("\n===== ReRank Result =====")
+
+        for product in filtered_products[:5]:
+
+            print(
+                product.get("title"),
+                product.get("match")
+            )
+                
 
         # =========================
         # 固定只回傳 3 筆
