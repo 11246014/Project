@@ -252,25 +252,20 @@ def recommend_products(user_message):
 
                 original_products.sort(
 
-                    key=lambda p:
-
-                    abs(
+                    key=lambda p: (
 
                         p.get(
                             "price",
                             0
+                        ) < budget_min,
+
+                        abs(
+                            p.get(
+                                "price",
+                                0
+                            )
+                            - budget_min
                         )
-
-                        -
-
-                        (
-
-                            budget_min
-                            +
-
-                            budget_max
-
-                        ) / 2
                     )
                 )
 
