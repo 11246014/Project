@@ -234,6 +234,13 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
 
   /// AI 推薦摘要區塊
   Widget _buildAiSummary(BuildContext context) {
+
+    final displayText = _summary.isNotEmpty
+      ? _summary
+      : _products.isEmpty
+          ? '目前找不到符合條件的商品，建議放寬篩選條件後重試。'
+          : '已為你找到以下推薦商品';
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -348,6 +355,21 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                       ? Image.network(
                           product['image'].toString(),
                           fit: BoxFit.cover,
+                          // 新增 loadingBuilder
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                                strokeWidth: 2,
+                                color: AppColors.primary,
+                              ),
+                            );
+                          },
+
                           errorBuilder: (context, error, stackTrace) => Icon(
                             Icons.watch_rounded,
                             color: AppColors.primary,

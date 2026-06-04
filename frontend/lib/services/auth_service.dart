@@ -10,7 +10,8 @@ class AuthService {
       'email': email,
       'password': password,
     });
-    return res.data['access_token'];
+    // 後端回傳 email，就用 email 當作本地識別 token
+    return res.data['email'] as String;
   }
 
   // 註冊
