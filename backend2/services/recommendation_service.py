@@ -147,6 +147,20 @@ def recommend_products(user_message):
             f"[Budget] "
             f"{budget_min} ~ {budget_max}"
         )
+        
+        search_query = search_keyword
+
+        if budget_max > 0:
+
+            search_query += (
+                f" {budget_min // 10000}萬到"
+                f"{budget_max // 10000}萬"
+            )
+
+        print(
+            f"[Search Query] "
+            f"{search_query}"
+        )
 
         print("\n====== Recommend Start ======")
         print(f"User: {user_message}")
@@ -165,19 +179,31 @@ def recommend_products(user_message):
         # =========================
         # DB 沒資料 → SerpAPI
         # =========================
-
         if not filtered_products:
 
-            print("[DB] 無資料，改用 SerpAPI")
-
-            filtered_products = web_search_products(
-                search_keyword
+            print(
+                "[DB] 無資料，改用 SerpAPI"
             )
+
+            search_query = search_keyword
+
+            if budget_max > 0:
+
+                search_query += (
+                    f" {budget_min // 10000}萬到"
+                    f"{budget_max // 10000}萬"
+                )
 
             print(
-                f"[Web Search] 找到 {len(filtered_products)} 筆商品"
+                f"[Search Query] "
+                f"{search_query}"
             )
 
+            filtered_products = (
+                web_search_products(
+                    search_query
+                )
+            )
         # =========================
         # Budget Filter
         # =========================
@@ -563,23 +589,20 @@ def recommend_products(user_message):
 
 21. 避免三個商品平均篇幅
 
-22. 整體控制在120字內
+22. 整體控制在150字內
 
-23. 不可自行判斷商品符合預算
+23. 每個商品都必須提到價格
 
-24. 不可使用：
+24. 價格請直接使用商品資料中的價格
+
+25. 不可省略價格資訊
+
+26. 不可自行判斷符合預算
+
+27. 不可使用：
 「符合預算」
 「預算內」
 「價格符合需求」
-
-25. 若商品價格低於使用者預算，
-只能描述為價格較低
-
-26. 若商品價格高於使用者預算，
-只能描述為價格較高
-
-27. 僅能根據商品資料與使用者需求描述，
-不可自行推論價格是否符合需求
 
 聊天紀錄：
 
@@ -661,10 +684,7 @@ def recommend_products(user_message):
 
         return {
 
-            "summary": (
-                budget_notice
-                + ai_reply
-            ),
+            "summary": ai_reply,
 
             "products": formatted_products
         }
