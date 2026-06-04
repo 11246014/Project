@@ -39,9 +39,19 @@ def is_product_request(message):
         "GPS",
 
         "健康",
-        "智慧"
-    ]
+        "智慧",
 
+        "apple",
+        "watch",
+
+        "garmin",
+        "amazfit",
+
+        "galaxy",
+        "huawei",
+
+        "fitbit"
+    ]
     for keyword in keywords:
 
         if keyword in message:
@@ -55,7 +65,7 @@ def recommend_products(user_message):
 
     global chat_history
     global user_history
-    
+
     try:
 
         # =========================
@@ -88,10 +98,18 @@ def recommend_products(user_message):
             f"使用者: {user_message}"
         )
 
+        user_history.append(
+            user_message
+        )
+
+        # AI摘要用
         chat_history = chat_history[-6:]
 
+        # Keyword Extraction用
+        user_history = user_history[-3:]
+
         conversation = "\n".join(
-            chat_history
+            user_history
         )
 
         # =========================
