@@ -1,68 +1,89 @@
-import os
-
-from dotenv import load_dotenv
-
-from services.ollama_service import ask_ollama
-
-load_dotenv()
-
-USE_GEMINI = True
-
-if USE_GEMINI:
-
-    import google.generativeai as genai
-
-    genai.configure(
-        api_key=os.getenv(
-            "GEMINI_API_KEY"
-        )
-    )
-
-    gemini_model = (
-        genai.GenerativeModel(
-            "gemini-2.5-flash"
-        )
-    )
+from services.ai_service import ask_ai
 
 
-def ask_ai(
-    prompt,
-    model_name=None
+def ai_rerank(
+    filters,
+    product
 ):
+
+    prompt = f"""
+
+你是智慧穿戴商品推薦專家。
+
+使用者需求：
+
+{filters}
+
+商品資料：
+
+商品名稱：
+{product.get("title")}
+
+商品描述：
+{product.get("desc")}
+
+價格：
+{product.get("price")}
+
+請評估：
+
+1. 此商品是否符合使用者需求
+2. 給 0~100 分
+3. 說明原因
+
+請只回：
+
+score: 分數
+reason: 原因
+
+"""
 
     try:
 
-        # =====================
-        # Gemini
-        # =====================
-
-        if USE_GEMINI:
-
-            response = (
-                gemini_model.generate_content(
-                    prompt
-                )
-            )
-
-            return (
-                response.text
-                if response.text
-                else ""
-            )
-
-        # =====================
-        # Ollama
-        # =====================
-
-        return ask_ollama(
-            prompt,
-            model_name=model_name
+        response = ask_ai(
+            prompt
         )
+
+        print(
+            "[AI Rerank]",
+            response
+        )
+
+        score = 50
+
+        lines = response.split("\n")
+
+        for line in lines:
+
+            if "score" in line.lower():
+
+                numbers = "".join(
+
+                    c for c in line
+
+                    if c.isdigit()
+                )
+
+                if numbers:
+
+                    score = int(numbers)
+
+        return {
+
+            "score": score,
+
+            "reason": response
+        }
 
     except Exception as e:
 
         print(
-            f"[AI Error] {e}"
+            f"[AI Rerank Error] {e}"
         )
 
-        return ""
+        return {
+
+            "score": 50,
+
+            "reason": "AI rerank failed"
+        }

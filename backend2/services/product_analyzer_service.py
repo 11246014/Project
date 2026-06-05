@@ -1,6 +1,6 @@
 import json
 
-from services.ollama_service import ask_ollama
+from services.ai_service import ask_ai
 from config.settings import KEYWORD_MODEL
 
 def analyze_product(product):
@@ -54,7 +54,7 @@ def analyze_product(product):
 禁止輸出 ```json。
 """
 
-        response = ask_ollama(
+        response = ask_ai (
             prompt,
             model_name=KEYWORD_MODEL
         )

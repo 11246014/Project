@@ -3,7 +3,7 @@
 import json
 import re
 
-from services.ollama_service import ask_ollama
+from services.ai_service import ask_ai
 from config.settings import KEYWORD_MODEL
 
 def extract_keyword(user_message):
@@ -230,7 +230,7 @@ Garmin
 }}
 """
 
-        response = ask_ollama(
+        response = ask_ai(
             prompt,
             model_name=KEYWORD_MODEL
         )

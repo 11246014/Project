@@ -1,4 +1,4 @@
-from services.ollama_service import ask_ollama
+from services.ai_service import ask_ai
 from config.settings import KEYWORD_MODEL
 
 
@@ -40,7 +40,7 @@ chat
 
     try:
 
-        result = ask_ollama(
+        result = ask_ai(
             prompt,
             model_name=KEYWORD_MODEL
         )
@@ -49,6 +49,10 @@ chat
 
         print(
             f"[Intent Raw] {result}"
+        )
+        
+        print(
+            f"[Intent] {'chat' if 'chat' in result else 'recommend'}"
         )
 
         if "chat" in result:

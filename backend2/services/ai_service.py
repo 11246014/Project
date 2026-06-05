@@ -1,10 +1,32 @@
-# services/ai_service.py
+import os
 
-from services.gemini_service import ask_gemini
+from dotenv import load_dotenv
+
+from config.settings import AI_PROVIDER
+
 from services.ollama_service import ask_ollama
 
+load_dotenv()
 
-USE_GEMINI = True
+# =====================
+# Gemini 初始化
+# =====================
+
+if AI_PROVIDER == "gemini":
+
+    import google.generativeai as genai
+
+    genai.configure(
+        api_key=os.getenv(
+            "GEMINI_API_KEY"
+        )
+    )
+
+    gemini_model = (
+        genai.GenerativeModel(
+            "gemini-2.5-flash"
+        )
+    )
 
 
 def ask_ai(
@@ -18,14 +40,22 @@ def ask_ai(
         # Gemini
         # =====================
 
-        if USE_GEMINI:
+        if AI_PROVIDER == "gemini":
 
-            return ask_gemini(
-                prompt
+            response = (
+                gemini_model.generate_content(
+                    prompt
+                )
+            )
+
+            return (
+                response.text
+                if response.text
+                else ""
             )
 
         # =====================
-        # Ollama Fallback
+        # Ollama
         # =====================
 
         return ask_ollama(
@@ -39,24 +69,4 @@ def ask_ai(
             f"[AI Error] {e}"
         )
 
-        try:
-
-            print(
-                "[Fallback Ollama]"
-            )
-
-            return ask_ollama(
-                prompt,
-                model_name=model_name
-            )
-
-        except Exception as e:
-
-            print(
-                f"[Fallback Error] {e}"
-            )
-
-            return """
-score: 50
-reason: fallback
-"""
+        return ""

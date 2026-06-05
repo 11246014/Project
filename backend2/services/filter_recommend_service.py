@@ -1,6 +1,6 @@
 import json
 
-from services.ollama_service import ask_ollama
+from services.ai_service import ask_ai
 
 
 def generate_filter_recommendation(filters, products):
@@ -23,6 +23,6 @@ def generate_filter_recommendation(filters, products):
     回覆控制在 3 句內。
     """
 
-    result = ask_ollama(prompt)
+    result = ask_ai(prompt)
 
     return result

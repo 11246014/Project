@@ -4,7 +4,7 @@ from services.intent_service import (
     detect_intent
 )
 
-from services.ollama_service import ask_ollama
+from services.ai_service import ask_ai
 from services.keyword_service import extract_keyword
 from services.web_search_service import web_search_products
 from services.product_formatter import format_product
@@ -87,7 +87,7 @@ def recommend_products(user_message):
 
         if intent == "chat":
 
-            reply = ask_ollama(
+            reply = ask_ai(
                 user_message
             )
 
@@ -682,7 +682,7 @@ def recommend_products(user_message):
 
             from config.settings import SUMMARY_MODEL
 
-            ai_reply = ask_ollama(
+            ai_reply = ask_ai(
                 final_prompt,
                 model_name=SUMMARY_MODEL
             )

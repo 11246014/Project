@@ -1,4 +1,6 @@
 OLLAMA_URL = "http://localhost:11434/api/generate"
+#展示時改成gemini ,AI_PROVIDER = "gemini"
+AI_PROVIDER = "ollama"
 
 MODEL_NAME = "qwen3"
 
