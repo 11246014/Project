@@ -1,4 +1,7 @@
 import asyncio
+from services.intent_service import (
+    detect_intent
+)
 
 from services.ollama_service import ask_ollama
 from services.keyword_service import extract_keyword
@@ -69,26 +72,30 @@ def recommend_products(user_message):
     try:
 
         # =========================
-        # 非商品需求
+        # Intent Detection
         # =========================
 
-        if (
-            not is_product_request(user_message)
-            and len(chat_history) <= 1
-        ):
+        intent = detect_intent(
+            user_message
+        )
+
+        print(
+            f"[Intent] {intent}"
+        )
+
+        if intent == "chat":
+
+            reply = ask_ollama(
+                user_message
+            )
 
             return {
 
-                "summary": (
-                    "您好～我是 WearWise 智慧穿戴助手！\n"
-                    "您可以直接輸入：\n"
-                    "『推薦運動手錶』\n"
-                    "『睡眠監測手環』\n"
-                    "『GPS智慧手錶』"
-                ),
+                "summary": reply,
 
                 "products": []
             }
+
 
         # =========================
         # 記錄聊天
