@@ -493,7 +493,7 @@ def recommend_products(user_message):
                     score += 15
 
             # =========================
-            # AI ReRank
+            # AI ReRank(上台展示直接關掉)
             # =========================
 
             if idx == 0:
@@ -600,26 +600,14 @@ def recommend_products(user_message):
         product_text = ""
 
         for idx, product in enumerate(
-            formatted_products,
+            formatted_products[:3],
             start=1
         ):
 
             product_text += f"""
-
-推薦順位：
-{idx}
-
-商品名稱：
+{idx}.
 {product.get('name', '')}
-
-價格：
-{product.get('price', '')}
-
-平台：
-{product.get('platform', '')}
-
-評分：
-{product.get('rating', '')}
+價格:{product.get('price', '')}
 """
 
         print("\n===== Product Summary =====")
@@ -716,23 +704,22 @@ def recommend_products(user_message):
         gemini_prompt = f"""
 你是 WearWise 智慧穿戴推薦顧問。
 
-請依推薦順位推薦商品。
+請依推薦順位介紹商品。
 
-要求：
+規則：
 
-- 使用繁體中文
-- 第一名詳細介紹
-- 第二名簡短介紹
-- 第三名一句話即可
-- 每個商品都要提到價格
-- 不可虛構規格
-- 控制150字內
+1. 第一名一句
+2. 第二名一句
+3. 第三名一句
+4. 每項都提價格
+5. 不超過100字
+6. 不可推測規格
 
 使用者需求：
 
 {user_message}
 
-商品資料：
+商品：
 
 {product_text}
 """
@@ -747,6 +734,9 @@ def recommend_products(user_message):
         try:
 
             print("\n[Summary Start]")
+            print(
+                f"[Product Text Length] {len(product_text)}"
+            )
 
             budget_notice = ""
 
@@ -764,6 +754,9 @@ def recommend_products(user_message):
 
             from config.settings import SUMMARY_MODEL
 
+            print(
+                f"[Product Text Length] {len(product_text)}"
+            )       
             ai_reply = ask_ai(
                 final_prompt,
                 model_name=SUMMARY_MODEL
