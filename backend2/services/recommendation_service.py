@@ -1,4 +1,5 @@
 import asyncio
+import time
 from services.intent_service import (
     detect_intent
 )
@@ -66,6 +67,7 @@ def is_product_request(message):
 
 def recommend_products(user_message):
 
+    total_start = time.time()
     global chat_history
     global user_history
 
@@ -127,8 +129,15 @@ def recommend_products(user_message):
         print(conversation)
         print("==================================\n")
 
+        start = time.time()
+
         keyword_result = extract_keyword(
             conversation
+        )
+
+        print(
+            f"[Keyword Time] "
+            f"{time.time() - start:.2f}s"
         )
 
         search_keyword = keyword_result.get(
@@ -176,11 +185,17 @@ def recommend_products(user_message):
         # =========================
         # 先查資料庫
         # =========================
+        start = time.time()
 
         filtered_products = asyncio.run(
             search_db_products(
                 search_keyword
             )
+        )
+
+        print(
+            f"[DB Search Time] "
+            f"{time.time() - start:.2f}s"
         )
 
         # =========================
@@ -206,10 +221,17 @@ def recommend_products(user_message):
                 f"{search_query}"
             )
 
+            start = time.time()
+
             filtered_products = (
                 web_search_products(
                     search_query
                 )
+            )
+
+            print(
+                f"[Web Search Time] "
+                f"{time.time() - start:.2f}s"
             )
         # =========================
         # Budget Filter
@@ -290,8 +312,16 @@ def recommend_products(user_message):
                 print("\n[Analyze Start]")
                 print(product.get("title"))
 
+                start = time.time()
+
                 analyzed = analyze_product(
                     product
+                )
+
+                print(
+                    f"[Analyze Time] "
+                    f"{product.get('title')} "
+                    f"{time.time() - start:.2f}s"
                 )
 
                 print("[Analyze End]")
@@ -634,8 +664,15 @@ def recommend_products(user_message):
                     f"以下推薦價格最接近需求的商品。\n\n"
                 )
 
+            start = time.time()
+
             ai_reply = ask_ollama(
                 final_prompt
+            )
+
+            print(
+                f"[Summary Time] "
+                f"{time.time() - start:.2f}s"
             )
 
             if budget_notice:
@@ -677,6 +714,11 @@ def recommend_products(user_message):
         )
 
         chat_history = chat_history[-6:]
+
+        print(
+            f"[Total Time] "
+            f"{time.time() - total_start:.2f}s"
+        )
 
         print("====== Recommend End ======\n")
 
