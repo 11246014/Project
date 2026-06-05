@@ -411,6 +411,11 @@ def recommend_products(user_message):
 
         for idx, product in enumerate(filtered_products):
 
+            print(
+                "[Before AI]",
+                product.get("title"),
+                product.get("match")
+            )
             score = product.get(
                 "match",
                 0
@@ -511,7 +516,7 @@ def recommend_products(user_message):
                         f"{ai_score}"
                     )
 
-                    score += ai_score // 2
+                    score += ai_score // 4
 
                     print(
                         "[DEBUG]",
@@ -615,9 +620,6 @@ def recommend_products(user_message):
 
 評分：
 {product.get('rating', '')}
-
-推薦原因：
-{product.get('reason', '')}
 """
 
         print("\n===== Product Summary =====")
