@@ -133,10 +133,13 @@ def recommend_products(user_message):
 
         start = time.time()
 
-        keyword_result = extract_keyword(
-            conversation
+        conversation_for_keyword = "\n".join(
+            conversation.split("\n")[-5:]
         )
 
+        keyword_result = extract_keyword(
+            conversation_for_keyword
+        )
         print(
             f"[Keyword Time] "
             f"{time.time() - start:.2f}s"

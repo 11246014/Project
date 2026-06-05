@@ -64,7 +64,29 @@ def extract_keyword(user_message):
 
                 "budget_max": 0
             }
+        if msg == "智慧手錶":
 
+            return {
+                "keyword": "智慧手錶",
+                "budget_min": 0,
+                "budget_max": 0
+            }
+
+        if msg == "智慧手環":
+
+            return {
+                "keyword": "智慧手環",
+                "budget_min": 0,
+                "budget_max": 0
+            }
+
+        if msg == "藍牙耳機":
+
+            return {
+                "keyword": "藍牙耳機",
+                "budget_min": 0,
+                "budget_max": 0
+            }
         
         ...
         prompt = f"""
