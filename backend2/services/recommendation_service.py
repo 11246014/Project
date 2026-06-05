@@ -613,6 +613,81 @@ def recommend_products(user_message):
         print("\n===== Product Summary =====")
         print(product_text)
 
+        import re
+
+        age = ""
+        job = ""
+        preference = ""
+        current_product = ""
+
+        text = conversation.lower()
+
+        # 年齡
+
+        age_match = re.search(
+            r"(\d{1,3})\s*歲",
+            conversation
+        )
+
+        if age_match:
+
+            age = age_match.group(1)
+
+        # 職業
+
+        jobs = [
+            "老師",
+            "學生",
+            "工程師",
+            "上班族",
+            "業務",
+            "醫師"
+        ]
+
+        for j in jobs:
+
+            if j in conversation:
+
+                job = j
+
+        # 偏好
+
+        preferences = [
+            "跑步",
+            "健身",
+            "游泳",
+            "登山",
+            "騎車"
+            "健康管理",
+            "睡眠",
+            "戶外",
+            "商務",
+            "日常"
+        ]
+
+        for p in preferences:
+
+            if p in conversation:
+
+                preference = p
+
+        # 目前使用產品
+
+        brands = [
+            "garmin",
+            "apple watch",
+            "galaxy watch",
+            "amazfit",
+            "huawei"
+        ]
+
+        for b in brands:
+
+            if b in text:
+
+                current_product = b
+
+                break
         # =========================
         # AI Summary
         # =========================
@@ -688,6 +763,23 @@ def recommend_products(user_message):
 
 30. 所有內容需符合台灣用語
 
+31. 若使用者提供年齡、職業、偏好或目前使用商品，可納入推薦理由
+
+32. 若資訊為「未提供」，請直接忽略，不要提及
+
+使用者資訊：
+
+年齡：
+{age if age else "未提供"}
+
+職業：
+{job if job else "未提供"}
+
+偏好：
+{preference if preference else "未提供"}
+
+目前使用商品：
+{current_product if current_product else "未提供"}
 
 聊天紀錄：
 
@@ -700,6 +792,7 @@ def recommend_products(user_message):
 商品資料：
 
 {product_text}
+{product_text}
 """
         gemini_prompt = f"""
 你是 WearWise 智慧穿戴推薦顧問。
@@ -708,12 +801,31 @@ def recommend_products(user_message):
 
 規則：
 
-1. 第一名一句
-2. 第二名一句
-3. 第三名一句
-4. 每項都提價格
-5. 不超過100字
-6. 不可推測規格
+1. 優先說明第一順位推薦原因
+2. 若使用者提供年齡、職業、偏好或目前使用商品，可納入推薦理由
+3. 若資訊為「未提供」，請直接忽略
+4. 第一順位介紹較詳細
+5. 第二順位簡短介紹
+6. 第三順位一句話即可
+7. 每個商品都必須提到價格
+8. 不可推測商品規格
+9. 不可虛構功能
+10. 使用繁體中文
+11. 控制150字內
+
+使用者資訊：
+
+年齡：
+{age if age else "未提供"}
+
+職業：
+{job if job else "未提供"}
+
+偏好：
+{preference if preference else "未提供"}
+
+目前使用商品：
+{current_product if current_product else "未提供"}
 
 使用者需求：
 
