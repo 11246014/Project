@@ -989,9 +989,11 @@ def filter_products(filters):
 
         for product in filtered_products[:3]:
 
-            analyzed = analyze_product(
-                product
-            )
+            # analyzed = analyze_product(
+            #     product
+            # )
+
+            analyzed = product
 
             analyzed_products.append(
                 analyzed

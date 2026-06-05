@@ -1,10 +1,10 @@
 # services/keyword_service.py
 
 import json
+import re
 
 from services.ollama_service import ask_ollama
 from config.settings import KEYWORD_MODEL
-
 
 def extract_keyword(user_message):
 
@@ -22,16 +22,48 @@ def extract_keyword(user_message):
         msg = user_message.lower().strip()
 
         if msg == "apple watch":
-            return "Apple Watch"
+
+            return {
+
+                "keyword": "Apple Watch",
+
+                "budget_min": 0,
+
+                "budget_max": 0
+            }
 
         if msg == "garmin":
-            return "Garmin"
+
+            return {
+
+                "keyword": "Garmin",
+
+                "budget_min": 0,
+
+                "budget_max": 0
+            }
 
         if msg == "amazfit":
-            return "Amazfit"
+
+            return {
+
+                "keyword": "Amazfit",
+
+                "budget_min": 0,
+
+                "budget_max": 0
+            }
 
         if msg == "galaxy watch":
-            return "Galaxy Watch"
+
+            return {
+
+                "keyword": "Galaxy Watch",
+
+                "budget_min": 0,
+
+                "budget_max": 0
+            }
 
         
         ...
@@ -222,6 +254,26 @@ Garmin
         data = json.loads(
             response.strip()
         )
+        # =====================
+        # Budget Validation
+        # =====================
+
+        has_budget = bool(
+
+            re.search(
+
+                r"(預算|\d+)",
+
+                user_message
+            )
+        )
+
+        if not has_budget:
+
+            data["budget_min"] = 0
+
+            data["budget_max"] = 0
+
         print("\n========== Parsed ==========")
         print(data)
 
