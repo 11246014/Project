@@ -879,44 +879,47 @@ def filter_products(filters):
 
                 product["feature_score"] = score
 
-        # =========================
-        # AI Rerank
-        # =========================
+        # # =========================
+        # # AI Rerank
+        # # =========================
 
+        # for product in filtered_products:
+
+        #     try:
+
+        #         ai_result = ai_rerank(
+
+        #             filters,
+
+        #             product
+        #         )
+
+        #         product[
+        #             "ai_score"
+        #         ] = ai_result.get(
+        #             "score",
+        #             50
+        #         )
+
+        #         product[
+        #             "ai_reason"
+        #         ] = ai_result.get(
+        #             "reason",
+        #             ""
+        #         )
+
+        #     except Exception as e:
+
+        #         print(
+        #             f"[AI Rerank Error] {e}"
+        #         )
+
+        #         product[
+        #             "ai_score"
+        #         ] = 50
         for product in filtered_products:
 
-            try:
-
-                ai_result = ai_rerank(
-
-                    filters,
-
-                    product
-                )
-
-                product[
-                    "ai_score"
-                ] = ai_result.get(
-                    "score",
-                    50
-                )
-
-                product[
-                    "ai_reason"
-                ] = ai_result.get(
-                    "reason",
-                    ""
-                )
-
-            except Exception as e:
-
-                print(
-                    f"[AI Rerank Error] {e}"
-                )
-
-                product[
-                    "ai_score"
-                ] = 50
+            product["ai_score"] = 0
 
         # =========================
         # 排序
@@ -925,11 +928,6 @@ def filter_products(filters):
         filtered_products.sort(
 
             key=lambda x: (
-
-                x.get(
-                    "ai_score",
-                    0
-                ),
 
                 x.get(
                     "feature_score",
