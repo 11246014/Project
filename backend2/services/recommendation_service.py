@@ -513,6 +513,13 @@ def recommend_products(user_message):
 
                     score += ai_score // 2
 
+                    print(
+                        "[DEBUG]",
+                        score,
+                        ai_score,
+                        ai_score // 2
+                    )
+
                     product["reason"] = (
                         rerank.get(
                             "reason",
