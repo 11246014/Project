@@ -74,7 +74,7 @@ def extract_keyword(user_message):
 
 {user_message}
 
-請只回傳 JSON：
+只回傳 JSON：
 
 {{
     "product_type":"",
@@ -86,21 +86,35 @@ def extract_keyword(user_message):
     "budget_max":0
 }}
 
-規則：
+product_type：
 
-product_type:
+常見類型：
+
 - 智慧手錶
 - 智慧手環
 - 藍牙耳機
 
-usage:
+若使用者提到其他商品類型，
+請保留原始名稱，
+不要自行修改。
+
+usage：
+
+常見類型：
+
 - 運動
 - 健康
 - 日常
 - 商務
 - 戶外
 
-features:
+若使用者描述更具體需求，
+可直接保留原始描述。
+
+features：
+
+可包含：
+
 - GPS
 - 睡眠監測
 - 血氧
@@ -108,126 +122,72 @@ features:
 - 心率
 - 防水
 
-os:
+os：
+
 - iOS
 - Android
 - Cross
 
-style:
+style：
+
 - 商務
 - 時尚
 - 運動
 
-budget_min:
+budget_min：
 最低預算
 
-budget_max:
+budget_max：
 最高預算
 
-如果使用者提到：
+若使用者提到：
 
 1000以下
 5000內
-1萬到2萬
 10000~20000
+1萬到2萬
 預算15000
 
-請轉換成 budget_min / budget_max
+請轉換為：
 
-重要規則：
+budget_min
+budget_max
+
+規則：
 
 1. 只能提取使用者明確提到的需求
+
 2. 禁止根據品牌推測功能
+
 3. 禁止根據常識補充功能
-4. 未提及欄位請填空
+
+4. 未提及欄位請填：
+
+- ""
+- []
+- 0
+
 5. features 只能包含使用者實際提到的功能
-6. 若使用者只提到品牌名稱，不可自行補充功能
-7. 若無法判斷 usage，請填 ""
-8. 若無法判斷 style，請填 ""
-9. 若無法判斷 os，請填 ""
+
+6. 若使用者只提到品牌名稱，不可補充功能
+
+7. 若無法判斷 usage，填 ""
+
+8. 若無法判斷 style，填 ""
+
+9. 若無法判斷 os，填 ""
+
 10. 禁止猜測 GPS、ECG、血氧、防水等功能
 
-範例1：
+11. 禁止輸出解釋文字
 
-使用者：
-推薦適合 iPhone 的 GPS 睡眠監測手錶
+12. 禁止輸出 Markdown
 
-回傳：
+13. 禁止輸出 ```json
 
-{{
-    "product_type":"智慧手錶",
-    "usage":"日常",
-    "features":["GPS","睡眠監測"],
-    "os":"iOS",
-    "style":""
-}}
+14. 只允許輸出合法 JSON
 
-範例2：
-
-使用者：
-Apple Watch
-
-回傳：
-
-{{
-    "product_type":"智慧手錶",
-    "usage":"",
-    "features":[],
-    "os":"iOS",
-    "style":""
-}}
-
-範例3：
-
-使用者：
-Garmin
-
-回傳：
-
-{{
-    "product_type":"智慧手錶",
-    "usage":"",
-    "features":[],
-    "os":"",
-    "style":""
-}}
-
-範例4：
-
-使用者：
-我要 GPS
-
-回傳：
-
-{{
-    "product_type":"",
-    "usage":"",
-    "features":["GPS"],
-    "os":"",
-    "style":""
-}}
-
-禁止輸出任何解釋文字。
-禁止輸出 Markdown。
-禁止輸出 ```json。
-只允許輸出 JSON。
-
-範例5：
-
-使用者：
-我想找一萬到兩萬的運動手錶
-
-回傳：
-
-{{
-    "product_type":"智慧手錶",
-    "usage":"運動",
-    "features":[],
-    "os":"",
-    "style":"",
-    "budget_min":10000,
-    "budget_max":20000
-}}
+15. 回傳格式必須可直接被 json.loads() 解析
 """
 
         response = ask_ai(
