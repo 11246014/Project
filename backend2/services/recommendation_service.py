@@ -492,51 +492,51 @@ def recommend_products(user_message):
 
                     score += 15
 
-            # =========================
-            # AI ReRank(上台展示直接關掉)
-            # =========================
+            # # =========================
+            # # AI ReRank(上台展示直接關掉)
+            # # =========================
 
-            if idx == 0:
+            # if idx == 0:
 
-                try:
+            #     try:
 
-                    rerank = ai_rerank(
-                        conversation,
-                        product
-                    )
+            #         rerank = ai_rerank(
+            #             conversation,
+            #             product
+            #         )
 
-                    ai_score = rerank.get(
-                        "score",
-                        50
-                    )
+            #         ai_score = rerank.get(
+            #             "score",
+            #             50
+            #         )
 
-                    print(
-                        f"[AI Score] "
-                        f"{product.get('title')} "
-                        f"{ai_score}"
-                    )
+            #         print(
+            #             f"[AI Score] "
+            #             f"{product.get('title')} "
+            #             f"{ai_score}"
+            #         )
 
-                    score += ai_score // 4
+            #         score += ai_score // 4
 
-                    print(
-                        "[DEBUG]",
-                        score,
-                        ai_score,
-                        ai_score // 2
-                    )
+            #         print(
+            #             "[DEBUG]",
+            #             score,
+            #             ai_score,
+            #             ai_score // 2
+            #         )
 
-                    product["reason"] = (
-                        rerank.get(
-                            "reason",
-                            ""
-                        )
-                    )
+            #         product["reason"] = (
+            #             rerank.get(
+            #                 "reason",
+            #                 ""
+            #             )
+            #         )
 
-                except Exception as e:
+            #     except Exception as e:
 
-                    print(
-                        f"[AI ReRank Error] {e}"
-                    )
+            #         print(
+            #             f"[AI ReRank Error] {e}"
+            #         )
 
             product["match"] = score
 
