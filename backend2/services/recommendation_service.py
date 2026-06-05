@@ -486,44 +486,46 @@ def recommend_products(user_message):
                 if "apple" in title_text:
 
                     score += 15
-        # =========================
-        # AI ReRank
-        # =========================
 
-        if idx < 3:
+            # =========================
+            # AI ReRank
+            # =========================
 
-            try:
+            if idx < 3:
 
-                rerank = ai_rerank(
-                    conversation,
-                    product
-                )
+                try:
 
-                ai_score = rerank.get(
-                    "score",
-                    50
-                )
-
-                print(
-                    f"[AI Score] "
-                    f"{product.get('title')} "
-                    f"{ai_score}"
-                )
-
-                score += ai_score
-
-                product["reason"] = (
-                    rerank.get(
-                        "reason",
-                        ""
+                    rerank = ai_rerank(
+                        conversation,
+                        product
                     )
-                )
 
-            except Exception as e:
+                    ai_score = rerank.get(
+                        "score",
+                        50
+                    )
 
-                print(
-                    f"[AI ReRank Error] {e}"
-                )
+                    print(
+                        f"[AI Score] "
+                        f"{product.get('title')} "
+                        f"{ai_score}"
+                    )
+
+                    score += ai_score
+
+                    product["reason"] = (
+                        rerank.get(
+                            "reason",
+                            ""
+                        )
+                    )
+
+                except Exception as e:
+
+                    print(
+                        f"[AI ReRank Error] {e}"
+                    )
+
             product["match"] = score
 
         # =========================
