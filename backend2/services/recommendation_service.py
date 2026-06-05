@@ -12,6 +12,7 @@ from services.product_formatter import format_product
 from services.product_analyzer_service import analyze_product
 from services.backend1_client import save_product
 from services.db_search_service import search_db_products
+from services.ai_rerank_service import ai_rerank
 
 
 # =========================
@@ -408,7 +409,7 @@ def recommend_products(user_message):
 
         conversation_text = conversation.lower()
 
-        for product in filtered_products:
+        for idx, product in enumerate(filtered_products):
 
             score = product.get(
                 "match",
@@ -485,7 +486,44 @@ def recommend_products(user_message):
                 if "apple" in title_text:
 
                     score += 15
+        # =========================
+        # AI ReRank
+        # =========================
 
+        if idx < 3:
+
+            try:
+
+                rerank = ai_rerank(
+                    conversation,
+                    product
+                )
+
+                ai_score = rerank.get(
+                    "score",
+                    50
+                )
+
+                print(
+                    f"[AI Score] "
+                    f"{product.get('title')} "
+                    f"{ai_score}"
+                )
+
+                score += ai_score
+
+                product["reason"] = (
+                    rerank.get(
+                        "reason",
+                        ""
+                    )
+                )
+
+            except Exception as e:
+
+                print(
+                    f"[AI ReRank Error] {e}"
+                )
             product["match"] = score
 
         # =========================
