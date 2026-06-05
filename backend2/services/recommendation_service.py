@@ -644,6 +644,12 @@ def recommend_products(user_message):
 「預算內」
 「價格符合需求」
 
+28. 必須使用繁體中文
+
+29. 禁止輸出簡體中文
+
+30. 所有內容需符合台灣用語
+
 聊天紀錄：
 
 {conversation}

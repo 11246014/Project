@@ -10,7 +10,10 @@ def ask_ollama(
     model_name=None,
     timeout=120
 ):
-
+    print(
+    f"[Model] {model_name}"
+    )
+    
     if not model_name:
 
         model_name = MODEL_NAME
