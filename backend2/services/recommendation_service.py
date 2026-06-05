@@ -314,8 +314,16 @@ def recommend_products(user_message):
 
                 start = time.time()
 
+                start = time.time()
+
                 analyzed = analyze_product(
                     product
+                )
+
+                print(
+                    f"[Analyze Time] "
+                    f"{product['title']} "
+                    f"{time.time() - start:.2f}s"
                 )
 
                 print(
@@ -666,10 +674,12 @@ def recommend_products(user_message):
 
             start = time.time()
 
-            ai_reply = ask_ollama(
-                final_prompt
-            )
+            from config.settings import SUMMARY_MODEL
 
+            ai_reply = ask_ollama(
+                final_prompt,
+                model_name=SUMMARY_MODEL
+            )
             print(
                 f"[Summary Time] "
                 f"{time.time() - start:.2f}s"

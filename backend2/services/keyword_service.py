@@ -3,6 +3,7 @@
 import json
 
 from services.ollama_service import ask_ollama
+from config.settings import KEYWORD_MODEL
 
 
 def extract_keyword(user_message):
@@ -197,7 +198,10 @@ Garmin
 }}
 """
 
-        response = ask_ollama(prompt)
+        response = ask_ollama(
+            prompt,
+            model_name=KEYWORD_MODEL
+        )
 
         print("\n========== Keyword Raw ==========")
         print(response)

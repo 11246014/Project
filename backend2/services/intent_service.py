@@ -1,4 +1,5 @@
 from services.ollama_service import ask_ollama
+from config.settings import KEYWORD_MODEL
 
 
 def detect_intent(message):
@@ -40,7 +41,8 @@ chat
     try:
 
         result = ask_ollama(
-            prompt
+            prompt,
+            model_name=KEYWORD_MODEL
         )
 
         result = result.lower().strip()
