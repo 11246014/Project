@@ -6,4 +6,5 @@ MODEL_NAME = "qwen3"
 
 KEYWORD_MODEL = "qwen3:1.7b"
 
-SUMMARY_MODEL = "qwen3:latest"
+#SUMMARY_MODEL = "qwen3:latest" 先改用1.7b
+SUMMARY_MODEL = "qwen3:1.7b"
