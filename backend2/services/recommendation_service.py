@@ -303,42 +303,42 @@ def recommend_products(user_message):
                 filtered_products = (
                     original_products[:3]
                 )
-            # =========================
-            # 只分析前 3 筆商品
-            # =========================
+            # # =========================
+            # # 只分析前 3 筆商品
+            # # =========================
 
-            analyzed_products = []
+            # analyzed_products = []
 
-            for product in filtered_products[:3]:
+            # for product in filtered_products[:3]:
 
-                print("\n[Analyze Start]")
-                print(product.get("title"))
+            #     print("\n[Analyze Start]")
+            #     print(product.get("title"))
 
-                start = time.time()
+            #     start = time.time()
 
-                start = time.time()
+            #     start = time.time()
 
-                analyzed = analyze_product(
-                    product
-                )
+            #     analyzed = analyze_product(
+            #         product
+            #     )
 
-                print(
-                    f"[Analyze Time] "
-                    f"{product['title']} "
-                    f"{time.time() - start:.2f}s"
-                )
+            #     print(
+            #         f"[Analyze Time] "
+            #         f"{product['title']} "
+            #         f"{time.time() - start:.2f}s"
+            #     )
 
-                print(
-                    f"[Analyze Time] "
-                    f"{product.get('title')} "
-                    f"{time.time() - start:.2f}s"
-                )
+            #     print(
+            #         f"[Analyze Time] "
+            #         f"{product.get('title')} "
+            #         f"{time.time() - start:.2f}s"
+            #     )
 
-                print("[Analyze End]")
+            #     print("[Analyze End]")
 
-                analyzed_products.append(
-                    analyzed
-                )
+            #     analyzed_products.append(
+            #         analyzed
+            #     )
 
             # =========================
             # 覆蓋前 3 筆
@@ -383,7 +383,7 @@ def recommend_products(user_message):
         else:
 
             print(
-                f"[DB] 命中資料庫商品 {len(filtered_products)} 筆"
+                 f"[Products] 共 {len(filtered_products)} 筆"
             )
 
         # =========================
@@ -491,7 +491,7 @@ def recommend_products(user_message):
             # AI ReRank
             # =========================
 
-            if idx < 3:
+            if idx == 0:
 
                 try:
 
@@ -511,7 +511,7 @@ def recommend_products(user_message):
                         f"{ai_score}"
                     )
 
-                    score += ai_score
+                    score += ai_score // 2
 
                     product["reason"] = (
                         rerank.get(
