@@ -5,6 +5,7 @@ from services.intent_service import (
 )
 
 from services.ai_service import ask_ai
+from config.settings import AI_PROVIDER
 from services.keyword_service import extract_keyword
 from services.web_search_service import web_search_products
 from services.product_formatter import format_product
@@ -579,7 +580,7 @@ def recommend_products(user_message):
         # AI Summary
         # =========================
 
-        final_prompt = f"""
+        ollama_prompt = f"""
 你是 WearWise 智慧穿戴推薦顧問。
 
 請根據使用者需求與商品資料，
@@ -650,6 +651,7 @@ def recommend_products(user_message):
 
 30. 所有內容需符合台灣用語
 
+
 聊天紀錄：
 
 {conversation}
@@ -662,6 +664,37 @@ def recommend_products(user_message):
 
 {product_text}
 """
+        gemini_prompt = f"""
+你是 WearWise 智慧穿戴推薦顧問。
+
+請依推薦順位推薦商品。
+
+要求：
+
+- 使用繁體中文
+- 第一名詳細介紹
+- 第二名簡短介紹
+- 第三名一句話即可
+- 每個商品都要提到價格
+- 不可虛構規格
+- 控制150字內
+
+使用者需求：
+
+{user_message}
+
+商品資料：
+
+{product_text}
+"""
+        if AI_PROVIDER == "gemini":
+
+            final_prompt = gemini_prompt
+
+        else:
+
+            final_prompt = ollama_prompt
+
         try:
 
             print("\n[Summary Start]")
