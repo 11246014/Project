@@ -6,9 +6,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+SEARCH_CACHE = {}
+
 SERPAPI_KEY = os.getenv(
     "SERPAPI_KEY"
 )
+
 
 # =========================
 # 已知品牌
@@ -548,6 +552,14 @@ def web_search_products(
     keyword
 ):
 
+    if keyword in SEARCH_CACHE:
+
+        print(
+            f"[Cache Hit] {keyword}"
+        )
+
+        return SEARCH_CACHE[keyword]
+
     print("=" * 50)
 
     print(
@@ -596,7 +608,7 @@ def web_search_products(
 
         products = []
 
-        for item in shopping_results[:10]:
+        for item in shopping_results[:7]:
 
             print("=" * 30)
 
@@ -674,6 +686,7 @@ def web_search_products(
             f"[Web Search] 找到 "
             f"{len(products)} 筆商品"
         )
+        SEARCH_CACHE[keyword] = products
 
         print("=" * 50)
 
