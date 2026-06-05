@@ -340,21 +340,21 @@ def recommend_products(user_message):
             #         analyzed
             #     )
 
-            # =========================
-            # 覆蓋前 3 筆
-            # =========================
+            # # =========================
+            # # 覆蓋前 3 筆
+            # # =========================
 
-            for idx, analyzed in enumerate(
-                analyzed_products
-            ):
+            # for idx, analyzed in enumerate(
+            #     analyzed_products
+            # ):
 
-                filtered_products[idx] = analyzed
+            #     filtered_products[idx] = analyzed
 
-            print("\n===== Analyze Result =====")
+            # print("\n===== Analyze Result =====")
 
-            for product in filtered_products:
+            # for product in filtered_products:
 
-                print(product)
+            #     print(product)
 
             # =========================
             # 存進 Backend1
