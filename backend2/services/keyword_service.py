@@ -96,7 +96,7 @@ def extract_keyword(user_message):
 
 {user_message}
 
-只回傳 JSON：
+只回傳 JSON:
 
 {{
     "product_type":"",
