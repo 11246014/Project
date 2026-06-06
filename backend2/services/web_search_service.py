@@ -608,7 +608,7 @@ def web_search_products(
 
         products = []
 
-        for item in shopping_results[:7]:
+        for item in shopping_results[:15]:
 
             print("=" * 30)
 
@@ -686,6 +686,7 @@ def web_search_products(
             f"[Web Search] 找到 "
             f"{len(products)} 筆商品"
         )
+        
         SEARCH_CACHE[keyword] = products
 
         print("=" * 50)
