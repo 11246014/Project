@@ -96,7 +96,7 @@ def extract_keyword(user_message):
 
 {user_message}
 
-只回傳 JSON:
+只回傳 JSON：
 
 {{
     "product_type":"",
@@ -107,11 +107,6 @@ def extract_keyword(user_message):
     "budget_min":0,
     "budget_max":0
 }}
-
-14. 只允許輸出合法 JSON
-
-15. 回傳格式必須可直接被 json.loads() 解析
-
 
 product_type：
 
