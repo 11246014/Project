@@ -217,6 +217,16 @@ budget_max
             model_name=KEYWORD_MODEL
         )
 
+        product_type = data.get(
+            "product_type",
+            ""
+        )
+
+        if product_type:
+            query_parts.append(
+                product_type
+            )
+
         print("\n========== Keyword Raw ==========")
         print(response)
         print("=================================\n")
