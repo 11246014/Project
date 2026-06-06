@@ -108,6 +108,11 @@ def extract_keyword(user_message):
     "budget_max":0
 }}
 
+14. 只允許輸出合法 JSON
+
+15. 回傳格式必須可直接被 json.loads() 解析
+
+
 product_type：
 
 常見類型：
