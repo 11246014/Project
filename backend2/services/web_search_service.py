@@ -135,7 +135,24 @@ WEARABLE_KEYWORDS = [
 
     "galaxy fit3",
     
-    "samsung fit"
+    "samsung fit",
+    
+    "戒指",
+
+    "智慧戒指",
+
+    "智能戒指",
+
+    "指環",
+
+    "智慧指環",
+
+    "智能指環",
+
+    "smart ring",
+
+    "ring"
+    
 ]
 
 # =========================

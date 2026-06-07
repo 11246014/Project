@@ -265,6 +265,7 @@ def build_search_keyword(filters):
         "device_type",
         ""
     )
+
     if device_type == "手環":
 
         keywords.append("智慧手環")
@@ -272,6 +273,10 @@ def build_search_keyword(filters):
     elif device_type == "手錶":
 
         keywords.append("智慧手錶")
+
+    elif device_type == "戒指":
+
+        keywords.append("智慧戒指")
 
     else:
 
