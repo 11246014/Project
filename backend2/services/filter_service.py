@@ -9,6 +9,7 @@ from services.product_analyzer_service import (
 from services.ai_rerank_service import (
     ai_rerank
 )
+import time
 
 
 # =========================
@@ -39,6 +40,22 @@ USAGE_MAPPING = {
         "睡眠",
         "ECG",
         "健康"
+    ],
+
+    "健康管理（心率 / 睡眠）": [
+
+        "血氧",
+        "睡眠",
+        "ECG",
+        "健康"
+    ],
+
+    "日常生活（看時間 / 通知）": [
+
+        "通知",
+        "生活",
+        "輕薄",
+        "續航"
     ],
 
     "登山 / 戶外": [
@@ -362,13 +379,20 @@ def build_search_keyword(filters):
         ""
     )
 
-    if "iOS" in os_type:
+    device_type = filters.get(
+        "device_type",
+        ""
+    )
 
-        keywords.append("iPhone")
+    if device_type != "戒指":
 
-    elif "Android" in os_type:
+        if "iOS" in os_type:
 
-        keywords.append("Android")
+            keywords.append("iPhone")
+
+        elif "Android" in os_type:
+
+            keywords.append("Android")
 
     # 去重
 
@@ -685,6 +709,8 @@ def calculate_feature_score(
 
 def filter_products(filters):
 
+    start_time= time.time()
+    
     try:
 
         # 搜尋關鍵字
@@ -766,6 +792,30 @@ def filter_products(filters):
 
                 continue
 
+
+            # Device Type
+
+            device_type = filters.get(
+                "device_type",
+                ""
+            )
+
+            title = product.get(
+                "title",
+                ""
+            ).lower()
+
+            if device_type == "戒指":
+
+                if (
+                    "戒指" not in title
+                    and "指環" not in title
+                    and "ring" not in title
+                ):
+
+                    continue
+
+                        
             # Feature Score
 
             score = calculate_feature_score(
@@ -926,6 +976,22 @@ def filter_products(filters):
 
             product["ai_score"] = 0
 
+            total_score = (
+                product.get(
+                    "feature_score",
+                    0
+                )
+                +
+                product.get(
+                    "ai_score",
+                    0
+                )
+            )
+
+            product["match"] = min(
+                total_score,
+                100
+            )
         # =========================
         # 排序
         # =========================
@@ -961,6 +1027,13 @@ def filter_products(filters):
             print(
 
                 product["title"],
+
+                "| match =",
+
+                product.get(
+                    "match",
+                    0
+                ),
 
                 "| ai =",
 
@@ -1006,11 +1079,19 @@ def filter_products(filters):
             f"[Filter] 最終商品數量 "
             f"{len(analyzed_products)}"
         )
+        print(
+            f"[Filter Time] "
+            f"{time.time() - start_time:.2f}s"
+        )
 
         return analyzed_products
 
     except Exception as e:
 
+        print(
+            f"[Filter Time] "
+            f"{time.time() - start_time:.2f}s"
+        )
         print(
             f"[Filter Service Error] {e}"
         )
