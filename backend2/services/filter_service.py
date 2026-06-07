@@ -189,9 +189,11 @@ CORE_FACTOR_KEYWORDS = {
 
     "感測器精準": [
 
-        "雙頻gps",
+        "gps",
+        "定位",
         "高精度",
-        "精準"
+        "精準",
+        "感測"
     ],
 
     "價格": [
@@ -224,7 +226,7 @@ WEIGHT_CONFIG = {
 
     "耐用性": 50,
 
-    "感測器精準": 45,
+    "感測器精準": 20,
 
     "價格": 35
 }
@@ -812,9 +814,25 @@ def filter_products(filters):
                     and "指環" not in title
                     and "ring" not in title
                 ):
-
                     continue
 
+            elif device_type == "手環":
+
+                if (
+                    "手環" not in title
+                    and "band" not in title
+                    and "fit" not in title
+                ):
+                    continue
+
+            elif device_type == "手錶":
+
+                if (
+                    "手錶" not in title
+                    and "腕錶" not in title
+                    and "watch" not in title
+                ):
+                    continue
                         
             # Feature Score
 
