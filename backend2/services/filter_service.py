@@ -1001,7 +1001,7 @@ def filter_products(filters):
             key=lambda x: (
 
                 x.get(
-                    "feature_score",
+                    "match",
                     0
                 ),
 
@@ -1092,6 +1092,7 @@ def filter_products(filters):
             f"[Filter Time] "
             f"{time.time() - start_time:.2f}s"
         )
+        
         print(
             f"[Filter Service Error] {e}"
         )
