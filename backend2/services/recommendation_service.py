@@ -171,7 +171,7 @@ def recommend_products(user_message):
         
         search_query = search_keyword
 
-        if budget_max > 0:
+        if budget_max >= 10000:
 
             search_query += (
                 f" {budget_min // 10000}萬到"
