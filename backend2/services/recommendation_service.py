@@ -411,18 +411,24 @@ def recommend_products(user_message):
         # =========================
 
         conversation_text = conversation.lower()
+        
+        need_count = 0
 
+        if "gps" in conversation_text:
+            need_count += 1
+
+        if "睡眠" in conversation_text:
+            need_count += 1
+
+        if "心率" in conversation_text:
+            need_count += 1
+
+        if "血氧" in conversation_text:
+            need_count += 1
+
+        if "ecg" in conversation_text:
+            need_count += 1
         for idx, product in enumerate(filtered_products):
-
-            print(
-                "[Before AI]",
-                product.get("title"),
-                product.get("match")
-            )
-            score = product.get(
-                "match",
-                0
-            )
 
             reason_parts = []
 
@@ -555,15 +561,34 @@ def recommend_products(user_message):
             #         )
             if reason_parts:
 
-                product["reason"] = "、".join(
-                    reason_parts
-                )
+                product["reason"] = "、".join(reason_parts)
 
             else:
 
                 product["reason"] = "符合使用需求"
 
-            product["match"] = score
+            matched_count = len(reason_parts)
+
+            if need_count > 0:
+
+                hit_rate = matched_count / need_count
+
+            else:
+
+                hit_rate = 0
+            final_score = int(
+                score * 0.6 +
+                hit_rate * 100 * 0.4
+            )
+            print(
+                "[Hit Rate]",
+                product.get("title"),
+                f"{matched_count}/{need_count}",
+                f"{hit_rate:.2f}",
+                final_score
+            )
+
+            product["match"] = final_score
 
         # =========================
         # 重新排序
@@ -675,6 +700,8 @@ def recommend_products(user_message):
 21. 請將推薦原因改寫成自然語句
 22. 不要重複使用相同推薦詞句
 23. 優先參考推薦原因與評分內容撰寫介紹
+24. 只能使用商品資料中的推薦原因。
+25. 若資料未提及，不得自行補充任何功能。
 
 格式範例：
 
@@ -721,6 +748,8 @@ def recommend_products(user_message):
 21. 請將推薦原因改寫成自然語句
 22. 不要重複使用相同推薦詞句
 23. 優先參考推薦原因與評分內容撰寫介紹
+24. 只能使用商品資料中的推薦原因。
+25. 若資料未提及，不得自行補充任何功能。
 
 格式範例：
 
