@@ -611,6 +611,8 @@ def recommend_products(user_message):
 推薦順位:{idx}
 商品名稱:{product.get('name')}
 價格:{product.get('price')}
+評分:{product.get('match')}
+推薦原因:{product.get('reason')}
 """
 
         print("\n===== Product Summary =====")
@@ -726,6 +728,7 @@ def recommend_products(user_message):
 18. 可參考使用者年齡、職業、偏好與目前使用商品
 19. 優先說明第一順位推薦原因
 20. 不要重複商品名稱過多次
+21. 請根據商品特色說明推薦原因
 
 使用者資訊：
 
@@ -770,6 +773,7 @@ def recommend_products(user_message):
 12. 必須依照推薦順位
 13. 使用繁體中文
 14. 控制150字內
+15. 請根據商品特色說明推薦原因
 
 使用者資訊：
 
