@@ -237,9 +237,12 @@ def clean_title(title):
 
         r"\[.*?\]",
         r"【.*?】",
-        r"\(.*?回饋.*?\)",
 
         r"\d+號前最高回饋\$?\d*",
+
+        r"\d+/\d+前最高回饋\d*萬?",
+        r"\d+/\d+前最高回饋\$?\d*",
+
         r"最高回饋\$?\d*",
 
         r"限時優惠",
@@ -423,6 +426,10 @@ def clean_product(
         " " +
         snippet
     ).lower()
+    print(
+        "[Desc]",
+        snippet
+    )
 
     clean_name = clean_title(
         raw_title
@@ -685,26 +692,6 @@ def web_search_products(
             if not product:
 
                 continue
-            
-            import re
-
-            # 刪除前面的廣告字樣
-
-            clean_name = re.sub(
-                r"^\d+/\d+前.*?】",
-                "",
-                clean_name
-            )
-
-            # 刪除品牌括號
-
-            clean_name = re.sub(
-                r"【.*?】",
-                "",
-                clean_name
-            )
-
-            clean_name = clean_name.strip()
             
             print(
                 "Clean Title:",
