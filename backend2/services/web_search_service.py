@@ -542,7 +542,7 @@ def clean_product(
         "rating": rating,
 
         "match": int(
-            rating * 20
+            rating * 10
         ),
 
         "reason": generate_reason(
@@ -673,6 +673,12 @@ def web_search_products(
         products = []
 
         for item in shopping_results[:15]:
+
+            print("=" * 30)
+
+            print(
+                item.get("title")
+            )
 
             print("=" * 30)
 

@@ -430,6 +430,11 @@ def recommend_products(user_message):
             need_count += 1
         for idx, product in enumerate(filtered_products):
 
+            score = product.get(
+                "match",
+                0
+            )
+
             reason_parts = []
 
             features_text = " ".join(
@@ -577,8 +582,8 @@ def recommend_products(user_message):
 
                 hit_rate = 0
             final_score = int(
-                score * 0.6 +
-                hit_rate * 100 * 0.4
+                score * 0.4 +
+                hit_rate * 100 * 0.6
             )
             print(
                 "[Hit Rate]",
