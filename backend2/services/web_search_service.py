@@ -685,7 +685,27 @@ def web_search_products(
             if not product:
 
                 continue
+            
+            import re
 
+            # 刪除前面的廣告字樣
+
+            clean_name = re.sub(
+                r"^\d+/\d+前.*?】",
+                "",
+                clean_name
+            )
+
+            # 刪除品牌括號
+
+            clean_name = re.sub(
+                r"【.*?】",
+                "",
+                clean_name
+            )
+
+            clean_name = clean_name.strip()
+            
             print(
                 "Clean Title:",
                 product["title"]
