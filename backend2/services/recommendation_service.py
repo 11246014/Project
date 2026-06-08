@@ -446,7 +446,7 @@ def recommend_products(user_message):
 
                 if "gps" in features_text:
 
-                    score += 15
+                    score += 40
 
                     reason_parts.append("支援GPS定位")
 
@@ -459,19 +459,19 @@ def recommend_products(user_message):
 
                 if "睡眠" in features_text:
 
-                    score += 15
+                    score += 40
 
                     reason_parts.append("具備睡眠監測")
 
             # ===== 心率 =====
 
-                if "心率" in conversation_text:
+            if "心率" in conversation_text:
 
-                    if "心率" in features_text:
+                if "心率" in features_text:
 
-                        score += 10
+                    score += 30
 
-                        reason_parts.append("提供心率監測")
+                    reason_parts.append("提供心率監測")
 
             # ===== 血氧 =====
 
@@ -479,7 +479,7 @@ def recommend_products(user_message):
 
                 if "血氧" in features_text:
 
-                    score += 10
+                    score += 30
 
                     reason_parts.append("支援血氧偵測")
 
@@ -492,7 +492,7 @@ def recommend_products(user_message):
                     or "心電圖" in features_text
                 ):
 
-                    score += 20
+                    score += 30
 
                     reason_parts.append("具備ECG心電圖功能")
             
@@ -653,9 +653,9 @@ def recommend_products(user_message):
 規則：
 
 1. 依照順位1、2、3介紹
-2. 第一名介紹2~3句
-3. 第二名介紹1~2句
-4. 第三名一句話帶過即可
+2. 第一順位介紹較詳細
+3. 第二順位簡短介紹
+4. 第三順位簡單帶過
 5. 每個商品都要提到價格
 6. 優先參考推薦原因
 7. 不可推測不存在的功能
@@ -666,10 +666,15 @@ def recommend_products(user_message):
 12. 不要出現結論段落
 13. 不要出現開場白
 14. 使用繁體中文
-15. 控制150字內
+15. 控制在150~220字
 16. 不要使用 Markdown
 17. 不要使用 ** ##
 18. 直接輸出純文字
+19. 不要只重複推薦原因欄位內容
+20. 回覆直接從第一順位開始介紹
+21. 請將推薦原因改寫成自然語句
+22. 不要重複使用相同推薦詞句
+23. 優先參考推薦原因與評分內容撰寫介紹
 
 格式範例：
 
@@ -694,9 +699,9 @@ def recommend_products(user_message):
 規則：
 
 1. 依照順位1、2、3介紹
-2. 第一名介紹2~3句
-3. 第二名介紹1~2句
-4. 第三名一句話帶過即可
+2. 第一順位介紹較詳細
+3. 第二順位簡短介紹
+4. 第三順位簡單帶過
 5. 每個商品都要提到價格
 6. 優先參考推薦原因
 7. 不可推測不存在的功能
@@ -707,10 +712,15 @@ def recommend_products(user_message):
 12. 不要出現結論段落
 13. 不要出現開場白
 14. 使用繁體中文
-15. 控制150字內
+15. 控制在150~220字
 16. 不要使用 Markdown
 17. 不要使用 ** ##
 18. 直接輸出純文字
+19. 不要只重複推薦原因欄位內容
+20. 回覆直接從第一順位開始介紹
+21. 請將推薦原因改寫成自然語句
+22. 不要重複使用相同推薦詞句
+23. 優先參考推薦原因與評分內容撰寫介紹
 
 格式範例：
 

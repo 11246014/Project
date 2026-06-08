@@ -413,6 +413,17 @@ def clean_product(
         ""
     )
 
+    snippet = item.get(
+        "snippet",
+        ""
+    )
+
+    feature_text = (
+        raw_title +
+        " " +
+        snippet
+    ).lower()
+
     clean_name = clean_title(
         raw_title
     )
@@ -465,21 +476,22 @@ def clean_product(
 
     features = []
 
-    title_lower = clean_name.lower()
-
-    if "gps" in title_lower:
+    if "gps" in feature_text:
         features.append("GPS")
 
-    if "睡眠" in clean_name:
+    if "睡眠" in feature_text:
         features.append("睡眠")
 
-    if "心率" in clean_name:
+    if "心率" in feature_text:
         features.append("心率")
 
-    if "血氧" in clean_name:
+    if "血氧" in feature_text:
         features.append("血氧")
 
-    if "ecg" in title_lower or "心電圖" in clean_name:
+    if (
+        "ecg" in feature_text
+        or "心電圖" in feature_text
+    ):
         features.append("ECG")
 
     print(
