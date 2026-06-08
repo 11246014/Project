@@ -424,6 +424,8 @@ def recommend_products(user_message):
                 0
             )
 
+            reason_parts = []
+
             features_text = " ".join(
                 product.get(
                     "features",
@@ -446,6 +448,8 @@ def recommend_products(user_message):
 
                     score += 15
 
+                    reason_parts.append("支援GPS定位")
+
             # ===== 睡眠 =====
 
             if (
@@ -457,13 +461,17 @@ def recommend_products(user_message):
 
                     score += 15
 
+                    reason_parts.append("具備睡眠監測")
+
             # ===== 心率 =====
 
-            if "心率" in conversation_text:
+                if "心率" in conversation_text:
 
-                if "心率" in features_text:
+                    if "心率" in features_text:
 
-                    score += 10
+                        score += 10
+
+                        reason_parts.append("提供心率監測")
 
             # ===== 血氧 =====
 
@@ -472,6 +480,8 @@ def recommend_products(user_message):
                 if "血氧" in features_text:
 
                     score += 10
+
+                    reason_parts.append("支援血氧偵測")
 
             # ===== ECG =====
 
@@ -483,6 +493,9 @@ def recommend_products(user_message):
                 ):
 
                     score += 20
+
+                    reason_parts.append("具備ECG心電圖功能")
+            
 
             # ===== iPhone =====
 
@@ -540,6 +553,15 @@ def recommend_products(user_message):
             #         print(
             #             f"[AI ReRank Error] {e}"
             #         )
+            if reason_parts:
+
+                product["reason"] = "、".join(
+                    reason_parts
+                )
+
+            else:
+
+                product["reason"] = "符合使用需求"
 
             product["match"] = score
 

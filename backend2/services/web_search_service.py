@@ -459,15 +459,41 @@ def clean_product(
 
         return None
 
+    # =========================
+    # Feature Extraction
+    # =========================
+
+    features = []
+
+    title_lower = clean_name.lower()
+
+    if "gps" in title_lower:
+        features.append("GPS")
+
+    if "睡眠" in clean_name:
+        features.append("睡眠")
+
+    if "心率" in clean_name:
+        features.append("心率")
+
+    if "血氧" in clean_name:
+        features.append("血氧")
+
+    if "ecg" in title_lower or "心電圖" in clean_name:
+        features.append("ECG")
+
+    print(
+        "[Features]",
+        clean_name,
+        features
+    )
+
     return {
 
         "title": clean_name,
 
         "price": clean_price(
-            item.get(
-                "price",
-                "0"
-            )
+            item.get("price", "0")
         ),
 
         "platform": item.get(
@@ -489,6 +515,8 @@ def clean_product(
             "thumbnail",
             ""
         ),
+
+        "features": features,   # ← 新增這行
 
         "tags": [],
 
