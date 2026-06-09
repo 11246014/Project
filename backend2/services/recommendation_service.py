@@ -9,10 +9,10 @@ from config.settings import AI_PROVIDER
 from services.keyword_service import extract_keyword
 from services.web_search_service import web_search_products
 from services.product_formatter import format_product
-from services.product_analyzer_service import analyze_product
+# from services.product_analyzer_service import analyze_product
 from services.backend1_client import save_product
 from services.db_search_service import search_db_products
-from services.ai_rerank_service import ai_rerank
+# from services.ai_rerank_service import ai_rerank
 
 
 # =========================
@@ -707,6 +707,13 @@ def recommend_products(user_message):
 23. 優先參考推薦原因與評分內容撰寫介紹
 24. 只能使用商品資料中的推薦原因。
 25. 若資料未提及，不得自行補充任何功能。
+26. 若推薦原因只有GPS，則以GPS相關用途作為介紹重點。
+27. 若推薦原因未提及心率，不得提及心率。
+28. 若推薦原因未提及睡眠，不得提及睡眠。
+29. 若推薦原因未提及血氧，不得提及血氧。
+30. 不得根據品牌名稱推測功能。
+31. 不得根據型號推測功能。
+32. 可將推薦原因改寫為自然語句，但不得改變原意。
 
 格式範例：
 
@@ -755,6 +762,13 @@ def recommend_products(user_message):
 23. 優先參考推薦原因與評分內容撰寫介紹
 24. 只能使用商品資料中的推薦原因。
 25. 若資料未提及，不得自行補充任何功能。
+26. 若推薦原因只有GPS，則以GPS相關用途作為介紹重點。
+27. 若推薦原因未提及心率，不得提及心率。
+28. 若推薦原因未提及睡眠，不得提及睡眠。
+29. 若推薦原因未提及血氧，不得提及血氧。
+30. 不得根據品牌名稱推測功能。
+31. 不得根據型號推測功能。
+32. 可將推薦原因改寫為自然語句，但不得改變原意。
 
 格式範例：
 

@@ -426,10 +426,15 @@ def clean_product(
         " " +
         snippet
     ).lower()
-    print(
-        "[Desc]",
-        snippet
-    )
+    
+    DEBUG_MODE = False
+
+    if DEBUG_MODE:
+        
+        print(
+            "[Desc]",
+            snippet
+        )
 
     clean_name = clean_title(
         raw_title
