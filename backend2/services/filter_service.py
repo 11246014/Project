@@ -696,9 +696,9 @@ def calculate_feature_score(
     # Demo Protection
     # =========================
 
-    if score < 40:
+    if score < 60:
 
-        score = 40
+        score = 60
     # 儲存資訊
 
     product[

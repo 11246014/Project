@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter
 
 from services.filter_service import filter_products
@@ -65,7 +67,7 @@ def product_filter(filters: dict):
         # =========================
 
         try:
-
+            
             ai_reply = (
                 generate_filter_recommendation(
                     filters,
