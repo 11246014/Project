@@ -692,6 +692,13 @@ def calculate_feature_score(
 
     score += int(rating * 5)
 
+    # =========================
+    # Demo Protection
+    # =========================
+
+    if score < 40:
+
+        score = 40
     # 儲存資訊
 
     product[

@@ -563,54 +563,54 @@ def clean_product(
     }
 
 
-# =========================
-# 品牌去重
-# =========================
+# # =========================
+# # 品牌去重
+# # =========================
 
-def remove_duplicate_brand(
-    products
-):
+# def remove_duplicate_brand(
+#     products
+# ):
 
-    brand_products = {}
+#     brand_products = {}
 
-    for product in products:
+#     for product in products:
 
-        brand = product.get(
-            "brand",
-            "Other"
-        )
+#         brand = product.get(
+#             "brand",
+#             "Other"
+#         )
 
-        if brand == "Other":
+#         if brand == "Other":
 
-            brand_products[
-                f"Other_{len(brand_products)}"
-            ] = product
+#             brand_products[
+#                 f"Other_{len(brand_products)}"
+#             ] = product
 
-        elif brand not in brand_products:
+#         elif brand not in brand_products:
 
-            brand_products[
-                brand
-            ] = product
+#             brand_products[
+#                 brand
+#             ] = product
 
-        else:
+#         else:
 
-            old_rating = brand_products[
-                brand
-            ]["rating"]
+#             old_rating = brand_products[
+#                 brand
+#             ]["rating"]
 
-            new_rating = product[
-                "rating"
-            ]
+#             new_rating = product[
+#                 "rating"
+#             ]
 
-            if new_rating > old_rating:
+#             if new_rating > old_rating:
 
-                brand_products[
-                    brand
-                ] = product
+#                 brand_products[
+#                     brand
+#                 ] = product
 
-    return list(
-        brand_products.values()
-    )
+#     return list(
+#         brand_products.values()
+#     )
 
 
 # =========================
@@ -731,9 +731,9 @@ def web_search_products(
             f"{len(products)}"
         )
 
-        products = remove_duplicate_brand(
-            products
-        )
+        # products = remove_duplicate_brand(
+        #     products
+        # )
 
         print(
             f"[After Dedup] "
