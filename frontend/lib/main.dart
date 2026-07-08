@@ -17,6 +17,7 @@ import 'features/chat/screens/chat_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/foundation.dart';
 
 // ════════════════════════════════════════════════════
 // 自訂 ScrollBehavior
@@ -71,13 +72,13 @@ class WebNavBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       child: Row(
         children: [
-          const SizedBox(width: 24),
+          const SizedBox(width: 40),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
@@ -94,7 +95,7 @@ class WebNavBar extends StatelessWidget implements PreferredSizeWidget {
               Text(
                 'WearWise',
                 style: GoogleFonts.sora(
-                  fontSize: 18,
+                  fontSize: 22,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
                   letterSpacing: 0.5,
@@ -106,12 +107,12 @@ class WebNavBar extends StatelessWidget implements PreferredSizeWidget {
           Text(
             '智慧穿戴裝置推薦',
             style: GoogleFonts.dmSans(
-              fontSize: 13,
+              fontSize: 16,
               color: Colors.white.withValues(alpha: 0.85),
               fontWeight: FontWeight.w400,
             ),
           ),
-          const SizedBox(width: 24),
+          const SizedBox(width: 40),
         ],
       ),
     );
@@ -126,11 +127,19 @@ class WebLayout extends StatelessWidget {
 
   const WebLayout({super.key, required this.child});
 
-  static const double contentWidth = 430;
+  static const double contentWidth = 560;
   static const Color bgColor = Color(0xFF1E2A3A);
 
   @override
   Widget build(BuildContext context) {
+    // 判斷是否為 Web 平台
+    // kIsWeb 是 Flutter 內建常數，不需要額外 import
+    if (!kIsWeb) {
+      // 手機 App：直接回傳子頁面，不加任何 Web 佈局
+      return child;
+    }
+
+    // Web 版：加上 NavBar 和左右背景
     return Scaffold(
       appBar: const WebNavBar(),
       backgroundColor: bgColor,
@@ -162,30 +171,31 @@ class WebLayout extends StatelessWidget {
 // GoRouter 路由設定
 // ════════════════════════════════════════════════════
 final _router = GoRouter(
-  initialLocation: AppRoutes.login,
-  redirect: (context, state) async {
-    final token = await const FlutterSecureStorage().read(key: 'token');
-    final isLoggedIn = token != null && token.isNotEmpty;
+  initialLocation: AppRoutes.home,
 
-    // 不需要登入就能進入的頁面
-    final isOnPublicPage =
-        state.matchedLocation == AppRoutes.login ||
-        state.matchedLocation == AppRoutes.register ||
-        state.matchedLocation == AppRoutes.forgotPassword;
+  // redirect: (context, state) async {
+  //   final token = await const FlutterSecureStorage().read(key: 'token');
+  //   final isLoggedIn = token != null && token.isNotEmpty;
 
-    // 沒有 Token 且不在公開頁 → 強制去登入頁
-    if (!isLoggedIn && !isOnPublicPage) return AppRoutes.login;
+  //   // 不需要登入就能進入的頁面
+  //   final isOnPublicPage =
+  //       state.matchedLocation == AppRoutes.login ||
+  //       state.matchedLocation == AppRoutes.register ||
+  //       state.matchedLocation == AppRoutes.forgotPassword;
 
-    // 有 Token 且在登入／註冊頁 → 直接進首頁
-    if (isLoggedIn &&
-        (state.matchedLocation == AppRoutes.login ||
-         state.matchedLocation == AppRoutes.register)) {
-      return AppRoutes.home;
-    }
+  //   // 沒有 Token 且不在公開頁 → 強制去登入頁
+  //   if (!isLoggedIn && !isOnPublicPage) return AppRoutes.login;
 
-    // 其他情況不做跳轉
-    return null;
-  },
+  //   // 有 Token 且在登入／註冊頁 → 直接進首頁
+  //   if (isLoggedIn &&
+  //       (state.matchedLocation == AppRoutes.login ||
+  //        state.matchedLocation == AppRoutes.register)) {
+  //     return AppRoutes.home;
+  //   }
+
+  //   // 其他情況不做跳轉
+  //   return null;
+  // },
   routes: [
     GoRoute(
       path: AppRoutes.login,

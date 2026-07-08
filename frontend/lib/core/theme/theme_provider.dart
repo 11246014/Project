@@ -9,7 +9,7 @@ final themeProvider = StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) {
 
 class ThemeNotifier extends StateNotifier<ThemeMode> {
   // 預設深色模式
-  ThemeNotifier() : super(ThemeMode.dark);
+  ThemeNotifier() : super(ThemeMode.light);
 
   /// 切換主題
   void toggle() {
