@@ -6,6 +6,52 @@ import re
 from services.ai_service import ask_ai
 from config.settings import KEYWORD_MODEL
 
+
+def _as_list(value):
+    if value is None or value == "":
+        return []
+
+    if isinstance(value, list):
+        return value
+
+    return [value]
+
+
+def _none_if_empty(value):
+    if value in ("", [], {}, 0):
+        return None
+
+    return value
+
+
+def _keyword_result(
+    keyword="",
+    budget_min=0,
+    budget_max=0,
+    product_type=None,
+    usage=None,
+    features=None,
+    os=None,
+    style=None,
+    battery=None,
+    occupation=None,
+    age_group=None
+):
+    return {
+        "keyword": keyword or "",
+        "budget_min": budget_min or 0,
+        "budget_max": budget_max or 0,
+        "product_type": _none_if_empty(product_type),
+        "usage": _none_if_empty(usage),
+        "features": _as_list(features),
+        "os": _none_if_empty(os),
+        "style": _none_if_empty(style),
+        "battery": _none_if_empty(battery),
+        "occupation": _none_if_empty(occupation),
+        "age_group": _none_if_empty(age_group)
+    }
+
+
 def extract_keyword(user_message):
 
     """
@@ -23,47 +69,27 @@ def extract_keyword(user_message):
 
         if msg == "apple watch":
 
-            return {
-
-                "keyword": "Apple Watch",
-
-                "budget_min": 0,
-
-                "budget_max": 0
-            }
+            return _keyword_result(
+                keyword="Apple Watch"
+            )
 
         if msg == "garmin":
 
-            return {
-
-                "keyword": "Garmin",
-
-                "budget_min": 0,
-
-                "budget_max": 0
-            }
+            return _keyword_result(
+                keyword="Garmin"
+            )
 
         if msg == "amazfit":
 
-            return {
-
-                "keyword": "Amazfit",
-
-                "budget_min": 0,
-
-                "budget_max": 0
-            }
+            return _keyword_result(
+                keyword="Amazfit"
+            )
 
         if msg == "galaxy watch":
 
-            return {
-
-                "keyword": "Galaxy Watch",
-
-                "budget_min": 0,
-
-                "budget_max": 0
-            }
+            return _keyword_result(
+                keyword="Galaxy Watch"
+            )
         if msg == "智慧手錶":
 
             return {
@@ -104,6 +130,9 @@ def extract_keyword(user_message):
     "features":[],
     "os":"",
     "style":"",
+    "battery":"",
+    "occupation":"",
+    "age_group":"",
     "budget_min":0,
     "budget_max":0
 }}
@@ -441,20 +470,41 @@ budget_max
                 f"[Keyword Extraction] {search_keyword}"
             )
 
-            return {
-
-                "keyword": search_keyword,
-
-                "budget_min": data.get(
+            return _keyword_result(
+                keyword=search_keyword,
+                budget_min=data.get(
                     "budget_min",
                     0
                 ),
-
-                "budget_max": data.get(
+                budget_max=data.get(
                     "budget_max",
                     0
+                ),
+                product_type=data.get(
+                    "product_type"
+                ),
+                usage=data.get(
+                    "usage"
+                ),
+                features=data.get(
+                    "features"
+                ),
+                os=data.get(
+                    "os"
+                ),
+                style=data.get(
+                    "style"
+                ),
+                battery=data.get(
+                    "battery"
+                ),
+                occupation=data.get(
+                    "occupation"
+                ),
+                age_group=data.get(
+                    "age_group"
                 )
-            }
+            )
 
     except Exception as e:
 
@@ -462,20 +512,6 @@ budget_max
             f"[Keyword Extraction Error] {e}"
         )
 
-        return {
+        return _keyword_result()
 
-            "keyword": "",
-
-            "budget_min": 0,
-
-            "budget_max": 0
-        }
-
-    return {
-
-        "keyword": "",
-
-        "budget_min": 0,
-
-        "budget_max": 0
-    }
+    return _keyword_result()

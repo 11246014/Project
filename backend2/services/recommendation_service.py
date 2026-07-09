@@ -6,7 +6,7 @@ from services.intent_service import (
 
 from services.ai_service import ask_ai
 from config.settings import AI_PROVIDER
-from services.keyword_service import extract_keyword
+from services.chat_parser import parse_chat_message
 from services.web_search_service import web_search_products
 from services.product_formatter import format_product
 # from services.product_analyzer_service import analyze_product
@@ -137,27 +137,29 @@ def recommend_products(user_message):
             conversation.split("\n")[-5:]
         )
 
-        keyword_result = extract_keyword(
+        recommendation_request = parse_chat_message(
             conversation_for_keyword
         )
+
+        user_need = recommendation_request.need
         print(
             f"[Keyword Time] "
             f"{time.time() - start:.2f}s"
         )
 
-        search_keyword = keyword_result.get(
-            "keyword",
-            ""
+        search_keyword = (
+            user_need.search_query
+            or ""
         )
 
-        budget_min = keyword_result.get(
-            "budget_min",
-            0
+        budget_min = (
+            user_need.budget.min
+            or 0
         )
 
-        budget_max = keyword_result.get(
-            "budget_max",
-            0
+        budget_max = (
+            user_need.budget.max
+            or 0
         )
 
         if not search_keyword:
@@ -404,7 +406,9 @@ def recommend_products(user_message):
 
                 "summary": ai_reply,
 
-                "products": []
+                "products": [],
+
+                "user_need": user_need.to_dict()
             }
         # =========================
         # Feature Weighting Lite
@@ -645,7 +649,9 @@ def recommend_products(user_message):
 
                 "summary": ai_reply,
 
-                "products": []
+                "products": [],
+
+                "user_need": user_need.to_dict()
             }
 
         # =========================
@@ -880,7 +886,9 @@ def recommend_products(user_message):
 
             "summary": ai_reply,
 
-            "products": formatted_products
+            "products": formatted_products,
+
+            "user_need": user_need.to_dict()
         }
 
     except Exception as e:
