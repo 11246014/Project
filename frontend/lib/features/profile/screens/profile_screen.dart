@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/theme_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../services/user_service.dart';
+import '../../../core/providers/user_profile_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -19,6 +20,8 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late final TextEditingController _occupationController;
+  late final TextEditingController _currentDeviceController;
 
   // 串接後從 API 取得
 Map<String, dynamic> _user = {
@@ -27,20 +30,6 @@ Map<String, dynamic> _user = {
   'avatar': null,
 };
 
-  // 偏好標籤選取狀態
-  final Map<String, bool> _preferTags = {
-    'GPS 精準度': true,
-    '電池續航': false,
-    '耐用性': false,
-    '感測器精準': true,
-    'AI 功能': false,
-    '生態整合': false,
-    '易讀性': false,
-    '售後服務': false,
-    '外型設計': true,
-    '價格': false,
-    '睡眠追蹤': false,
-  };
 
   // Mock 歷史紀錄（W3 串接後從 API 取得）
   final List<Map<String, dynamic>> _history = [
@@ -88,6 +77,11 @@ Map<String, dynamic> _user = {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadUserInfo();
+
+    _occupationController =
+    TextEditingController(text: ref.read(userProfileProvider).occupation);
+    _currentDeviceController =
+    TextEditingController(text: ref.read(userProfileProvider).currentDevice);
   }
 
   Future<void> _loadUserInfo() async {
@@ -111,6 +105,8 @@ Map<String, dynamic> _user = {
   @override
   void dispose() {
     _tabController.dispose();
+    _occupationController.dispose();
+    _currentDeviceController.dispose();
     super.dispose();
   }
 
@@ -254,52 +250,35 @@ Map<String, dynamic> _user = {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 偏好標籤
-          Text('我的偏好標籤', style: AppTextStyles.displayMedium.copyWith(
-            fontSize: 16,
-            color: AppColors.textMain(context))),
+          // 個人資訊（皆為選填，會自動套用到 Filter 問卷與 AI 聊天推薦）
+          Text('個人資訊', style: AppTextStyles.displayMedium.copyWith(
+              fontSize: 16, color: AppColors.textMain(context))),
           const SizedBox(height: 6),
-          Text('點選標籤調整你的推薦偏好', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSub(context))),
+          Text('填寫後，AI 推薦時會自動參考這些資訊（皆為選填）',
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSub(context))),
           const SizedBox(height: 16),
 
-          // 標籤選取區
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _preferTags.entries.map((entry) {
-              final isSelected = entry.value;
-              return GestureDetector(
-                onTap: () => setState(
-                  () => _preferTags[entry.key] = !isSelected,
-                ),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    gradient: isSelected ? AppColors.primaryGradient : null,
-                    color: isSelected ? null : AppColors.cardVariant(context),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppColors.borderColor(context),
-                    ),
-                  ),
-                  child: Text(
-                    entry.key,
-                    style: AppTextStyles.caption.copyWith(
-                      color: isSelected
-                          ? Colors.white
-                          : AppColors.textMain(context),
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+          _buildProfileDropdown(
+            label: '年齡層',
+            value: ref.watch(userProfileProvider).ageRange,
+            options: const ['18 以下', '18–25', '26–35', '36–45', '46 以上'],
+            onChanged: ref.read(userProfileProvider.notifier).updateAgeRange,
+          ),
+          const SizedBox(height: 12),
+
+          _buildProfileTextField(
+            controller: _occupationController,
+            label: '職業（選填）',
+            hint: '例如：學生、工程師、教師、運動員',
+            onChanged: ref.read(userProfileProvider.notifier).updateOccupation,
+          ),
+          const SizedBox(height: 12),
+
+          _buildProfileTextField(
+            controller: _currentDeviceController,
+            label: '目前使用的穿戴裝置（選填）',
+            hint: '例如：Apple Watch SE、無、小米手環 7',
+            onChanged: ref.read(userProfileProvider.notifier).updateCurrentDevice,
           ),
           const SizedBox(height: 28),
 
@@ -308,6 +287,9 @@ Map<String, dynamic> _user = {
             fontSize: 16,
             color: AppColors.textMain(context))),
           const SizedBox(height: 12),
+
+          
+
           _buildSettingItem(
             icon: Icons.notifications_outlined,
             label: '推播通知',
@@ -379,6 +361,70 @@ Map<String, dynamic> _user = {
             variant: ButtonVariant.outline,
           ),
         ],
+      ),
+    );
+  }
+
+  /// 個人資訊下拉選單（用於選項固定的欄位，例如年齡層）
+  Widget _buildProfileDropdown({
+    required String label,
+    required String value,
+    required List<String> options,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderColor(context)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: value.isEmpty ? null : value,
+          hint: Text(label,
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSub(context))),
+          dropdownColor: AppColors.cardBg(context),
+          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMain(context)),
+          items: options.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),
+          onChanged: (v) {
+            if (v != null) onChanged(v);
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 個人資訊文字輸入（用於職業、目前裝置等自由輸入欄位）
+  Widget _buildProfileTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required ValueChanged<String> onChanged,
+  }) {
+    return TextFormField(
+      controller: controller,
+      onChanged: onChanged,
+      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMain(context)),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        filled: true,
+        fillColor: AppColors.cardBg(context),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.borderColor(context)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.borderColor(context)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.borderFocus, width: 1.5),
+        ),
       ),
     );
   }
