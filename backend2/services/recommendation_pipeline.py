@@ -56,6 +56,12 @@ PRIORITY_EVIDENCE_TERMS = {
         "軍規",
         "防摔",
     ],
+    "ease_of_use": [
+        "操作簡單",
+        "簡單操作",
+        "容易使用",
+        "易用",
+    ],    
 }
 
 def _list(value):
@@ -86,7 +92,24 @@ def _price(product):
         return int(product.get("price", 0) or 0)
     except Exception:
         return 0
+    
+def score_preferences(product, need):
+    score = 0
+    text = _text(product)
 
+    if (
+        need.preferences.battery
+        and "battery_life" not in _list(need.priorities)
+    ):
+        battery_terms = PRIORITY_EVIDENCE_TERMS["battery_life"]
+
+        if any(
+            term.lower() in text
+            for term in battery_terms
+        ):
+            score += 10
+
+    return score
 
 def build_search_query(need):
     parts = []
@@ -195,11 +218,12 @@ def hard_filter_candidates(candidates, need):
     for product in candidates:
         price = _price(product)
 
-        if need.budget.min and price < need.budget.min:
-            continue
+        if price > 0:
+            if need.budget.min and price < need.budget.min:
+                continue
 
-        if need.budget.max and price > need.budget.max:
-            continue
+            if need.budget.max and price > need.budget.max:
+                continue
 
         filtered.append(product)
 
@@ -209,7 +233,10 @@ def hard_filter_candidates(candidates, need):
 def score_product(product, need):
     score = 0
     text = _text(product)
-    features = set(_list(product.get("features")))
+    features = {
+    str(item).lower()
+    for item in _list(product.get("features"))
+    }
 
     if need.device_type:
         device_term = DEVICE_QUERY_TERMS.get(
@@ -243,6 +270,8 @@ def score_product(product, need):
             for term in evidence_terms
         ):
             score += 10
+
+    score += score_preferences(product, need)
 
     price = _price(product)
 
