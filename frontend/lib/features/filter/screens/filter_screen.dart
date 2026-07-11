@@ -510,6 +510,7 @@ class _FilterScreenState extends ConsumerState<FilterScreen> {
     if (_currentQuestion.multiSelect) {
       // 複選：方形 checkbox
       return AnimatedContainer(
+        key: const ValueKey('checkbox_indicator'), // 與圓形指示器區分身分，避免跨題型動畫過渡
         duration: const Duration(milliseconds: 150),
         width: 20,
         height: 20,
@@ -530,6 +531,7 @@ class _FilterScreenState extends ConsumerState<FilterScreen> {
     } else {
       // 單選：圓形 radio
       return AnimatedContainer(
+        key: const ValueKey('radio_indicator'), // 與方形指示器區分身分，避免跨題型動畫過渡
         duration: const Duration(milliseconds: 150),
         width: 20,
         height: 20,
