@@ -1,5 +1,6 @@
 from models.schemas import (
     Budget,
+    Persona,
     Preferences,
     RawInput,
     RecommendationRequest,
@@ -62,6 +63,22 @@ def adapt_filter_request(filters):
     )
 
     need = UserNeed(
+        # 新增：把前端「我的」頁面 + Filter Q9 送來的個人資訊接進 Persona
+        # 這四個都是選填，使用者沒填就是空字串，_none_if_empty 會轉成 None
+        persona=Persona(
+            age_range=_none_if_empty(
+                original_filters.get("age_range")
+            ),
+            occupation=_none_if_empty(
+                original_filters.get("occupation")
+            ),
+            usage_scope=_none_if_empty(
+                original_filters.get("usage_scope")
+            ),
+            current_device=_none_if_empty(
+                original_filters.get("current_device")
+            ),
+        ),
         budget=Budget(
             min=_none_if_empty(
                 original_filters.get("min_price")

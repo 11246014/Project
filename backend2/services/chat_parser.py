@@ -50,7 +50,7 @@ def parse_chat_message(message):
 
     need = UserNeed(
         persona=Persona(
-            age_group=normalize_age_group(
+            age_range=normalize_age_group(
                 keyword_result.get("age_group")
             ),
             occupation=normalize_occupation(
