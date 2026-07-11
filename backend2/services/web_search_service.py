@@ -513,8 +513,9 @@ def clean_product(
     )
 
     return {
-
         "title": clean_name,
+
+        "raw_title": raw_title,
 
         "price": clean_price(
             item.get("price", "0")
@@ -525,10 +526,7 @@ def clean_product(
             ""
         ),
 
-        "desc": item.get(
-            "snippet",
-            ""
-        ),
+        "desc": snippet,
 
         "link": item.get(
             "link",
@@ -540,7 +538,7 @@ def clean_product(
             ""
         ),
 
-        "features": features,   # ← 新增這行
+        "features": features,
 
         "tags": [],
 
@@ -562,56 +560,17 @@ def clean_product(
         "isTop": False
     }
 
-
-# # =========================
-# # 品牌去重
-# # =========================
-
-# def remove_duplicate_brand(
-#     products
-# ):
-
-#     brand_products = {}
-
-#     for product in products:
-
-#         brand = product.get(
-#             "brand",
-#             "Other"
-#         )
-
-#         if brand == "Other":
-
-#             brand_products[
-#                 f"Other_{len(brand_products)}"
-#             ] = product
-
-#         elif brand not in brand_products:
-
-#             brand_products[
-#                 brand
-#             ] = product
-
-#         else:
-
-#             old_rating = brand_products[
-#                 brand
-#             ]["rating"]
-
-#             new_rating = product[
-#                 "rating"
-#             ]
-
-#             if new_rating > old_rating:
-
-#                 brand_products[
-#                     brand
-#                 ] = product
-
-#     return list(
-#         brand_products.values()
-#     )
-
+def _text(product):
+    return " ".join(
+        str(product.get(key, ""))
+        for key in (
+            "title",
+            "raw_title",
+            "name",
+            "desc",
+            "description"
+        )
+    ).lower()
 
 # =========================
 # Web Search

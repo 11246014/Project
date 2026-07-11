@@ -36,7 +36,27 @@ PRIORITY_QUERY_TERMS = {
     "durability": "耐用",
     "ease_of_use": "操作簡單",
 }
-
+PRIORITY_EVIDENCE_TERMS = {
+    "battery_life": [
+        "長續航",
+        "強勢續航",
+        "超高續航",
+        "續航",
+        "solar",
+        "太陽能",
+    ],
+    "location_accuracy": [
+        "gps",
+        "gps定位",
+        "定位",
+    ],
+    "durability": [
+        "耐用",
+        "堅固",
+        "軍規",
+        "防摔",
+    ],
+}
 
 def _list(value):
     if not value:
@@ -51,7 +71,13 @@ def _list(value):
 def _text(product):
     return " ".join(
         str(product.get(key, ""))
-        for key in ("title", "name", "desc", "description")
+        for key in (
+            "title",
+            "raw_title",
+            "name",
+            "desc",
+            "description"
+        )
     ).lower()
 
 
@@ -207,9 +233,15 @@ def score_product(product, need):
             score += 25
 
     for priority in _list(need.priorities):
-        term = PRIORITY_QUERY_TERMS.get(priority, priority).lower()
+        evidence_terms = PRIORITY_EVIDENCE_TERMS.get(
+            priority,
+            [priority]
+        )
 
-        if priority in text or term in text:
+        if any(
+            term.lower() in text
+            for term in evidence_terms
+        ):
             score += 10
 
     price = _price(product)
@@ -272,6 +304,19 @@ def recommend_from_need(
         candidates,
         need
     )
+
+    print("\n========== PIPELINE CANDIDATES ==========")
+
+    for index, product in enumerate(filtered, start=1):
+        print(f"\n--- Candidate {index} ---")
+        print("title:", product.get("title"))
+        print("price:", product.get("price"))
+        print("features:", product.get("features"))
+        print("desc:", product.get("desc"))
+        print("rating:", product.get("rating"))
+        print("raw_title:", product.get("raw_title", ""))
+
+    print("\n=========================================\n")
 
     ranked = rank_candidates(
         filtered,
