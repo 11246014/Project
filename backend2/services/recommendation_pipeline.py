@@ -1,10 +1,9 @@
 import asyncio
 
 from services.db_search_service import search_db_products
-from services.filter_recommend_service import generate_filter_recommendation
 from services.product_formatter import format_product
 from services.web_search_service import web_search_products
-
+from services.backend1_client import save_product
 
 DEVICE_QUERY_TERMS = {
     "smartwatch": "智慧手錶",
@@ -191,6 +190,15 @@ def _run_async(coro):
         "recommend_from_need cannot run async DB search inside an active event loop"
     )
 
+def save_candidates(products):
+    for product in products:
+        try:
+            if product.get("title"):
+                _run_async(
+                    save_product(product)
+                )
+        except Exception as e:
+            print(f"[Save Error] {e}")
 
 def retrieve_candidates(search_query):
     candidates = []
@@ -215,22 +223,46 @@ def retrieve_candidates(search_query):
 def hard_filter_candidates(candidates, need):
     filtered = []
 
+    budget_fallback = False
+
+    budget_min = need.budget.min or 0
+    budget_max = need.budget.max or 0
+
     for product in candidates:
+
         price = _price(product)
 
         if price > 0:
-            if need.budget.min and price < need.budget.min:
+
+            if budget_min and price < budget_min:
                 continue
 
-            if need.budget.max and price > need.budget.max:
+            if budget_max and price > budget_max:
                 continue
 
         filtered.append(product)
 
-    return filtered
+    if filtered:
+        return filtered, budget_fallback
+
+    if not budget_max:
+        return candidates, budget_fallback
+
+    budget_fallback = True
+
+    fallback = sorted(
+        candidates,
+        key=lambda p: (
+            _price(p) < budget_min,
+            abs(_price(p) - budget_min)
+        )
+    )
+
+    return fallback[:3], budget_fallback
 
 
 def score_product(product, need):
+    reason_parts = []
     score = 0
     text = _text(product)
     features = {
@@ -254,10 +286,50 @@ def score_product(product, need):
             score += 15
 
     for feature in _list(need.features):
-        term = FEATURE_QUERY_TERMS.get(feature, feature).lower()
 
-        if feature in features or feature in text or term in text:
-            score += 25
+        feature = feature.lower()
+
+        if feature == "gps":
+
+            if "gps" in features or "gps" in text:
+
+                score += 40
+                reason_parts.append("支援GPS定位")
+
+        elif feature in ["sleep_tracking", "sleep"]:
+
+            if "睡眠" in features or "睡眠" in text:
+
+                score += 40
+                reason_parts.append("具備睡眠監測")
+
+        elif feature == "heart_rate":
+
+            if "心率" in features or "心率" in text:
+
+                score += 30
+                reason_parts.append("提供心率監測")
+
+        elif feature == "blood_oxygen":
+
+            if "血氧" in features or "血氧" in text:
+
+                score += 30
+                reason_parts.append("支援血氧偵測")
+
+        elif feature == "ecg":
+
+            if "ecg" in features or "心電圖" in text:
+
+                score += 30
+                reason_parts.append("具備ECG心電圖功能")
+
+        elif feature == "water_resistance":
+
+            if "防水" in features or "防水" in text:
+
+                score += 20
+                reason_parts.append("具備防水功能")
 
     for priority in _list(need.priorities):
         evidence_terms = PRIORITY_EVIDENCE_TERMS.get(
@@ -278,7 +350,15 @@ def score_product(product, need):
     if need.budget.max and price and price <= need.budget.max:
         score += 10
 
-    return min(score, 100)
+    if reason_parts:
+        reason = "、".join(reason_parts)
+    else:
+        reason = "符合使用需求"
+
+    return {
+        "score": min(score, 100),
+        "reason": reason,
+    }
 
 
 def rank_candidates(candidates, need):
@@ -286,7 +366,9 @@ def rank_candidates(candidates, need):
 
     for product in candidates:
         product = product.copy()
-        product["match"] = score_product(product, need)
+        result = score_product(product, need)
+        product["match"] = result["score"]
+        product["reason"] = result["reason"]
         ranked.append(product)
 
     ranked.sort(
@@ -299,37 +381,22 @@ def rank_candidates(candidates, need):
 
     return ranked
 
-
-def summarize_recommendation(need, products):
-    if not products:
-        return "目前沒有找到符合條件的推薦商品。"
-
-    try:
-        result = generate_filter_recommendation(
-            need.to_dict(),
-            products
-        )
-
-        if result and result.strip():
-            return result
-
-        return "已根據你的需求整理出以下推薦商品。"
-
-    except Exception as e:
-        print(f"[Pipeline Summary Error] {e}")
-        return "已根據你的需求整理出以下推薦商品。"
-
+def format_products(products, limit=3):
+    return [
+        format_product(product)
+        for product in products[:limit]
+    ]
 
 def recommend_from_need(
     need,
-    limit=3,
-    generate_summary=True
+    limit=3
 ):
     search_query = build_search_query(need)
 
     candidates = retrieve_candidates(search_query)
+    save_candidates(candidates)
 
-    filtered = hard_filter_candidates(
+    filtered, budget_fallback = hard_filter_candidates(
         candidates,
         need
     )
@@ -352,22 +419,14 @@ def recommend_from_need(
         need
     )
 
-    formatted_products = [
-        format_product(product)
-        for product in ranked[:limit]
-    ]
-
-    if generate_summary:
-        summary = summarize_recommendation(
-            need,
-            formatted_products
-        )
-    else:
-        summary = ""
+    formatted_products = format_products(
+        ranked,
+        limit
+    )
 
     return {
-        "summary": summary,
         "products": formatted_products,
         "search_query": search_query,
-        "user_need": need.to_dict()
+        "user_need": need.to_dict(),
+        "budget_fallback": budget_fallback
     }
