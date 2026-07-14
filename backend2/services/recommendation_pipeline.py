@@ -47,17 +47,20 @@ OS_QUERY_TERMS = {
 }
 
 STYLE_MAPPING = {
-    "商務正式": [
+
+    "business": [
         "商務",
         "金屬",
         "正式",
     ],
-    "時尚 / 穿搭": [
+
+    "fashion": [
         "時尚",
         "設計",
         "AMOLED",
     ],
-    "運動風": [
+
+    "sport": [
         "運動",
         "防水",
         "GPS",
@@ -65,18 +68,43 @@ STYLE_MAPPING = {
 }
 
 BATTERY_MAPPING = {
-    "每天充電": [
+
+    "low": [
         "高性能",
     ],
-    "2 – 3 天一次": [
+
+    "medium": [
         "續航",
     ],
-    "5 – 7 天一次": [
+
+    "high": [
         "長續航",
     ],
 }
+# ==================================================
+# Search Filter Mapping
+# （搜尋階段硬性過濾）
+# ==================================================
 
+NEGATIVE_STYLE_KEYWORDS = {
+    "business": [
+        "兒童",
+        "卡通",
+        "玩具",
+    ],
+    "fashion": [
+        "軍規",
+        "粗獷",
+    ],
+}
+IOS_ONLY_KEYWORDS = [
+    "apple watch",
+]
 
+ANDROID_ONLY_KEYWORDS = [
+    "galaxy watch",
+    "wear os",
+]
 # ==================================================
 # Score Mapping
 # （商品評分）
@@ -112,6 +140,15 @@ FEATURE_KEYWORDS = {
     ],
 }
 
+FEATURE_REASON = {
+    "GPS": "支援GPS定位",
+    "睡眠": "具備睡眠監測",
+    "血氧": "支援血氧偵測",
+    "ECG": "具備ECG心電圖功能",
+    "心率": "提供心率監測",
+    "防水": "具備防水功能",
+}
+
 CORE_FACTOR_KEYWORDS = {
     "battery_life": [
         "續航",
@@ -136,26 +173,6 @@ CORE_FACTOR_KEYWORDS = {
     ]
 }
 
-WEIGHT_CONFIG = {
-    "GPS": 30,
-    "睡眠": 30,
-    "血氧": 35,
-    "ECG": 40,
-    "防水": 20,
-    "心率": 25,
-    "電池續航": 50,
-    "耐用性": 50,
-    "感測器精準": 20,
-    "價格": 35,
-}
-FEATURE_REASON = {
-    "GPS": "支援GPS定位",
-    "睡眠": "具備睡眠監測",
-    "血氧": "支援血氧偵測",
-    "ECG": "具備ECG心電圖功能",
-    "心率": "提供心率監測",
-    "防水": "具備防水功能",
-}
 PRIORITY_EVIDENCE_TERMS = {
     "battery_life": [
         "長續航",
@@ -182,6 +199,24 @@ PRIORITY_EVIDENCE_TERMS = {
         "容易使用",
         "易用",
     ],
+}
+# ==================================================
+# Score Config
+# （權重設定）
+# ==================================================
+WEIGHT_CONFIG = {
+
+    "GPS": 30,
+    "睡眠": 30,
+    "血氧": 35,
+    "ECG": 40,
+    "防水": 20,
+    "心率": 25,
+
+    "battery_life": 50,
+    "durability": 50,
+    "location_accuracy": 20,
+    "value": 35,
 }
 
 def _list(value):
@@ -392,6 +427,64 @@ def match_device_type(product, need):
 
     return True
 
+def match_os(product, need):
+
+    os_type = need.preferences.os
+
+    if not os_type:
+        return True
+
+    title = product.get(
+        "title",
+        ""
+    ).lower()
+
+    if os_type == "iOS":
+
+        for keyword in ANDROID_ONLY_KEYWORDS:
+
+            if keyword.lower() in title:
+                return False
+
+    elif os_type == "Android":
+
+        for keyword in IOS_ONLY_KEYWORDS:
+
+            if keyword.lower() in title:
+                return False
+
+    return True
+
+def match_negative(product, need):
+
+    style = need.preferences.style
+
+    if not style:
+        return True
+
+    title = product.get(
+        "title",
+        ""
+    ).lower()
+
+    desc = product.get(
+        "desc",
+        ""
+    ).lower()
+
+    text = f"{title} {desc}"
+
+    bad_keywords = NEGATIVE_STYLE_KEYWORDS.get(
+        style,
+        []
+    )
+
+    for keyword in bad_keywords:
+
+        if keyword.lower() in text:
+            return False
+
+    return True
 def hard_filter_candidates(candidates, need):
     filtered = []
 
@@ -403,6 +496,18 @@ def hard_filter_candidates(candidates, need):
     for product in candidates:
 
         if not match_device_type(
+            product,
+            need
+        ):
+            continue
+
+        if not match_os(
+            product,
+            need
+        ):
+            continue
+
+        if not match_negative(
             product,
             need
         ):
@@ -504,16 +609,16 @@ def score_product(product, need):
 
     for feature in _list(need.features):
 
-        feature_key = FEATURE_QUERY_TERMS.get(
-            str(feature).lower(),
+        feature_name = FEATURE_QUERY_TERMS.get(
+            feature,
             feature
         )
 
-        if feature_key == "睡眠監測":
-            feature_key = "睡眠"
+        if feature_name == "睡眠監測":
+            feature_name = "睡眠"
 
         keywords = FEATURE_KEYWORDS.get(
-            feature_key,
+            feature_name,
             []
         )
 
@@ -523,12 +628,12 @@ def score_product(product, need):
         ):
 
             score += WEIGHT_CONFIG.get(
-                feature_key,
+                feature_name,
                 20
             )
 
             reason = FEATURE_REASON.get(
-                feature_key
+                feature_name
             )
 
             if (
