@@ -5,6 +5,11 @@ from services.product_formatter import format_product
 from services.web_search_service import web_search_products
 from services.backend1_client import save_product
 
+# ==================================================
+# Search Query Mapping
+# （建立搜尋關鍵字）
+# ==================================================
+
 DEVICE_QUERY_TERMS = {
     "smartwatch": "智慧手錶",
     "smart_band": "智慧手環",
@@ -35,6 +40,115 @@ PRIORITY_QUERY_TERMS = {
     "durability": "耐用",
     "ease_of_use": "操作簡單",
 }
+
+OS_QUERY_TERMS = {
+    "iOS": "iPhone",
+    "Android": "Android",
+}
+
+STYLE_MAPPING = {
+    "商務正式": [
+        "商務",
+        "金屬",
+        "正式",
+    ],
+    "時尚 / 穿搭": [
+        "時尚",
+        "設計",
+        "AMOLED",
+    ],
+    "運動風": [
+        "運動",
+        "防水",
+        "GPS",
+    ],
+}
+
+BATTERY_MAPPING = {
+    "每天充電": [
+        "高性能",
+    ],
+    "2 – 3 天一次": [
+        "續航",
+    ],
+    "5 – 7 天一次": [
+        "長續航",
+    ],
+}
+
+
+# ==================================================
+# Score Mapping
+# （商品評分）
+# ==================================================
+
+FEATURE_KEYWORDS = {
+    "GPS": [
+        "gps",
+        "定位",
+        "導航",
+        "衛星",
+    ],
+    "睡眠": [
+        "睡眠",
+        "sleep",
+    ],
+    "血氧": [
+        "血氧",
+        "spo2",
+    ],
+    "ECG": [
+        "ecg",
+        "心電圖",
+    ],
+    "防水": [
+        "防水",
+        "ip68",
+        "5atm",
+    ],
+    "心率": [
+        "心率",
+        "heart rate",
+    ],
+}
+
+CORE_FACTOR_KEYWORDS = {
+    "電池續航": [
+        "續航",
+        "長續航",
+        "電池",
+    ],
+    "耐用性": [
+        "軍規",
+        "防摔",
+        "耐用",
+    ],
+    "感測器精準": [
+        "gps",
+        "定位",
+        "高精度",
+        "精準",
+        "感測",
+    ],
+    "價格": [
+        "cp值",
+        "超值",
+    ],
+}
+
+WEIGHT_CONFIG = {
+    "GPS": 30,
+    "睡眠": 30,
+    "血氧": 35,
+    "ECG": 40,
+    "防水": 20,
+    "心率": 25,
+    "電池續航": 50,
+    "耐用性": 50,
+    "感測器精準": 20,
+    "價格": 35,
+}
+
 PRIORITY_EVIDENCE_TERMS = {
     "battery_life": [
         "長續航",
@@ -60,7 +174,7 @@ PRIORITY_EVIDENCE_TERMS = {
         "簡單操作",
         "容易使用",
         "易用",
-    ],    
+    ],
 }
 
 def _list(value):
@@ -147,19 +261,35 @@ def build_search_query(need):
             )
         )
 
-    if need.preferences.os:
-        parts.append(need.preferences.os)
+    if (
+        need.preferences.os
+        and need.preferences.os != "0"
+    ):
 
-    if need.preferences.style:
-        parts.append(need.preferences.style)
-
-    if need.preferences.battery:
         parts.append(
-            PRIORITY_QUERY_TERMS.get(
-                "battery_life",
-                "長續航"
+            OS_QUERY_TERMS.get(
+                need.preferences.os,
+                need.preferences.os
             )
         )
+
+    if need.preferences.style:
+
+        style_keywords = STYLE_MAPPING.get(
+            need.preferences.style,
+            [need.preferences.style]
+        )
+
+        parts.extend(style_keywords)
+
+    if need.preferences.battery:
+
+        battery_keywords = BATTERY_MAPPING.get(
+            need.preferences.battery,
+            ["長續航"]
+        )
+
+        parts.extend(battery_keywords)
 
     budget_min = need.budget.min
     budget_max = need.budget.max
