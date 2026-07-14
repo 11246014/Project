@@ -1,19 +1,7 @@
-import json
-
 from fastapi import APIRouter
 
-from services.filter_service import filter_products
-
-from services.filter_recommend_service import (
-    generate_filter_recommendation
-)
-
-from services.filter_adapter import (
-    adapt_filter_request
-)
-
-from services.product_formatter import (
-    format_product
+from services.filter_service import (
+    filter_products
 )
 
 router = APIRouter()
@@ -22,94 +10,23 @@ router = APIRouter()
 @router.post("/products/filter")
 def product_filter(filters: dict):
 
+    print("\n====== 前端清單資料 ======")
+
+    print(filters)
+
+    print("==========================\n")
+
     try:
 
-        # =========================
-        # 印出前端送來的清單資料
-        # =========================
-
-        print("\n====== 前端清單資料 ======")
-
-        print(filters)
-
-        print("==========================\n")
-
-        recommendation_request = adapt_filter_request(
-            filters
-        )
-
-        # =========================
-        # 商品篩選
-        # =========================
-
-        results = filter_products(
+        result = filter_products(
             filters
         )
 
         print(
-            f"[Filter] 找到 {len(results)} 筆商品"
+            "[Filter Router] Success"
         )
 
-        # =========================
-        # 印出篩選結果
-        # =========================
-
-        for product in results:
-
-            print(product.get("title"))
-
-        # =========================
-        # 統一商品格式
-        # =========================
-
-        formatted_results = []
-
-        for product in results:
-
-            formatted_results.append(
-                format_product(product)
-            )
-
-        # =========================
-        # AI 推薦文字
-        # =========================
-
-        try:
-            
-            ai_reply = (
-                generate_filter_recommendation(
-                    filters,
-                    formatted_results
-                )
-            )
-
-        except Exception as e:
-
-            print(
-                f"[Filter AI Error] {e}"
-            )
-
-            ai_reply = (
-                "目前 AI 推薦暫時無法產生，"
-                "但已先列出符合條件的商品。"
-            )
-
-        # =========================
-        # 回傳前端
-        # =========================
-
-        return {
-
-            "success": True,
-
-            "filters": filters,
-
-            "user_need": recommendation_request.need.to_dict(),
-
-            "reply": ai_reply,
-
-            "results": formatted_results
-        }
+        return result
 
     except Exception as e:
 
