@@ -5,7 +5,7 @@ from fastapi import (
     status,
     Query
 )
-
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.future import select
 
 from sqlalchemy.orm import Session,declarative_base, sessionmaker
@@ -57,7 +57,13 @@ models.Base.metadata.create_all(
 # =========================
 
 app = FastAPI()
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 # =========================
 # 密碼加密
 # =========================
@@ -520,3 +526,4 @@ def render_template_endpoint(name: str, payload: RenderPromptRequest, db: Sessio
         "template_name": name,
         "rendered_prompt": final_prompt
     }
+    
