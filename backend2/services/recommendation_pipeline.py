@@ -585,8 +585,8 @@ def score_product(product, need):
             need.device_type
         ).lower()
 
-    if device_term in text:
-        score += 20
+        if device_term in text:
+            score += 20
 
     # =========================
     # Usage
@@ -610,7 +610,7 @@ def score_product(product, need):
     for feature in _list(need.features):
 
         feature_name = FEATURE_QUERY_TERMS.get(
-            feature,
+            str(feature).lower(),
             feature
         )
 
@@ -622,9 +622,12 @@ def score_product(product, need):
             []
         )
 
-        if any(
-            keyword.lower() in text
-            for keyword in keywords
+        if (
+            feature_name.lower() in features
+            or any(
+                keyword.lower() in text
+                for keyword in keywords
+            )
         ):
 
             score += WEIGHT_CONFIG.get(
