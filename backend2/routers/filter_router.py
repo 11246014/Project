@@ -1,9 +1,15 @@
+import json
+
 from fastapi import APIRouter
 
 from services.filter_service import filter_products
 
 from services.filter_recommend_service import (
     generate_filter_recommendation
+)
+
+from services.filter_adapter import (
+    adapt_filter_request
 )
 
 from services.product_formatter import (
@@ -27,6 +33,10 @@ def product_filter(filters: dict):
         print(filters)
 
         print("==========================\n")
+
+        recommendation_request = adapt_filter_request(
+            filters
+        )
 
         # =========================
         # 商品篩選
@@ -65,7 +75,7 @@ def product_filter(filters: dict):
         # =========================
 
         try:
-
+            
             ai_reply = (
                 generate_filter_recommendation(
                     filters,
@@ -93,6 +103,8 @@ def product_filter(filters: dict):
             "success": True,
 
             "filters": filters,
+
+            "user_need": recommendation_request.need.to_dict(),
 
             "reply": ai_reply,
 

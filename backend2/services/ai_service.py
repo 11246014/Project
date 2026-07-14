@@ -1,49 +1,67 @@
 import os
 
-from openai import OpenAI
-
 from dotenv import load_dotenv
+
+from config.settings import AI_PROVIDER
+
+from services.ollama_service import ask_ollama
 
 load_dotenv()
 
+# =====================
+# Gemini 初始化
+# =====================
 
-client = OpenAI(
+if AI_PROVIDER == "gemini":
 
-    api_key=os.getenv(
-        "OPENAI_API_KEY"
+    import google.generativeai as genai
+
+    genai.configure(
+        api_key=os.getenv(
+            "GEMINI_API_KEY"
+        )
     )
-)
+
+    gemini_model = (
+        genai.GenerativeModel(
+            "gemini-2.5-flash"
+        )
+    )
 
 
-def ask_ai(prompt):
+def ask_ai(
+    prompt,
+    model_name=None
+):
 
     try:
 
-        response = client.chat.completions.create(
+        # =====================
+        # Gemini
+        # =====================
 
-            model="gpt-4o-mini",
+        if AI_PROVIDER == "gemini":
 
-            messages=[
+            response = (
+                gemini_model.generate_content(
+                    prompt
+                )
+            )
 
-                {
-                    "role": "system",
+            return (
+                response.text
+                if response.text
+                else ""
+            )
 
-                    "content": (
-                        "你是智慧穿戴商品推薦專家"
-                    )
-                },
+        # =====================
+        # Ollama
+        # =====================
 
-                {
-                    "role": "user",
-
-                    "content": prompt
-                }
-            ],
-
-            temperature=0.3
+        return ask_ollama(
+            prompt,
+            model_name=model_name
         )
-
-        return response.choices[0].message.content
 
     except Exception as e:
 
@@ -51,4 +69,4 @@ def ask_ai(prompt):
             f"[AI Error] {e}"
         )
 
-        return "AI 回應失敗"
+        return ""

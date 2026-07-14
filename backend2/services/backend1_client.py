@@ -75,7 +75,7 @@ async def save_product(product):
 # 查詢資料庫商品
 # =========================
 
-async def get_db_products(keyword):
+async def get_db_products():
 
     try:
 

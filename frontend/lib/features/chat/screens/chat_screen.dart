@@ -3,6 +3,8 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../services/chat_service.dart';
 import '../../../core/constants/app_formatters.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/user_profile_provider.dart';
 
 /// 訊息角色
 enum MessageRole { user, ai }
@@ -22,14 +24,14 @@ class ChatMessage {
   });
 }
 
-class ChatScreen extends StatefulWidget {
+class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -86,7 +88,10 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       // TODO W3：替換為真實 AI API 呼叫
       // 例如：final response = await ChatService.sendMessage(text);
-     final response = await ChatService.sendMessage(text);
+     final response = await ChatService.sendMessage(
+        text,
+        profile: ref.read(userProfileProvider),
+      );
       if (mounted) {
         setState(() {
           _messages.add(ChatMessage(
@@ -250,8 +255,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     message.content,
                     style: AppTextStyles.bodyMedium
                         .copyWith(color: AppColors.textMain(context)),
-                    maxLines: 5,        // 最多顯示5行
-                    overflow: TextOverflow.ellipsis,
+                    
 
                   ),
                 ),

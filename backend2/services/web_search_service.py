@@ -6,9 +6,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+SEARCH_CACHE = {}
+
 SERPAPI_KEY = os.getenv(
     "SERPAPI_KEY"
 )
+
 
 # =========================
 # 已知品牌
@@ -99,7 +103,56 @@ WEARABLE_KEYWORDS = [
 
     "穿戴",
 
-    "腕錶"
+    "腕錶",
+
+    "手環",
+
+    "智慧手環",
+
+    "智能手環",
+
+    "運動手環",
+
+    "band",
+
+    "xiaomi band",
+
+    "mi band",
+
+    "galaxy fit",
+
+    "fit3",
+
+    "fit 3",
+
+    "huawei band",
+
+    "smart band",
+
+    "fit3",
+
+    "fit 3",
+
+    "galaxy fit3",
+    
+    "samsung fit",
+    
+    "戒指",
+
+    "智慧戒指",
+
+    "智能戒指",
+
+    "指環",
+
+    "智慧指環",
+
+    "智能指環",
+
+    "smart ring",
+
+    "ring"
+    
 ]
 
 # =========================
@@ -184,9 +237,12 @@ def clean_title(title):
 
         r"\[.*?\]",
         r"【.*?】",
-        r"\(.*?回饋.*?\)",
 
         r"\d+號前最高回饋\$?\d*",
+
+        r"\d+/\d+前最高回饋\d*萬?",
+        r"\d+/\d+前最高回饋\$?\d*",
+
         r"最高回饋\$?\d*",
 
         r"限時優惠",
@@ -360,6 +416,26 @@ def clean_product(
         ""
     )
 
+    snippet = item.get(
+        "snippet",
+        ""
+    )
+
+    feature_text = (
+        raw_title +
+        " " +
+        snippet
+    ).lower()
+    
+    DEBUG_MODE = False
+
+    if DEBUG_MODE:
+        
+        print(
+            "[Desc]",
+            snippet
+        )
+
     clean_name = clean_title(
         raw_title
     )
@@ -406,15 +482,43 @@ def clean_product(
 
         return None
 
-    return {
+    # =========================
+    # Feature Extraction
+    # =========================
 
+    features = []
+
+    if "gps" in feature_text:
+        features.append("GPS")
+
+    if "睡眠" in feature_text:
+        features.append("睡眠")
+
+    if "心率" in feature_text:
+        features.append("心率")
+
+    if "血氧" in feature_text:
+        features.append("血氧")
+
+    if (
+        "ecg" in feature_text
+        or "心電圖" in feature_text
+    ):
+        features.append("ECG")
+
+    print(
+        "[Features]",
+        clean_name,
+        features
+    )
+
+    return {
         "title": clean_name,
 
+        "raw_title": raw_title,
+
         "price": clean_price(
-            item.get(
-                "price",
-                "0"
-            )
+            item.get("price", "0")
         ),
 
         "platform": item.get(
@@ -422,10 +526,7 @@ def clean_product(
             ""
         ),
 
-        "desc": item.get(
-            "snippet",
-            ""
-        ),
+        "desc": snippet,
 
         "link": item.get(
             "link",
@@ -437,12 +538,14 @@ def clean_product(
             ""
         ),
 
+        "features": features,
+
         "tags": [],
 
         "rating": rating,
 
         "match": int(
-            rating * 20
+            rating * 10
         ),
 
         "reason": generate_reason(
@@ -457,56 +560,17 @@ def clean_product(
         "isTop": False
     }
 
-
-# =========================
-# 品牌去重
-# =========================
-
-def remove_duplicate_brand(
-    products
-):
-
-    brand_products = {}
-
-    for product in products:
-
-        brand = product.get(
-            "brand",
-            "Other"
+def _text(product):
+    return " ".join(
+        str(product.get(key, ""))
+        for key in (
+            "title",
+            "raw_title",
+            "name",
+            "desc",
+            "description"
         )
-
-        if brand == "Other":
-
-            brand_products[
-                f"Other_{len(brand_products)}"
-            ] = product
-
-        elif brand not in brand_products:
-
-            brand_products[
-                brand
-            ] = product
-
-        else:
-
-            old_rating = brand_products[
-                brand
-            ]["rating"]
-
-            new_rating = product[
-                "rating"
-            ]
-
-            if new_rating > old_rating:
-
-                brand_products[
-                    brand
-                ] = product
-
-    return list(
-        brand_products.values()
-    )
-
+    ).lower()
 
 # =========================
 # Web Search
@@ -515,6 +579,14 @@ def remove_duplicate_brand(
 def web_search_products(
     keyword
 ):
+
+    if keyword in SEARCH_CACHE:
+
+        print(
+            f"[Cache Hit] {keyword}"
+        )
+
+        return SEARCH_CACHE[keyword]
 
     print("=" * 50)
 
@@ -564,7 +636,13 @@ def web_search_products(
 
         products = []
 
-        for item in shopping_results[:10]:
+        for item in shopping_results[:15]:
+
+            print("=" * 30)
+
+            print(
+                item.get("title")
+            )
 
             print("=" * 30)
 
@@ -584,7 +662,7 @@ def web_search_products(
             if not product:
 
                 continue
-
+            
             print(
                 "Clean Title:",
                 product["title"]
@@ -612,9 +690,9 @@ def web_search_products(
             f"{len(products)}"
         )
 
-        products = remove_duplicate_brand(
-            products
-        )
+        # products = remove_duplicate_brand(
+        #     products
+        # )
 
         print(
             f"[After Dedup] "
@@ -642,10 +720,12 @@ def web_search_products(
             f"[Web Search] 找到 "
             f"{len(products)} 筆商品"
         )
+        
+        SEARCH_CACHE[keyword] = products
 
         print("=" * 50)
 
-        return products[:3]
+        return products
 
     except Exception as e:
 

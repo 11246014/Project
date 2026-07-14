@@ -102,7 +102,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'AI 正在為你分析推薦中...',
+                            '正在為你分析推薦中...',
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: AppColors.textSub(context),
                             ),
@@ -284,8 +284,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
                     color: AppColors.textMain(context),
                     height: 1.6,
                   ),
-                  maxLines: 5,
-                  overflow: TextOverflow.ellipsis,
+                  
                 ),
               ],
             ),

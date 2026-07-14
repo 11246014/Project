@@ -9,6 +9,7 @@ from services.product_analyzer_service import (
 from services.ai_rerank_service import (
     ai_rerank
 )
+import time
 
 
 # =========================
@@ -39,6 +40,22 @@ USAGE_MAPPING = {
         "睡眠",
         "ECG",
         "健康"
+    ],
+
+    "健康管理（心率 / 睡眠）": [
+
+        "血氧",
+        "睡眠",
+        "ECG",
+        "健康"
+    ],
+
+    "日常生活（看時間 / 通知）": [
+
+        "通知",
+        "生活",
+        "輕薄",
+        "續航"
     ],
 
     "登山 / 戶外": [
@@ -172,9 +189,11 @@ CORE_FACTOR_KEYWORDS = {
 
     "感測器精準": [
 
-        "雙頻gps",
+        "gps",
+        "定位",
         "高精度",
-        "精準"
+        "精準",
+        "感測"
     ],
 
     "價格": [
@@ -207,7 +226,7 @@ WEIGHT_CONFIG = {
 
     "耐用性": 50,
 
-    "感測器精準": 45,
+    "感測器精準": 20,
 
     "價格": 35
 }
@@ -249,131 +268,6 @@ ANDROID_ONLY_KEYWORDS = [
 
     "wear os"
 ]
-
-
-# =========================
-# 建立搜尋關鍵字
-# =========================
-
-def build_search_keyword(filters):
-
-    keywords = []
-
-    # 裝置類型
-
-    device_type = filters.get(
-        "device_type",
-        ""
-    )
-
-    if device_type:
-
-        keywords.append(device_type)
-
-    # 使用情境
-
-    usage = filters.get(
-        "usage",
-        ""
-    )
-
-    usage_keywords = USAGE_MAPPING.get(
-        usage,
-        []
-    )
-
-    keywords.extend(
-        usage_keywords
-    )
-
-    # 風格
-
-    style = filters.get(
-        "style",
-        ""
-    )
-
-    style_keywords = STYLE_MAPPING.get(
-        style,
-        []
-    )
-
-    keywords.extend(
-        style_keywords
-    )
-
-    # 電池需求
-
-    battery = filters.get(
-        "battery",
-        ""
-    )
-
-    battery_keywords = BATTERY_MAPPING.get(
-        battery,
-        []
-    )
-
-    keywords.extend(
-        battery_keywords
-    )
-
-    # 功能需求
-
-    features = filters.get(
-        "features",
-        []
-    )
-
-    for feature in features:
-
-        if "血氧" in feature:
-
-            keywords.append("血氧")
-
-        elif "GPS" in feature:
-
-            keywords.append("GPS")
-
-        elif "睡眠" in feature:
-
-            keywords.append("睡眠監測")
-
-        elif "ECG" in feature:
-
-            keywords.append("ECG")
-
-    # OS
-
-    os_type = filters.get(
-        "os",
-        ""
-    )
-
-    if "iOS" in os_type:
-
-        keywords.append("iPhone")
-
-    elif "Android" in os_type:
-
-        keywords.append("Android")
-
-    # 去重
-
-    keywords = list(
-        dict.fromkeys(keywords)
-    )
-
-    # keyword
-
-    keyword = " ".join(keywords)
-
-    print(
-        f"[Search Keyword] {keyword}"
-    )
-
-    return keyword
-
 
 # =========================
 # OS 相容性
@@ -654,6 +548,13 @@ def calculate_feature_score(
 
     score += int(rating * 5)
 
+    # =========================
+    # Demo Protection
+    # =========================
+
+    if score < 60:
+
+        score = 60
     # 儲存資訊
 
     product[
@@ -673,6 +574,8 @@ def calculate_feature_score(
 
 def filter_products(filters):
 
+    start_time= time.time()
+    
     try:
 
         # 搜尋關鍵字
@@ -717,6 +620,10 @@ def filter_products(filters):
 
         filtered_products = []
 
+        original_products = products.copy()
+
+        budget_fallback = False
+
         for product in products:
 
             price = product.get(
@@ -750,6 +657,46 @@ def filter_products(filters):
 
                 continue
 
+
+            # Device Type
+
+            device_type = filters.get(
+                "device_type",
+                ""
+            )
+
+            title = product.get(
+                "title",
+                ""
+            ).lower()
+
+            if device_type == "戒指":
+
+                if (
+                    "戒指" not in title
+                    and "指環" not in title
+                    and "ring" not in title
+                ):
+                    continue
+
+            elif device_type == "手環":
+
+                if (
+                    "手環" not in title
+                    and "band" not in title
+                    and "fit" not in title
+                ):
+                    continue
+
+            elif device_type == "手錶":
+
+                if (
+                    "手錶" not in title
+                    and "腕錶" not in title
+                    and "watch" not in title
+                ):
+                    continue
+                        
             # Feature Score
 
             score = calculate_feature_score(
@@ -768,44 +715,164 @@ def filter_products(filters):
             )
 
         # =========================
-        # AI Rerank
+        # Budget Fallback
         # =========================
 
-        for product in filtered_products:
+        if len(filtered_products) == 0:
 
-            try:
+            budget_fallback = True
 
-                ai_result = ai_rerank(
+            print(
+                "[Budget Fallback]"
+            )
 
-                    filters,
+            # =========================
+            # 先過 OS / Style
+            # =========================
 
+            fallback_products = []
+
+            for product in original_products:
+
+                if not os_match(
+                    product,
+                    os_type
+                ):
+                    continue
+
+                if not negative_match(
+                    product,
+                    style
+                ):
+                    continue
+
+                fallback_products.append(
                     product
                 )
 
-                product[
-                    "ai_score"
-                ] = ai_result.get(
-                    "score",
-                    50
+            original_products = (
+                fallback_products
+            )
+
+            # =========================
+            # 先排除太離譜便宜的商品
+            # =========================
+
+            near_budget = [
+
+                p for p in original_products
+
+                if p.get(
+                    "price",
+                    0
+                ) >= min_price * 0.7
+            ]
+
+            if near_budget:
+
+                original_products = near_budget
+
+            print(
+                f"[Near Budget] {len(original_products)}"
+            )
+
+            # =========================
+            # 找最接近預算
+            # =========================
+
+            original_products.sort(
+                key=lambda p: (
+
+                    p.get("price", 0) < min_price,
+
+                    min(
+                        abs(
+                            p.get("price", 0)
+                            - min_price
+                        ),
+                        abs(
+                            p.get("price", 0)
+                            - max_price
+                        )
+                    )
+                )
+            )
+
+            filtered_products = (
+                original_products[:3]
+            )
+
+            # =========================
+            # 補算 feature score
+            # =========================
+
+            for product in filtered_products:
+
+                score = calculate_feature_score(
+                    product,
+                    filters
                 )
 
-                product[
-                    "ai_reason"
-                ] = ai_result.get(
-                    "reason",
-                    ""
+                product["feature_score"] = score
+
+        # # =========================
+        # # AI Rerank
+        # # =========================
+
+        # for product in filtered_products:
+
+        #     try:
+
+        #         ai_result = ai_rerank(
+
+        #             filters,
+
+        #             product
+        #         )
+
+        #         product[
+        #             "ai_score"
+        #         ] = ai_result.get(
+        #             "score",
+        #             50
+        #         )
+
+        #         product[
+        #             "ai_reason"
+        #         ] = ai_result.get(
+        #             "reason",
+        #             ""
+        #         )
+
+        #     except Exception as e:
+
+        #         print(
+        #             f"[AI Rerank Error] {e}"
+        #         )
+
+        #         product[
+        #             "ai_score"
+        #         ] = 50
+        for product in filtered_products:
+
+            product["ai_score"] = 0
+
+            total_score = (
+                product.get(
+                    "feature_score",
+                    0
                 )
-
-            except Exception as e:
-
-                print(
-                    f"[AI Rerank Error] {e}"
+                +
+                product.get(
+                    "ai_score",
+                    0
                 )
+            )
 
-                product[
-                    "ai_score"
-                ] = 50
-
+            product["match"] = min(
+                total_score,
+                100
+            )
         # =========================
         # 排序
         # =========================
@@ -815,12 +882,7 @@ def filter_products(filters):
             key=lambda x: (
 
                 x.get(
-                    "ai_score",
-                    0
-                ),
-
-                x.get(
-                    "feature_score",
+                    "match",
                     0
                 ),
 
@@ -846,6 +908,13 @@ def filter_products(filters):
             print(
 
                 product["title"],
+
+                "| match =",
+
+                product.get(
+                    "match",
+                    0
+                ),
 
                 "| ai =",
 
@@ -877,9 +946,11 @@ def filter_products(filters):
 
         for product in filtered_products[:3]:
 
-            analyzed = analyze_product(
-                product
-            )
+            # analyzed = analyze_product(
+            #     product
+            # )
+
+            analyzed = product
 
             analyzed_products.append(
                 analyzed
@@ -889,11 +960,20 @@ def filter_products(filters):
             f"[Filter] 最終商品數量 "
             f"{len(analyzed_products)}"
         )
+        print(
+            f"[Filter Time] "
+            f"{time.time() - start_time:.2f}s"
+        )
 
         return analyzed_products
 
     except Exception as e:
 
+        print(
+            f"[Filter Time] "
+            f"{time.time() - start_time:.2f}s"
+        )
+        
         print(
             f"[Filter Service Error] {e}"
         )

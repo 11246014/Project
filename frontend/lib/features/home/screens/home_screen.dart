@@ -461,7 +461,7 @@ class _ProductCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // 商品圖示佔位（W2 替換為真實圖片 Image.network）
+          // 商品圖示佔位（替換為真實圖片 Image.network）
           Container(
             width: 72,
             height: 72,
@@ -469,10 +469,39 @@ class _ProductCard extends StatelessWidget {
               color: AppColors.cardVariant(context),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.watch_rounded,
-              color: AppColors.primary,
-              size: 32,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: (product['image'] != null && product['image'].toString().isNotEmpty)
+                  ? Image.network(
+                      product['image'].toString(),
+                      fit: BoxFit.cover,
+                      // 圖片載入中的動畫提示
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                            strokeWidth: 2,
+                            color: AppColors.primary,
+                          ),
+                        );
+                      },
+                      // 圖片載入失敗時的備用圖示
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.watch_rounded,
+                        color: AppColors.primary,
+                        size: 32,
+                      ),
+                    )
+                  // 若無圖片網址，直接顯示備用圖示
+                  : const Icon(
+                      Icons.watch_rounded,
+                      color: AppColors.primary,
+                      size: 32,
+                    ),
             ),
           ),
           const SizedBox(width: 16),

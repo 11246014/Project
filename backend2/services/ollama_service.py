@@ -1,19 +1,43 @@
 import requests
 
-from config.settings import OLLAMA_URL, MODEL_NAME
+from config.settings import (
+    OLLAMA_URL,
+    MODEL_NAME
+)
 
-def ask_ollama(prompt, timeout=120):
+def ask_ollama(
+    prompt,
+    model_name=None,
+    timeout=120
+):
+
+    if not model_name:
+
+        model_name = MODEL_NAME
+
+    print(
+        f"[Model] {model_name}"
+    )
 
     response = requests.post(
+
         OLLAMA_URL,
+
         json={
-            "model": MODEL_NAME,
+
+            "model": model_name,
+
             "prompt": prompt,
+
             "stream": False
         },
+
         timeout=timeout
     )
 
     response.raise_for_status()
 
-    return response.json().get("response", "")
+    return response.json().get(
+        "response",
+        ""
+    )

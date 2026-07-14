@@ -6,6 +6,8 @@ import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../services/filter_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/user_profile_provider.dart';
 
 /// 篩選器資料模型
 /// [question]    題目標題
@@ -19,6 +21,7 @@ class FilterQuestion {
   final List<String> options;
   final bool multiSelect;
   final int? maxSelect;
+  final bool isOptional; // 是否為選填題，可跳過不選
 
   const FilterQuestion({
     required this.question,
@@ -26,17 +29,18 @@ class FilterQuestion {
     required this.options,
     this.multiSelect = false,
     this.maxSelect,
+    this.isOptional = false,
   });
 }
 
-class FilterScreen extends StatefulWidget {
+class FilterScreen extends ConsumerStatefulWidget {
   const FilterScreen({super.key});
 
   @override
-  State<FilterScreen> createState() => _FilterScreenState();
+  ConsumerState<FilterScreen> createState() => _FilterScreenState();
 }
 
-class _FilterScreenState extends State<FilterScreen> {
+class _FilterScreenState extends ConsumerState<FilterScreen> {
   // 目前顯示第幾題（0-based）
   int _currentPage = 0;
 
@@ -151,6 +155,18 @@ class _FilterScreenState extends State<FilterScreen> {
       multiSelect: true,
       maxSelect: 3,
     ),
+    // 新增第 9 題：使用情境定位（可跳過不選）
+    FilterQuestion(
+      question: '這台裝置主要是？',
+      subtitle: '請選擇一個選項（可跳過）',
+      options: [
+        '個人使用',
+        '家庭共用',
+        '要送禮',
+      ],
+      multiSelect: false,
+      isOptional: true,
+    ),
   ];
 
   // 取得目前題目
@@ -203,23 +219,14 @@ class _FilterScreenState extends State<FilterScreen> {
 
   /// 下一題 / 完成
   void _onNext() {
-    // 驗證：至少選一個
-    if (_currentAnswers.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('請至少選擇一個選項'),
-          backgroundColor: AppColors.error,
-          duration: Duration(seconds: 1),
-        ),
-      );
-      return;
-    }
-
+    
     // Q8 複選至少選 2 個
-    if (_currentQuestion.maxSelect != null && _currentAnswers.length < 2) {
+    if (_currentQuestion.maxSelect != null &&
+        _currentAnswers.isNotEmpty &&
+        _currentAnswers.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('請至少選擇 2 個選項'),
+          content: Text('請至少選擇 2 個選項，或不選則跳過'),
           backgroundColor: AppColors.error,
           duration: Duration(seconds: 1),
         ),
@@ -273,6 +280,9 @@ class _FilterScreenState extends State<FilterScreen> {
       maxPrice = 5000;
     }
 
+    // 讀取「我的」頁面填寫的個人資訊（選填，沒填就是空字串）
+    final profile = ref.read(userProfileProvider);
+
     // 抓取畫面選項，組裝成 JSON 結構傳給後端
     final filters = {
       "usage":
@@ -288,6 +298,13 @@ class _FilterScreenState extends State<FilterScreen> {
       "style":
           (_answers[6] ?? {}).isNotEmpty ? _answers[6]!.first : "",
       "core_factors": (_answers[7] ?? {}).toList(),
+
+      // 第 9 題：使用情境定位（選填）
+      "usage_scope":
+          (_answers[8] ?? {}).isNotEmpty ? _answers[8]!.first : "",
+
+      // 合併個人資訊
+      ...profile.toMap(),
     };
 
     // 傳遞給推薦頁，由推薦頁自行打 API
@@ -482,6 +499,7 @@ class _FilterScreenState extends State<FilterScreen> {
     if (_currentQuestion.multiSelect) {
       // 複選：方形 checkbox
       return AnimatedContainer(
+        key: const ValueKey('checkbox_indicator'), // 與圓形指示器區分身分，避免跨題型動畫過渡
         duration: const Duration(milliseconds: 150),
         width: 20,
         height: 20,
@@ -502,6 +520,7 @@ class _FilterScreenState extends State<FilterScreen> {
     } else {
       // 單選：圓形 radio
       return AnimatedContainer(
+        key: const ValueKey('radio_indicator'), // 與方形指示器區分身分，避免跨題型動畫過渡
         duration: const Duration(milliseconds: 150),
         width: 20,
         height: 20,
@@ -529,18 +548,27 @@ class _FilterScreenState extends State<FilterScreen> {
 
   /// 底部導覽按鈕：最後一題顯示「開始推薦」，其他顯示「下一題」
   Widget _buildBottomNav() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-      decoration: BoxDecoration(
-        color: AppColors.bg(context),
-        border:
-            Border(top: BorderSide(color: AppColors.borderColor(context))),
-      ),
-      child: CustomButton(
-        label: _isLastPage ? '開始推薦' : '下一題',
-        onTap: _onNext,
-        variant: ButtonVariant.primary,
-      ),
-    );
+  String label;
+  if (_isLastPage) {
+    label = '開始推薦';
+  } else if (_currentAnswers.isEmpty) {
+    label = '跳過';
+  } else {
+    label = '下一題';
   }
+
+  return Container(
+    padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+    decoration: BoxDecoration(
+      color: AppColors.bg(context),
+      border:
+          Border(top: BorderSide(color: AppColors.borderColor(context))),
+    ),
+    child: CustomButton(
+      label: label,
+      onTap: _onNext,
+      variant: ButtonVariant.primary,
+    ),
+  );
+}
 }
