@@ -254,7 +254,7 @@ Map<String, dynamic> _user = {
           Text('個人資訊', style: AppTextStyles.displayMedium.copyWith(
               fontSize: 16, color: AppColors.textMain(context))),
           const SizedBox(height: 6),
-          Text('填寫後，AI 推薦時會自動參考這些資訊（皆為選填）',
+          Text('填寫後，AI 推薦時會自動參考這些資訊',
               style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSub(context))),
           const SizedBox(height: 16),
 
@@ -268,7 +268,7 @@ Map<String, dynamic> _user = {
 
           _buildProfileTextField(
             controller: _occupationController,
-            label: '職業（選填）',
+            label: '職業',
             hint: '例如：學生、工程師、教師、運動員',
             onChanged: ref.read(userProfileProvider.notifier).updateOccupation,
           ),
@@ -276,7 +276,7 @@ Map<String, dynamic> _user = {
 
           _buildProfileTextField(
             controller: _currentDeviceController,
-            label: '目前使用的穿戴裝置（選填）',
+            label: '目前使用的穿戴裝置',
             hint: '例如：Apple Watch SE、無、小米手環 7',
             onChanged: ref.read(userProfileProvider.notifier).updateCurrentDevice,
           ),

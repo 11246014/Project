@@ -219,31 +219,20 @@ class _FilterScreenState extends ConsumerState<FilterScreen> {
 
   /// 下一題 / 完成
   void _onNext() {
-    if (!_currentQuestion.isOptional) {
-    // 驗證：至少選一個
-    if (_currentAnswers.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('請至少選擇一個選項'),
-          backgroundColor: AppColors.error,
-          duration: Duration(seconds: 1),
-        ),
-      );
-      return;
-    }
-
+    
     // Q8 複選至少選 2 個
-    if (_currentQuestion.maxSelect != null && _currentAnswers.length < 2) {
+    if (_currentQuestion.maxSelect != null &&
+        _currentAnswers.isNotEmpty &&
+        _currentAnswers.length < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('請至少選擇 2 個選項'),
+          content: Text('請至少選擇 2 個選項，或不選則跳過'),
           backgroundColor: AppColors.error,
           duration: Duration(seconds: 1),
         ),
       );
       return;
     }
-  }
 
     if (_isLastPage) {
       // 全部完成，整理答案傳給推薦頁
@@ -562,7 +551,7 @@ class _FilterScreenState extends ConsumerState<FilterScreen> {
   String label;
   if (_isLastPage) {
     label = '開始推薦';
-  } else if (_currentQuestion.isOptional && _currentAnswers.isEmpty) {
+  } else if (_currentAnswers.isEmpty) {
     label = '跳過';
   } else {
     label = '下一題';
