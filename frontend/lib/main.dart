@@ -15,6 +15,7 @@ import 'features/filter/screens/filter_screen.dart';
 import 'features/filter/screens/recommendation_screen.dart';
 import 'features/chat/screens/chat_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
+import 'features/product/screens/product_detail_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart';
@@ -240,6 +241,18 @@ final _router = GoRouter(
         return NoTransitionPage(
           child: WebLayout(
             child: RecommendationScreen(result: result),
+          ),
+        );
+      },
+    ),
+    // 商品詳情頁：接收上一頁傳來的完整商品 Map，不另外打 API
+    GoRoute(
+      path: AppRoutes.product,
+      pageBuilder: (context, state) {
+        final product = state.extra as Map<String, dynamic>? ?? {};
+        return NoTransitionPage(
+          child: WebLayout(
+            child: ProductDetailScreen(product: product),
           ),
         );
       },

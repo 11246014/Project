@@ -5,6 +5,8 @@ import '../../../services/chat_service.dart';
 import '../../../core/constants/app_formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/user_profile_provider.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_routes.dart';
 
 /// 訊息角色
 enum MessageRole { user, ai }
@@ -332,14 +334,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   /// AI 推薦商品卡片（氣泡內）
+  /// 點擊卡片可進入商品詳情頁
   Widget _buildProductCard(Map<String, dynamic> product) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg(context),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderColor(context)),
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.product, extra: product),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg(context),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
@@ -438,6 +443,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
