@@ -451,14 +451,17 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor(context)),
-      ),
+    // 點擊卡片跳轉商品詳情頁，帶入完整商品 Map
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.product, extra: product),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg(context),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderColor(context)),
+        ),
       child: Row(
         children: [
           // 商品圖示佔位（替換為真實圖片 Image.network）
@@ -551,15 +554,16 @@ class _ProductCard extends StatelessWidget {
                         Text(
                           product['rating'] == 0.0 ? 'N/A' : '${product['rating']}',
                           style: AppTextStyles.caption,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
