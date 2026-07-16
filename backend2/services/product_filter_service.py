@@ -1,4 +1,5 @@
 import re
+DEBUG_SEARCH = False
 
 # =========================
 # Product Filter Config
@@ -49,6 +50,156 @@ KNOWN_BRANDS = [
     "OPPO",
     "realme",
 ]
+# =========================
+# 配件 / 非手錶黑名單
+# =========================
+
+BAD_KEYWORDS = [
+
+    "錶帶",
+    "表帶",
+    "皮帶",
+    "皮带",
+
+    "保護貼",
+    "保護殼",
+
+    "充電線",
+    "充電器",
+
+    "配件",
+    "替換帶",
+    "腕帶",
+
+    "手機殼",
+    "耳機殼",
+
+    "臂帶",
+    "胸帶",
+    "感測器",
+
+    "襪子",
+    "鞋子"
+]
+# =========================
+# 穿戴裝置白名單
+# =========================
+
+WEARABLE_KEYWORDS = [
+
+    "智慧手錶",
+    "智慧手環",
+    "智慧腕錶",
+
+    "智能手錶",
+    "智能手表",
+
+    "運動手錶",
+
+    "smartwatch",
+
+    "watch",
+
+    "watch fit",
+
+    "galaxy watch",
+
+    "apple watch",
+
+    "garmin",
+
+    "amazfit",
+
+    "fitbit",
+
+    "huawei",
+
+    "xiaomi watch",
+
+    "mi watch",
+
+    "穿戴",
+
+    "腕錶",
+
+    "手環",
+
+    "智慧手環",
+
+    "智能手環",
+
+    "運動手環",
+
+    "band",
+
+    "xiaomi band",
+
+    "mi band",
+
+    "galaxy fit",
+
+    "fit3",
+
+    "fit 3",
+
+    "huawei band",
+
+    "smart band",
+
+    "fit3",
+
+    "fit 3",
+
+    "galaxy fit3",
+    
+    "samsung fit",
+    
+    "戒指",
+
+    "智慧戒指",
+
+    "智能戒指",
+
+    "指環",
+
+    "智慧指環",
+
+    "智能指環",
+
+    "smart ring",
+
+    "ring"
+    
+]
+# =========================
+# 智慧手錶強化白名單
+# =========================
+
+SMARTWATCH_KEYWORDS = [
+
+    "智慧手錶",
+
+    "智能手錶",
+
+    "智慧腕錶",
+
+    "smartwatch",
+
+    "watch",
+
+    "watch fit",
+
+    "galaxy watch",
+
+    "apple watch",
+
+    "garmin",
+
+    "huawei watch",
+
+    "xiaomi watch"
+]
+
 
 # =========================
 # Price
@@ -214,3 +365,159 @@ def extract_features(feature_text):
             features.append(name)
 
     return features
+# =========================
+# Product Clean
+# =========================
+
+def clean_product(
+    item,
+    keyword
+):
+
+    rating = item.get(
+        "rating",
+        0
+    )
+
+    try:
+
+        rating = float(rating)
+
+    except (TypeError, ValueError):
+
+        rating = 0
+
+    raw_title = item.get(
+        "title",
+        ""
+    )
+
+    snippet = item.get(
+        "snippet",
+        ""
+    )
+
+    feature_text = (
+        raw_title +
+        " " +
+        snippet
+    ).lower()
+
+    if DEBUG_SEARCH:
+
+        print(
+            "[Desc]",
+            snippet
+        )
+
+    clean_name = clean_title(
+        raw_title
+    )
+
+    title_lower = clean_name.lower()
+
+    # =========================
+    # 黑名單
+    # =========================
+
+    for word in BAD_KEYWORDS:
+
+        if word.lower() in title_lower:
+
+            print(
+                f"[Filtered] {clean_name}"
+            )
+
+            return None
+
+    # =========================
+    # 穿戴裝置過濾
+    # =========================
+
+    is_wearable = any(
+
+        word.lower() in title_lower
+
+        for word in WEARABLE_KEYWORDS
+    )
+
+    smartwatch_match = any(
+
+        word.lower() in title_lower
+
+        for word in SMARTWATCH_KEYWORDS
+    )
+
+    if not is_wearable and not smartwatch_match:
+
+        print(
+            f"[Not Wearable] {clean_name}"
+        )
+
+        return None
+
+    # =========================
+    # Feature Extraction
+    # =========================
+
+    features = extract_features(
+        feature_text
+    )
+
+    print(
+        "[Features]",
+        clean_name,
+        features
+    )
+
+    return {
+
+        "title": clean_name,
+
+        "raw_title": raw_title,
+
+        "price": clean_price(
+            item.get(
+                "price",
+                "0"
+            )
+        ),
+
+        "platform": item.get(
+            "source",
+            ""
+        ),
+
+        "desc": snippet,
+
+        "link": item.get(
+            "link",
+            ""
+        ),
+
+        "image": item.get(
+            "thumbnail",
+            ""
+        ),
+
+        "features": features,
+
+        "tags": [],
+
+        "rating": rating,
+
+        "match": int(
+            rating * 10
+        ),
+
+        "reason": generate_reason(
+            keyword,
+            rating
+        ),
+
+        "brand": detect_brand(
+            clean_name
+        ),
+
+        "isTop": False
+    }
