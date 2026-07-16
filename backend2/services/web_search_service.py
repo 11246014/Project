@@ -6,14 +6,64 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
+# =========================
+# Search Config
+# =========================
 SEARCH_CACHE = {}
+
+DEBUG_SEARCH = False
+
+SEARCH_TIMEOUT = 30
+
+MAX_SEARCH_RESULTS = 15
+
+MIN_PRODUCT_PRICE = 100
+
+MAX_PRODUCT_PRICE = 30000
+
+TOP_MATCH_SCORE = 98
 
 SERPAPI_KEY = os.getenv(
     "SERPAPI_KEY"
 )
 
+TITLE_REMOVE_PATTERNS = [
 
+    r"\[.*?\]",
+    r"【.*?】",
+    r"\d+號前最高回饋\$?\d*",
+    r"\d+/\d+前最高回饋\d*萬?",
+    r"\d+/\d+前最高回饋\$?\d*",
+    r"最高回饋\$?\d*",
+    r"限時優惠",
+    r"官方旗艦館",
+    r"蝦皮直送",
+    r"快速出貨",
+    r"現貨",
+    r"買一送一",
+    r"熱銷推薦",
+    r"優惠到",
+    r"超值優惠",
+    r"免運",
+    r"聖誕禮物",
+    r"交換禮物",
+    ]
+
+FEATURE_KEYWORDS = {
+
+    "gps":"GPS",
+
+    "睡眠":"睡眠",
+
+    "心率":"心率",
+
+    "血氧":"血氧",
+
+    "ecg":"ECG",
+
+    "心電圖":"ECG"
+    
+    }
 # =========================
 # 已知品牌
 # =========================
@@ -233,34 +283,8 @@ def clean_title(title):
 
     cleaned = str(title)
 
-    patterns = [
 
-        r"\[.*?\]",
-        r"【.*?】",
-
-        r"\d+號前最高回饋\$?\d*",
-
-        r"\d+/\d+前最高回饋\d*萬?",
-        r"\d+/\d+前最高回饋\$?\d*",
-
-        r"最高回饋\$?\d*",
-
-        r"限時優惠",
-        r"官方旗艦館",
-        r"蝦皮直送",
-        r"快速出貨",
-        r"現貨",
-        r"買一送一",
-        r"熱銷推薦",
-        r"優惠到",
-        r"超值優惠",
-        r"免運",
-
-        r"聖誕禮物",
-        r"交換禮物",
-    ]
-
-    for pattern in patterns:
+    for pattern in TITLE_REMOVE_PATTERNS:
 
         cleaned = re.sub(
 
@@ -407,7 +431,7 @@ def clean_product(
 
         rating = float(rating)
 
-    except:
+    except (TypeError, ValueError):
 
         rating = 0
 
@@ -427,9 +451,8 @@ def clean_product(
         snippet
     ).lower()
     
-    DEBUG_MODE = False
 
-    if DEBUG_MODE:
+    if DEBUG_SEARCH:
         
         print(
             "[Desc]",
@@ -488,23 +511,12 @@ def clean_product(
 
     features = []
 
-    if "gps" in feature_text:
-        features.append("GPS")
+    for keyword, name in FEATURE_KEYWORDS.items():
 
-    if "睡眠" in feature_text:
-        features.append("睡眠")
+        if keyword in feature_text:
 
-    if "心率" in feature_text:
-        features.append("心率")
+            features.append(name)
 
-    if "血氧" in feature_text:
-        features.append("血氧")
-
-    if (
-        "ecg" in feature_text
-        or "心電圖" in feature_text
-    ):
-        features.append("ECG")
 
     print(
         "[Features]",
@@ -576,17 +588,7 @@ def _text(product):
 # Web Search
 # =========================
 
-def web_search_products(
-    keyword
-):
-
-    if keyword in SEARCH_CACHE:
-
-        print(
-            f"[Cache Hit] {keyword}"
-        )
-
-        return SEARCH_CACHE[keyword]
+def fetch_shopping_results(keyword):
 
     print("=" * 50)
 
@@ -611,119 +613,159 @@ def web_search_products(
         "hl": "zh-tw"
     }
 
+    response = requests.get(
+
+        url,
+
+        params=params,
+
+        timeout=SEARCH_TIMEOUT
+    )
+
+    data = response.json()
+
+    shopping_results = data.get(
+        "shopping_results",
+        []
+    )
+
+    print(
+        f"[Shopping Results Count] "
+        f"{len(shopping_results)}"
+    )
+
+    return shopping_results
+
+def build_products(
+    shopping_results,
+    keyword
+):
+
+    products = []
+
+    for item in shopping_results[:MAX_SEARCH_RESULTS]:
+
+        print("=" * 30)
+
+        print(
+            item.get("title")
+        )
+
+        print("=" * 30)
+
+        print(
+            item.get("title")
+        )
+
+        print(
+            item.get("price")
+        )
+
+        product = clean_product(
+            item,
+            keyword
+        )
+
+        if not product:
+
+            continue
+
+        print(
+            "Clean Title:",
+            product["title"]
+        )
+
+        print(
+            "Clean Price:",
+            product["price"]
+        )
+
+        if (
+            product["price"] < MIN_PRODUCT_PRICE
+            or
+            product["price"] > MAX_PRODUCT_PRICE
+        ):
+
+            continue
+
+        if not product["title"]:
+
+            continue
+
+        products.append(
+            product
+        )
+
+    return products
+
+
+def finalize_products(products):
+
+    print(
+        f"[Before Dedup] "
+        f"{len(products)}"
+    )
+
+    # products = remove_duplicate_brand(
+    #     products
+    # )
+
+    print(
+        f"[After Dedup] "
+        f"{len(products)}"
+    )
+
+    products.sort(
+
+        key=lambda x: x["rating"],
+
+        reverse=True
+    )
+
+    if products:
+
+        products[0]["isTop"] = True
+
+        products[0]["match"] = TOP_MATCH_SCORE
+
+    print(
+        f"[Web Search] 找到 "
+        f"{len(products)} 筆商品"
+    )
+
+    print("=" * 50)
+
+    return products
+
+
+def web_search_products(
+    keyword
+):
+
+    if keyword in SEARCH_CACHE:
+
+        print(
+            f"[Cache Hit] {keyword}"
+        )
+
+        return SEARCH_CACHE[keyword]
+
     try:
 
-        response = requests.get(
-
-            url,
-
-            params=params,
-
-            timeout=30
+        shopping_results = fetch_shopping_results(
+            keyword
         )
 
-        data = response.json()
-
-        shopping_results = data.get(
-            "shopping_results",
-            []
+        products = build_products(
+            shopping_results,
+            keyword
         )
 
-        print(
-            f"[Shopping Results Count] "
-            f"{len(shopping_results)}"
+        products = finalize_products(
+            products
         )
 
-        products = []
-
-        for item in shopping_results[:15]:
-
-            print("=" * 30)
-
-            print(
-                item.get("title")
-            )
-
-            print("=" * 30)
-
-            print(
-                item.get("title")
-            )
-
-            print(
-                item.get("price")
-            )
-
-            product = clean_product(
-                item,
-                keyword
-            )
-
-            if not product:
-
-                continue
-            
-            print(
-                "Clean Title:",
-                product["title"]
-            )
-
-            print(
-                "Clean Price:",
-                product["price"]
-            )
-
-            if product["price"] > 30000:
-
-                continue
-
-            if not product["title"]:
-
-                continue
-
-            products.append(
-                product
-            )
-
-        print(
-            f"[Before Dedup] "
-            f"{len(products)}"
-        )
-
-        # products = remove_duplicate_brand(
-        #     products
-        # )
-
-        print(
-            f"[After Dedup] "
-            f"{len(products)}"
-        )
-
-        products.sort(
-
-            key=lambda x: x["rating"],
-
-            reverse=True
-        )
-
-        if products:
-
-            products[0][
-                "isTop"
-            ] = True
-
-            products[0][
-                "match"
-            ] = 98
-
-        print(
-            f"[Web Search] 找到 "
-            f"{len(products)} 筆商品"
-        )
-        
         SEARCH_CACHE[keyword] = products
-
-        print("=" * 50)
 
         return products
 
