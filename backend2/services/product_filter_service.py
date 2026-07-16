@@ -50,6 +50,42 @@ KNOWN_BRANDS = [
     "OPPO",
     "realme",
 ]
+SMART_BRANDS = [
+
+    "Apple",
+    "Samsung",
+    "Garmin",
+    "Huawei",
+    "Amazfit",
+    "Fitbit",
+    "Google",
+    "Xiaomi",
+    "OPPO",
+    "realme",
+    "COROS",
+    "Polar",
+    "Suunto",
+]
+SMART_TITLE_KEYWORDS = [
+
+    "智慧",
+    "智能",
+
+    "smart",
+
+    "smartwatch",
+
+    "wear os",
+    "wearos",
+
+    "智慧手錶",
+    "智慧手環",
+    "智慧戒指",
+
+    "智能手錶",
+    "智能手環",
+    "智能戒指",
+]
 # =========================
 # 配件 / 非手錶黑名單
 # =========================
@@ -378,6 +414,99 @@ def extract_features(feature_text):
             features.append(name)
 
     return features
+
+
+# =========================
+# Accessory Detection
+# =========================
+
+def is_accessory(title):
+
+    title_lower = title.lower()
+
+    for word in ACCESSORY_KEYWORDS:
+
+        if word.lower() in title_lower:
+
+            return True
+
+    return False
+
+# =========================
+# Wearable Score
+# =========================
+
+def calculate_wearable_score(
+    title,
+    snippet=""
+):
+
+    score = 0
+
+    title_lower = title.lower()
+
+    # =========================
+    # Brand Score
+    # =========================
+
+    for brand in SMART_BRANDS:
+
+        if brand.lower() in title_lower:
+
+            score += 2
+
+    # =========================
+    # Title Score
+    # =========================
+
+    for keyword in SMART_TITLE_KEYWORDS:
+
+        if keyword.lower() in title_lower:
+
+            score += 2
+
+    return score
+
+# =========================
+# Wearable Detection
+# =========================
+
+def is_wearable_device(
+    title,
+    snippet=""
+):
+
+    score = calculate_wearable_score(
+        title,
+        snippet
+    )
+    print(
+    "[Wearable Score]",
+    title,
+    score
+    )
+    title_lower = title.lower()
+
+    is_wearable = any(
+
+        word.lower() in title_lower
+
+        for word in WEARABLE_KEYWORDS
+    )
+
+    smartwatch_match = any(
+
+        word.lower() in title_lower
+
+        for word in SMARTWATCH_KEYWORDS
+    )
+
+    return (
+        is_wearable
+        or
+        smartwatch_match
+    )
+
 # =========================
 # Product Clean
 # =========================
@@ -427,41 +556,19 @@ def clean_product(
         raw_title
     )
 
-    title_lower = clean_name.lower()
-
     # =========================
     # 黑名單
     # =========================
 
-    for word in ACCESSORY_KEYWORDS:
+    if is_accessory(clean_name):
 
-        if word.lower() in title_lower:
+        print(
+            f"[Filtered] {clean_name}"
+        )
 
-            print(
-                f"[Filtered] {clean_name}"
-            )
+        return None
 
-            return None
-
-    # =========================
-    # 穿戴裝置過濾
-    # =========================
-
-    is_wearable = any(
-
-        word.lower() in title_lower
-
-        for word in WEARABLE_KEYWORDS
-    )
-
-    smartwatch_match = any(
-
-        word.lower() in title_lower
-
-        for word in SMARTWATCH_KEYWORDS
-    )
-
-    if not is_wearable and not smartwatch_match:
+    if not is_wearable_device(clean_name):
 
         print(
             f"[Not Wearable] {clean_name}"
