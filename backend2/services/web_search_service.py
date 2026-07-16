@@ -1,9 +1,14 @@
 import os
-import re
+
 import requests
-
 from dotenv import load_dotenv
-
+from services.product_filter_service import (
+    clean_price,
+    clean_title,
+    detect_brand,
+    generate_reason,
+    extract_features
+)
 load_dotenv()
 
 # =========================
@@ -27,60 +32,7 @@ SERPAPI_KEY = os.getenv(
     "SERPAPI_KEY"
 )
 
-TITLE_REMOVE_PATTERNS = [
 
-    r"\[.*?\]",
-    r"【.*?】",
-    r"\d+號前最高回饋\$?\d*",
-    r"\d+/\d+前最高回饋\d*萬?",
-    r"\d+/\d+前最高回饋\$?\d*",
-    r"最高回饋\$?\d*",
-    r"限時優惠",
-    r"官方旗艦館",
-    r"蝦皮直送",
-    r"快速出貨",
-    r"現貨",
-    r"買一送一",
-    r"熱銷推薦",
-    r"優惠到",
-    r"超值優惠",
-    r"免運",
-    r"聖誕禮物",
-    r"交換禮物",
-    ]
-
-FEATURE_KEYWORDS = {
-
-    "gps":"GPS",
-
-    "睡眠":"睡眠",
-
-    "心率":"心率",
-
-    "血氧":"血氧",
-
-    "ecg":"ECG",
-
-    "心電圖":"ECG"
-    
-    }
-# =========================
-# 已知品牌
-# =========================
-
-KNOWN_BRANDS = [
-
-    "Apple",
-    "Samsung",
-    "Garmin",
-    "Xiaomi",
-    "Fitbit",
-    "Huawei",
-    "Amazfit",
-    "Google",
-    "OPPO",
-    "realme"
-]
 
 # =========================
 # 配件 / 非手錶黑名單
@@ -235,182 +187,13 @@ SMARTWATCH_KEYWORDS = [
 ]
 
 
-# =========================
-# 清理價格
-# =========================
 
-def clean_price(price_text):
 
-    if not price_text:
-        return 0
 
-    try:
 
-        text = str(price_text)
 
-        text = text.replace(
-            "$",
-            ""
-        )
 
-        text = text.replace(
-            "NT$",
-            ""
-        )
 
-        text = text.replace(
-            ",",
-            ""
-        )
-
-        value = float(text)
-
-        return int(value)
-
-    except Exception:
-
-        return 0
-
-
-# =========================
-# 商品名稱清理
-# =========================
-
-def clean_title(title):
-
-    if not title:
-        return ""
-
-    cleaned = str(title)
-
-
-    for pattern in TITLE_REMOVE_PATTERNS:
-
-        cleaned = re.sub(
-
-            pattern,
-
-            "",
-
-            cleaned,
-
-            flags=re.IGNORECASE
-        )
-
-    if "(" in cleaned:
-
-        cleaned = cleaned.split("(")[0]
-
-    if "（" in cleaned:
-
-        cleaned = cleaned.split("（")[0]
-
-    cleaned = re.sub(
-
-        r"([a-z])([A-Z])",
-
-        r"\1 \2",
-
-        cleaned
-    )
-
-    cleaned = re.sub(
-
-        r"[A-Z0-9\-]{12,}",
-
-        "",
-
-        cleaned
-    )
-
-    words = cleaned.split()
-
-    filtered_words = []
-
-    for word in words:
-
-        if (
-            len(word) >= 15
-            and re.search(r"[A-Z]", word)
-            and re.search(r"\d", word)
-        ):
-
-            continue
-
-        filtered_words.append(word)
-
-    cleaned = " ".join(filtered_words)
-
-    replacements = {
-
-        "智慧型手錶": "智慧手錶",
-        "智能手表": "智慧手錶",
-        "智能手錶": "智慧手錶",
-        "智慧腕錶": "智慧手錶",
-    }
-
-    for old, new in replacements.items():
-
-        cleaned = cleaned.replace(
-            old,
-            new
-        )
-
-    cleaned = re.sub(
-
-        r"\s+",
-
-        " ",
-
-        cleaned
-    )
-
-    cleaned = cleaned.strip()
-
-    return cleaned
-
-
-# =========================
-# 品牌偵測
-# =========================
-
-def detect_brand(title):
-
-    title_lower = title.lower()
-
-    for brand in KNOWN_BRANDS:
-
-        if brand.lower() in title_lower:
-
-            return brand
-
-    return "Other"
-
-
-# =========================
-# 推薦理由
-# =========================
-
-def generate_reason(
-    keyword,
-    rating
-):
-
-    if rating >= 4.5:
-
-        return (
-            f"高評價商品，"
-            f"適合有「{keyword}」需求的使用者"
-        )
-
-    elif rating >= 4.0:
-
-        return (
-            f"熱門選擇，"
-            f"符合「{keyword}」使用情境"
-        )
-
-    return f"符合「{keyword}」需求"
 
 
 # =========================
@@ -450,18 +233,23 @@ def clean_product(
         " " +
         snippet
     ).lower()
-    
 
     if DEBUG_SEARCH:
-        
+
         print(
             "[Desc]",
             snippet
         )
 
+    # =========================
+    # 商品名稱清理
+    # =========================
+
     clean_name = clean_title(
         raw_title
     )
+
+    title_lower = clean_name.lower()
 
     # =========================
     # 黑名單過濾
@@ -469,7 +257,7 @@ def clean_product(
 
     for word in BAD_KEYWORDS:
 
-        if word.lower() in clean_name.lower():
+        if word.lower() in title_lower:
 
             print(
                 f"[Filtered] {clean_name}"
@@ -480,8 +268,6 @@ def clean_product(
     # =========================
     # 穿戴裝置過濾
     # =========================
-
-    title_lower = clean_name.lower()
 
     is_wearable = any(
 
@@ -509,14 +295,9 @@ def clean_product(
     # Feature Extraction
     # =========================
 
-    features = []
-
-    for keyword, name in FEATURE_KEYWORDS.items():
-
-        if keyword in feature_text:
-
-            features.append(name)
-
+    features = extract_features(
+        feature_text
+    )
 
     print(
         "[Features]",
@@ -525,6 +306,7 @@ def clean_product(
     )
 
     return {
+
         "title": clean_name,
 
         "raw_title": raw_title,
@@ -622,6 +404,8 @@ def fetch_shopping_results(keyword):
         timeout=SEARCH_TIMEOUT
     )
 
+    response.raise_for_status()
+
     data = response.json()
 
     shopping_results = data.get(
@@ -646,24 +430,12 @@ def build_products(
     for item in shopping_results[:MAX_SEARCH_RESULTS]:
 
         print("=" * 30)
-
-        print(
-            item.get("title")
-        )
-
-        print("=" * 30)
-
-        print(
-            item.get("title")
-        )
-
-        print(
-            item.get("price")
-        )
+        print(item.get("title"))
+        print(item.get("price"))
 
         product = clean_product(
-            item,
-            keyword
+            item=item,
+            keyword=keyword
         )
 
         if not product:
@@ -769,7 +541,7 @@ def web_search_products(
 
         return products
 
-    except Exception as e:
+    except requests.RequestException as e:
 
         print(
             f"[Web Search Error] {e}"
