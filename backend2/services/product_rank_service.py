@@ -163,7 +163,32 @@ WEIGHT_CONFIG = {
     "location_accuracy": 20,
     "value": 35,
 }
+# ==================================================
+# Brand Score
+# ==================================================
 
+BRAND_SCORE = {
+
+    "Apple": 15,
+
+    "Garmin": 15,
+
+    "Samsung": 12,
+
+    "Huawei": 10,
+
+    "Amazfit": 10,
+
+    "Fitbit": 10,
+
+    "Google": 10,
+
+    "COROS": 12,
+
+    "Polar": 12,
+
+    "Suunto": 12,
+}
 # =========================
 # Helper Functions
 # =========================
@@ -375,7 +400,21 @@ def calculate_product_score(product, need):
     except Exception:
         rating = 0
     score += int(rating * 5)
+    
+    # =========================
+    # Brand
+    # =========================
 
+    brand = product.get(
+        "brand",
+        ""
+    )
+
+    score += BRAND_SCORE.get(
+        brand,
+        0
+    )
+    
     # =========================
     # Reason
     # =========================

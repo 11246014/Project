@@ -480,11 +480,6 @@ def is_wearable_device(
         title,
         snippet
     )
-    print(
-    "[Wearable Score]",
-    title,
-    score
-    )
     title_lower = title.lower()
 
     is_wearable = any(
@@ -570,10 +565,6 @@ def clean_product(
 
     if not is_wearable_device(clean_name):
 
-        print(
-            f"[Not Wearable] {clean_name}"
-        )
-
         return None
 
     # =========================
@@ -582,12 +573,6 @@ def clean_product(
 
     features = extract_features(
         feature_text
-    )
-
-    print(
-        "[Features]",
-        clean_name,
-        features
     )
 
     return {

@@ -26,19 +26,6 @@ SERPAPI_KEY = os.getenv(
     "SERPAPI_KEY"
 )
 
-
-def _text(product):
-    return " ".join(
-        str(product.get(key, ""))
-        for key in (
-            "title",
-            "raw_title",
-            "name",
-            "desc",
-            "description"
-        )
-    ).lower()
-
 # =========================
 # Web Search
 # =========================
@@ -56,24 +43,13 @@ def fetch_shopping_results(keyword):
     )
 
     params = {
-
         "engine": "google_shopping",
-
         "q": keyword,
-
         "api_key": SERPAPI_KEY,
-
-        "gl": "tw",
-
-        "hl": "zh-tw"
     }
-
     response = requests.get(
-
         url,
-
         params=params,
-
         timeout=SEARCH_TIMEOUT
     )
 
@@ -102,10 +78,9 @@ def build_products(
 
     for item in shopping_results[:MAX_SEARCH_RESULTS]:
 
-        print("=" * 30)
-        print(item.get("title"))
-        print(item.get("price"))
-
+        print(
+            f"[Item] {item.get('title')}"
+        )
         product = clean_product(
             item=item,
             keyword=keyword
@@ -114,16 +89,6 @@ def build_products(
         if not product:
 
             continue
-
-        print(
-            "Clean Title:",
-            product["title"]
-        )
-
-        print(
-            "Clean Price:",
-            product["price"]
-        )
 
         if (
             product["price"] < MIN_PRODUCT_PRICE
@@ -212,6 +177,9 @@ def web_search_products(
 
         SEARCH_CACHE[keyword] = products
 
+        print(
+            f"[Cache Save] {keyword}"
+        )
         return products
 
     except requests.RequestException as e:

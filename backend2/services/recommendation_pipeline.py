@@ -33,20 +33,14 @@ STYLE_MAPPING = {
 
     "business": [
         "商務",
-        "金屬",
-        "正式",
     ],
 
     "fashion": [
         "時尚",
-        "設計",
-        "AMOLED",
     ],
 
     "sport": [
         "運動",
-        "防水",
-        "GPS",
     ],
 }
 
@@ -161,9 +155,12 @@ def build_search_query(need):
 
     if (
         need.preferences.os
-        and need.preferences.os != "0"
+        and need.preferences.os not in (
+            "0",
+            "Cross",
+            "cross",
+        )
     ):
-
         parts.append(
             OS_QUERY_TERMS.get(
                 need.preferences.os,
@@ -175,37 +172,45 @@ def build_search_query(need):
 
         style_keywords = STYLE_MAPPING.get(
             need.preferences.style,
-            [need.preferences.style]
+            []
         )
 
-        parts.extend(style_keywords)
+        if style_keywords:
+            parts.append(style_keywords[0])
 
     if need.preferences.battery:
 
         battery_keywords = BATTERY_MAPPING.get(
             need.preferences.battery,
-            ["長續航"]
+            []
         )
 
-        parts.extend(battery_keywords)
+        if battery_keywords:
+            parts.append(battery_keywords[0])
 
     budget_min = need.budget.min
     budget_max = need.budget.max
 
-    if budget_min and budget_max:
-        parts.append(f"{budget_min}到{budget_max}元")
-    elif budget_max:
-        parts.append(f"{budget_max}元以下")
-    elif budget_min:
-        parts.append(f"{budget_min}元以上")
+    # if budget_min and budget_max:
+    #     parts.append(f"{budget_min}到{budget_max}元")
+    # elif budget_max:
+    #     parts.append(f"{budget_max}元以下")
+    # elif budget_min:
+    #     parts.append(f"{budget_min}元以上")
 
     cleaned = []
 
     for part in parts:
-        if part and part not in cleaned:
+
+        if not part:
+            continue
+
+        if part not in cleaned:
             cleaned.append(part)
 
     return " ".join(cleaned)
+
+
 
 
 def _run_async(coro):
@@ -437,19 +442,6 @@ def recommend_from_need(
         candidates,
         need
     )
-
-    print("\n========== PIPELINE CANDIDATES ==========")
-
-    for index, product in enumerate(filtered, start=1):
-        print(f"\n--- Candidate {index} ---")
-        print("title:", product.get("title"))
-        print("price:", product.get("price"))
-        print("features:", product.get("features"))
-        print("desc:", product.get("desc"))
-        print("rating:", product.get("rating"))
-        print("raw_title:", product.get("raw_title", ""))
-
-    print("\n=========================================\n")
 
     ranked = rank_products(
         filtered,
