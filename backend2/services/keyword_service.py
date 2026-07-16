@@ -5,7 +5,9 @@ import re
 
 from services.ai_service import ask_ai
 from config.settings import KEYWORD_MODEL
-
+from services.search_query_builder import (
+    build_search_query
+)
 
 def _as_list(value):
     if value is None or value == "":
@@ -296,172 +298,8 @@ budget_max
 
         print("============================\n")
 
-        query_parts = []
-
-        # =====================
-        # Product Type
-        # =====================
-
-        product_type = data.get(
-            "product_type",
-            ""
-        )
-
-        if product_type:
-            query_parts.append(
-                product_type
-            )
-
-        # =====================
-        # Usage
-        # =====================
-
-        usage = data.get(
-            "usage",
-            ""
-        )
-
-        usage_mapping = {
-
-            "運動": "運動",
-
-            "健康": "健康",
-
-            "日常": "日常",
-
-            "商務": "商務",
-
-            "戶外": "戶外"
-        }
-
-        if usage in usage_mapping:
-
-            query_parts.append(
-                usage_mapping[usage]
-            )
-
-        # =====================
-        # Features
-        # =====================
-
-        features = data.get(
-            "features",
-            []
-        )
-
-        for feature in features:
-
-            if "GPS" in feature:
-
-                query_parts.append(
-                    "GPS"
-                )
-
-            elif "睡眠" in feature:
-
-                query_parts.append(
-                    "睡眠監測"
-                )
-
-            elif "血氧" in feature:
-
-                query_parts.append(
-                    "血氧"
-                )
-
-            elif "ECG" in feature:
-
-                query_parts.append(
-                    "ECG"
-                )
-
-            elif "心率" in feature:
-
-                query_parts.append(
-                    "心率"
-                )
-
-            elif "防水" in feature:
-
-                query_parts.append(
-                    "防水"
-                )
-
-        # =====================
-        # OS
-        # =====================
-
-        os_type = data.get(
-            "os",
-            ""
-        )
-
-        if os_type == "iOS":
-
-            query_parts.append(
-                "iPhone"
-            )
-
-            if (
-                "apple watch"
-                not in user_message.lower()
-            ):
-
-                query_parts.append(
-                    "Apple Watch"
-                )
-
-        elif os_type == "Android":
-
-            ...
-
-            if (
-                "galaxy watch"
-                not in user_message.lower()
-            ):
-
-                query_parts.append(
-                    "Galaxy Watch"
-                )
-
-        # =====================
-        # Style
-        # =====================
-
-        style = data.get(
-            "style",
-            ""
-        )
-
-        if style == "商務":
-
-            query_parts.append(
-                "商務手錶"
-            )
-
-        elif style == "運動":
-
-            query_parts.append(
-                "運動手錶"
-            )
-
-        elif style == "時尚":
-
-            query_parts.append(
-                "時尚手錶"
-            )
-        # =====================
-        # 去重
-        # =====================
-
-        query_parts = list(
-            dict.fromkeys(
-                query_parts
-            )
-        )
-
-        search_keyword = " ".join(
-            query_parts
+        search_keyword = build_search_query(
+            data
         )
 
         if search_keyword:
