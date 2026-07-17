@@ -556,41 +556,56 @@ Map<String, dynamic> _user = {
   }
 
   /// 單一購物車商品卡片
+  /// 點擊卡片可進入商品詳情頁（前往購買、數量按鈕不受影響，
+  /// Flutter 手勢判定會優先由內層按鈕接收點擊事件）
   Widget _buildCartItemCard(CartItem item) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg(context),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderColor(context)),
+    return GestureDetector(
+      onTap: () => context.push(
+        AppRoutes.product,
+        extra: {
+          'name': item.name,
+          'price': item.price,
+          'image': item.image,
+          'tags': item.tags,
+          'link': item.link,
+          'platform': item.platform,
+        },
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _buildCartItemImage(item),
-              const SizedBox(width: 12),
-              Expanded(child: _buildCartItemInfo(item)),
-              _buildCartItemQtyControls(item),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () =>
-                  LaunchHelper.openProductLink(context, item.link),
-              icon: const Icon(Icons.open_in_new_rounded, size: 16),
-              label: const Text('前往購買'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg(context),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.borderColor(context)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _buildCartItemImage(item),
+                const SizedBox(width: 12),
+                Expanded(child: _buildCartItemInfo(item)),
+                _buildCartItemQtyControls(item),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () =>
+                    LaunchHelper.openProductLink(context, item.link),
+                icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                label: const Text('前往購買'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -718,7 +733,7 @@ Map<String, dynamic> _user = {
           ),
           const SizedBox(height: 8),
           Text(
-            '實際金額請以各平台結帳頁面為準，WearWise 不提供直接結帳',
+            '實際金額請以各平台結帳頁面為準',
             style: AppTextStyles.caption.copyWith(color: AppColors.textHint),
             textAlign: TextAlign.center,
           ),
