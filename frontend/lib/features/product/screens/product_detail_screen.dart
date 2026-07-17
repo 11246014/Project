@@ -153,19 +153,27 @@ class ProductDetailScreen extends ConsumerWidget {
   }
 
   /// 主圖，載入失敗時顯示備用圖示，避免整頁因為單一圖片壞掉
+   /// 改為固定高度置中顯示，避免圖片過大佔滿整個螢幕
   Widget _buildImage(BuildContext context, String image) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: AspectRatio(
-        aspectRatio: 1.2,
-        child: Container(
+    return Center(
+      child: Container(
+        width: double.infinity,
+        height: 240, // 固定高度，不再用 AspectRatio 撐滿寬度
+        decoration: BoxDecoration(
           color: AppColors.cardVariant(context),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
           child: image.isNotEmpty
               ? Image.network(
                   image,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Icon(Icons.watch_rounded, color: AppColors.primary, size: 64),
+                  fit: BoxFit.contain, // 改用 contain，圖片不裁切、置中顯示
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    Icons.watch_rounded,
+                    color: AppColors.primary,
+                    size: 64,
+                  ),
                 )
               : Icon(Icons.watch_rounded, color: AppColors.primary, size: 64),
         ),
