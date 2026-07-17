@@ -555,16 +555,15 @@ def clean_product(
     # 黑名單
     # =========================
 
-    if is_accessory(clean_name):
+    matched = None
 
-        print(
-            f"[Filtered] {clean_name}"
-        )
+    for word in ACCESSORY_KEYWORDS:
+        if word.lower() in clean_name.lower():
+            matched = word
+            break
 
-        return None
-
-    if not is_wearable_device(clean_name):
-
+    if matched:
+        print(f"[Accessory] {matched} -> {clean_name}")
         return None
 
     # =========================
@@ -575,12 +574,20 @@ def clean_product(
         feature_text
     )
 
+    # Debug
+    raw_price = item.get("price", "0")
+    print("[Raw Price]", raw_price)
+
+    price = clean_price(raw_price)
+    print("[Clean Price]", price)
+
     return {
 
         "title": clean_name,
 
         "raw_title": raw_title,
 
+        
         "price": clean_price(
             item.get(
                 "price",

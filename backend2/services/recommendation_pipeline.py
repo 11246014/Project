@@ -223,15 +223,15 @@ def _run_async(coro):
         "recommend_from_need cannot run async DB search inside an active event loop"
     )
 
-def save_candidates(products):
-    for product in products:
-        try:
-            if product.get("title"):
-                _run_async(
-                    save_product(product)
-                )
-        except Exception as e:
-            print(f"[Save Error] {e}")
+# def save_candidates(products):
+#     for product in products:
+#         try:
+#             if product.get("title"):
+#                 _run_async(
+#                     save_product(product)
+#                 )
+#         except Exception as e:
+#             print(f"[Save Error] {e}")
 
 def retrieve_candidates(search_query):
     candidates = []
@@ -436,7 +436,7 @@ def recommend_from_need(
     search_query = build_search_query(need)
 
     candidates = retrieve_candidates(search_query)
-    save_candidates(candidates)
+    # save_candidates(candidates)
 
     filtered, budget_fallback = hard_filter_candidates(
         candidates,

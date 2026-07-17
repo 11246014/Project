@@ -46,6 +46,9 @@ def fetch_shopping_results(keyword):
         "engine": "google_shopping",
         "q": keyword,
         "api_key": SERPAPI_KEY,
+        
+        "gl": "tw",
+        "hl": "zh-tw",
     }
     response = requests.get(
         url,
