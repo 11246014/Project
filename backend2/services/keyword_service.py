@@ -1,15 +1,65 @@
-# services/keyword_service.py
-
 import json
 import re
 
-from services.ai_service import ask_ai
 from config.settings import KEYWORD_MODEL
+from services.ai_service import ask_ai
+from services.keyword_prompt import build_keyword_prompt
 from services.search_query_builder import (
-    build_search_query
+    build_search_query,
 )
 
+# ==================================================
+# Constants
+# ==================================================
+
+# 品牌快速查詢
+BRAND_KEYWORDS = {
+    "apple watch": "Apple Watch",
+    "garmin": "Garmin",
+    "amazfit": "Amazfit",
+    "galaxy watch": "Galaxy Watch",
+}
+
+# 裝置快速查詢
+DEVICE_KEYWORDS = {
+    "智慧手錶": "智慧手錶",
+    "智慧手環": "智慧手環",
+    "藍牙耳機": "藍牙耳機",
+}
+
+# AI 常見簡體修正
+ZH_MAP = {
+    "睡眠监测": "睡眠監測",
+    "商务": "商務",
+    "运动": "運動",
+    "健康监测": "健康監測",
+}
+
+# 功能別名
+FEATURE_ALIAS = {
+    "睡眠": "睡眠監測",
+    "睡眠品質": "睡眠監測",
+    "記錄睡眠": "睡眠監測",
+}
+
+# AI 常見未知值
+UNKNOWN_VALUES = {
+    "未知",
+    "unknown",
+    "Unknown",
+    "N/A",
+    None,
+}
+
+# ==================================================
+# Helpers
+# ==================================================
+
 def _as_list(value):
+    """
+    保證回傳 List。
+    """
+
     if value is None or value == "":
         return []
 
@@ -20,10 +70,28 @@ def _as_list(value):
 
 
 def _none_if_empty(value):
+    """
+    空值統一轉成 None。
+    """
+
     if value in ("", [], {}, 0):
         return None
 
     return value
+
+
+def _convert_traditional(text):
+    """
+    將 AI 回傳的簡體轉為繁體。
+    """
+
+    if not isinstance(text, str):
+        return text
+
+    for old, new in ZH_MAP.items():
+        text = text.replace(old, new)
+
+    return text
 
 
 def _keyword_result(
@@ -37,8 +105,12 @@ def _keyword_result(
     style=None,
     battery=None,
     occupation=None,
-    age_group=None
+    age_group=None,
 ):
+    """
+    Keyword Extraction 統一回傳格式。
+    """
+
     return {
         "keyword": keyword or "",
         "budget_min": budget_min or 0,
@@ -50,44 +122,120 @@ def _keyword_result(
         "style": _none_if_empty(style),
         "battery": _none_if_empty(battery),
         "occupation": _none_if_empty(occupation),
-        "age_group": _none_if_empty(age_group)
+        "age_group": _none_if_empty(age_group),
     }
 
-# =====================
-# Normalize AI Output
-# =====================
+
+# ==================================================
+# Parser
+# ==================================================
+
+def _parse_ai_response(response):
+    """
+    解析 AI 回傳 JSON。
+    """
+
+    if not isinstance(response, str):
+        raise ValueError(
+            "AI response must be a string."
+        )
+
+    response = response.strip()
+
+    response = response.replace(
+        "```json",
+        ""
+    )
+
+    response = response.replace(
+        "```",
+        ""
+    )
+
+    response = response.strip()
+
+    data = json.loads(response)
+
+    if not isinstance(data, dict):
+        raise ValueError(
+            "AI response must be a JSON object."
+        )
+
+    return data
+# ==================================================
+# Validation
+# ==================================================
+
+def _validate_keyword_result(data):
+    """
+    驗證並修正 AI 回傳資料格式。
+
+    僅修正資料型別與缺少欄位，
+    不推測、不修改使用者需求。
+    """
+
+    if not isinstance(data, dict):
+        return {}
+
+    defaults = {
+        "product_type": "",
+        "usage": "",
+        "features": [],
+        "os": "",
+        "style": "",
+        "battery": "",
+        "occupation": "",
+        "age_group": "",
+        "budget_min": 0,
+        "budget_max": 0,
+    }
+
+    # 補齊缺少欄位
+    for key, default in defaults.items():
+        data.setdefault(key, default)
+
+    # features 一律轉 List
+    if not isinstance(data["features"], list):
+        if data["features"] in ("", None):
+            data["features"] = []
+        else:
+            data["features"] = [data["features"]]
+
+    # usage
+    if data["usage"] is None:
+        data["usage"] = ""
+
+    # budget
+    try:
+        data["budget_min"] = int(data["budget_min"])
+    except Exception:
+        data["budget_min"] = 0
+
+    try:
+        data["budget_max"] = int(data["budget_max"])
+    except Exception:
+        data["budget_max"] = 0
+
+    return data
+
+
+# ==================================================
+# Normalize
+# ==================================================
 
 def normalize_keyword_result(data, user_message):
     """
-    將 AI 回傳結果正規化。
+    將 AI 回傳資料正規化。
 
-    只修正格式與明確錯誤，
-    不進行推薦、不猜測使用者需求。
+    只修正格式，
+    不猜測需求。
     """
 
-    data = dict(data)
+    # --------------------------
+    # Traditional Chinese
+    # --------------------------
 
-    # =====================
-    # 簡體 -> 繁體
-    # =====================
-
-    zh_map = {
-        "睡眠监测": "睡眠監測",
-        "商务": "商務",
-        "运动": "運動",
-        "健康监测": "健康監測",
-    }
-
-    def convert(text):
-        if not isinstance(text, str):
-            return text
-
-        for old, new in zh_map.items():
-            text = text.replace(old, new)
-
-        return text
-
-    for key in [
+    for key in (
         "product_type",
         "usage",
         "os",
@@ -95,37 +243,42 @@ def normalize_keyword_result(data, user_message):
         "battery",
         "occupation",
         "age_group",
-    ]:
-        if key in data:
-            data[key] = convert(data[key])
+    ):
+
+        data[key] = _convert_traditional(
+            data.get(key)
+        )
+
+    # --------------------------
+    # Features
+    # --------------------------
 
     features = []
 
     for item in data.get("features", []):
 
-        item = convert(item)
+        item = _convert_traditional(item)
+
+        item = FEATURE_ALIAS.get(
+            item,
+            item
+        )
 
         if item not in features:
             features.append(item)
 
     data["features"] = features
 
-    # =====================
-    # battery
-    # =====================
+    # --------------------------
+    # Battery
+    # --------------------------
 
-    if data.get("battery") in [
-        "未知",
-        "unknown",
-        "Unknown",
-        "N/A",
-        None,
-    ]:
+    if data.get("battery") in UNKNOWN_VALUES:
         data["battery"] = ""
 
-    # =====================
-    # style
-    # =====================
+    # --------------------------
+    # Style
+    # --------------------------
 
     if not re.search(
         r"(商務|商务|時尚|时尚|運動|运动)",
@@ -133,38 +286,37 @@ def normalize_keyword_result(data, user_message):
     ):
         data["style"] = ""
 
-    # =====================
-    # os
-    # =====================
+    # --------------------------
+    # OS
+    # --------------------------
 
     if not re.search(
         r"(iphone|ios|android|安卓)",
         user_message,
         re.IGNORECASE,
     ):
+
         if data.get("os") == "Cross":
             data["os"] = ""
 
-    # =====================
-    # usage
-    # =====================
+    # --------------------------
+    # Usage
+    # --------------------------
 
     usage = data.get("usage", "")
 
     if isinstance(usage, str):
 
-        usage = convert(usage)
+        usage = _convert_traditional(
+            usage
+        )
 
-        # 跑步、睡眠
-        parts = re.split(r"[、,，/ ]+", usage)
+        parts = re.split(
+            r"[、,，/ ]+",
+            usage
+        )
 
         new_usage = []
-
-        feature_map = {
-            "睡眠": "睡眠監測",
-            "睡眠品質": "睡眠監測",
-            "記錄睡眠": "睡眠監測",
-        }
 
         for item in parts:
 
@@ -173,25 +325,29 @@ def normalize_keyword_result(data, user_message):
             if not item:
                 continue
 
-            if item in feature_map:
+            if item in FEATURE_ALIAS:
 
-                feature = feature_map[item]
+                feature = FEATURE_ALIAS[item]
 
                 if feature not in data["features"]:
-                    data["features"].append(feature)
+                    data["features"].append(
+                        feature
+                    )
 
             else:
 
                 if item not in new_usage:
                     new_usage.append(item)
 
-        data["usage"] = "、".join(new_usage)
+        data["usage"] = "、".join(
+            new_usage
+        )
 
-    # =====================
-    # 空值
-    # =====================
+    # --------------------------
+    # Empty Value
+    # --------------------------
 
-    for key in [
+    for key in (
         "product_type",
         "usage",
         "os",
@@ -199,247 +355,63 @@ def normalize_keyword_result(data, user_message):
         "battery",
         "occupation",
         "age_group",
-    ]:
-        if data.get(key) in [
+    ):
+
+        if data.get(key) in (
             None,
             "None",
             "null",
-        ]:
+        ):
             data[key] = ""
 
     return data
-def extract_keyword(user_message):
+# ==================================================
+# Extract Flow
+# ==================================================
 
+def extract_keyword(user_message):
     """
-    使用 Ollama 分析需求
-    組成較適合 Google Shopping 的搜尋關鍵字
+    使用 AI 分析使用者需求，
+    並產生搜尋關鍵字。
     """
 
     try:
 
-        # =====================
-        # 品牌直通
-        # =====================
+        # --------------------------
+        # Brand Shortcut
+        # --------------------------
 
         msg = user_message.lower().strip()
 
-        if msg == "apple watch":
+        if msg in BRAND_KEYWORDS:
 
             return _keyword_result(
-                keyword="Apple Watch"
+                keyword=BRAND_KEYWORDS[msg]
             )
 
-        if msg == "garmin":
+        # --------------------------
+        # Device Shortcut
+        # --------------------------
+
+        device = user_message.strip()
+
+        if device in DEVICE_KEYWORDS:
 
             return _keyword_result(
-                keyword="Garmin"
+                keyword=DEVICE_KEYWORDS[device]
             )
 
-        if msg == "amazfit":
+        # --------------------------
+        # Build Prompt
+        # --------------------------
 
-            return _keyword_result(
-                keyword="Amazfit"
-            )
+        prompt = build_keyword_prompt(
+            user_message
+        )
 
-        if msg == "galaxy watch":
-
-            return _keyword_result(
-                keyword="Galaxy Watch"
-            )
-        if msg == "智慧手錶":
-
-            return {
-                "keyword": "智慧手錶",
-                "budget_min": 0,
-                "budget_max": 0
-            }
-
-        if msg == "智慧手環":
-
-            return {
-                "keyword": "智慧手環",
-                "budget_min": 0,
-                "budget_max": 0
-            }
-
-        if msg == "藍牙耳機":
-
-            return {
-                "keyword": "藍牙耳機",
-                "budget_min": 0,
-                "budget_max": 0
-            }
-        
-        ...
-        prompt = f"""
-你是智慧穿戴商品需求分析助手。
-
-請分析使用者需求：
-
-{user_message}
-
-只回傳 JSON：
-
-{{
-    "product_type":"",
-    "usage":"",
-    "features":[],
-    "os":"",
-    "style":"",
-    "battery":"",
-    "occupation":"",
-    "age_group":"",
-    "budget_min":0,
-    "budget_max":0
-}}
-
-product_type：
-
-常見類型：
-
-- 智慧手錶
-- 智慧手環
-- 藍牙耳機
-
-若使用者提到其他商品類型，
-請保留原始名稱，
-不要自行修改。
-
-usage：
-
-請優先保留使用者的實際使用情境。
-不要將具體情境（例如：跑步、游泳、登山）統一改寫成「運動」，
-除非使用者本身只提到「運動」。
-
-例如：
-
-跑步
-游泳
-登山
-健身
-騎車
-健康監測
-日常
-商務
-
-只有當使用者沒有描述具體情境時，
-才使用：
-運動
-健康
-日常
-
-features：
-
-請輸出標準功能名稱。
-
-可包含：
-
-GPS
-睡眠監測
-血氧
-ECG
-心率
-防水
-
-若使用者使用近義詞，
-請統一轉換成上述名稱。
-
-os：
-
-- iOS
-- Android
-- Cross
-
-style：
-
-- 商務
-- 時尚
-- 運動
-
-budget_min：
-最低預算
-
-budget_max：
-最高預算
-
-若使用者提到：
-
-1000以下
-5000內
-10000~20000
-1萬到2萬
-預算15000
-
-請轉換為：
-
-budget_min
-budget_max
-
-規則：
-
-1. 只能提取使用者明確提到的需求
-
-2. 禁止根據品牌推測功能
-
-3. 禁止根據常識補充功能
-
-4. 未提及欄位請填：
-
-- ""
-- []
-- 0
-
-5. features 只能包含使用者實際提到的功能
-
-6. 若使用者只提到品牌名稱，不可補充功能
-
-7. 若無法判斷 usage，填 ""
-
-8. 若無法判斷 style，填 ""
-
-9. 若無法判斷 os，填 ""
-
-10. 禁止猜測 GPS、ECG、血氧、防水等功能
-
-11. 禁止輸出解釋文字
-
-12. 禁止輸出 Markdown
-
-13. 禁止輸出 ```json
-
-14. 只允許輸出合法 JSON
-
-15. 回傳格式必須可直接被 json.loads() 解析
-
-16. features 應填入使用者明確提到的功能名稱。
-
-例如：
-
-GPS
-睡眠監測
-血氧
-ECG
-心率
-防水
-
-若使用者使用不同說法，
-請轉換為最接近的標準功能名稱。
-
-例如：
-
-記錄睡眠 → 睡眠監測
-睡眠品質 → 睡眠監測
-定位 → GPS
-導航 → GPS
-心跳 → 心率
-心電圖 → ECG
-
-若同時符合 usage 與 features，
-
-請優先將功能放入 features，
-
-不要放到 usage。
-"""
+        # --------------------------
+        # Ask AI
+        # --------------------------
 
         response = ask_ai(
             prompt,
@@ -450,29 +422,32 @@ ECG
         print(response)
         print("=================================\n")
 
-        if "```json" in response:
-            response = response.replace(
-                "```json",
-                ""
-            )
+        # --------------------------
+        # Parse
+        # --------------------------
 
-        if "```" in response:
-            response = response.replace(
-                "```",
-                ""
-            )
-
-        data = json.loads(
-            response.strip()
+        data = _parse_ai_response(
+            response
         )
-        
+
+        # --------------------------
+        # Validation
+        # --------------------------
+
+        data = _validate_keyword_result(data)
+
+        # --------------------------
+        # Normalize
+        # --------------------------
+
         data = normalize_keyword_result(
             data,
             user_message
         )
-        # =====================
+
+        # --------------------------
         # Budget Validation
-        # =====================
+        # --------------------------
 
         has_budget = bool(
 
@@ -481,7 +456,9 @@ ECG
                 r"(預算|\d+)",
 
                 user_message
+
             )
+
         )
 
         if not has_budget:
@@ -501,6 +478,10 @@ ECG
 
         print("============================\n")
 
+        # --------------------------
+        # Build Search Query
+        # --------------------------
+
         search_keyword = build_search_query(
             data
         )
@@ -512,39 +493,51 @@ ECG
             )
 
             return _keyword_result(
+
                 keyword=search_keyword,
+
                 budget_min=data.get(
                     "budget_min",
                     0
                 ),
+
                 budget_max=data.get(
                     "budget_max",
                     0
                 ),
+
                 product_type=data.get(
                     "product_type"
                 ),
+
                 usage=data.get(
                     "usage"
                 ),
+
                 features=data.get(
                     "features"
                 ),
+
                 os=data.get(
                     "os"
                 ),
+
                 style=data.get(
                     "style"
                 ),
+
                 battery=data.get(
                     "battery"
                 ),
+
                 occupation=data.get(
                     "occupation"
                 ),
+
                 age_group=data.get(
                     "age_group"
                 )
+
             )
 
     except Exception as e:
