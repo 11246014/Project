@@ -436,22 +436,41 @@ def recommend_from_need(
     search_query = build_search_query(need)
 
     candidates = retrieve_candidates(search_query)
-    # save_candidates(candidates)
+
+    print(f"[Candidates] {len(candidates)}")
 
     filtered, budget_fallback = hard_filter_candidates(
         candidates,
         need
     )
 
+    print(f"[After Filter] {len(filtered)}")
+
     ranked = rank_products(
         filtered,
         need
     )
+    print("\n========== Ranked ==========")
+
+    for idx, product in enumerate(ranked[:5], start=1):
+
+        print(
+            f"{idx}. "
+            f"{product.get('title','')} | "
+            f"Score={product.get('match',0)} | "
+            f"Reason={product.get('reason','')}"
+        )
+
+    print("============================")
+    
+    print(f"[After Ranking] {len(ranked)}")
 
     formatted_products = format_products(
         ranked,
         limit
     )
+
+    print(f"[Formatted] {len(formatted_products)}")
 
     return {
         "products": formatted_products,

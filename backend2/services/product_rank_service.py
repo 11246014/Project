@@ -193,6 +193,21 @@ BRAND_SCORE = {
 # Helper Functions
 # =========================
 
+def extract_product_features(product):
+
+    found = []
+
+    features = _list(product.get("features"))
+
+    for feature in features:
+
+        feature = str(feature).strip()
+
+        if feature and feature not in found:
+            found.append(feature)
+
+    return found
+
 def _list(value):
     if not value:
         return []
@@ -222,6 +237,28 @@ def _price(product):
     except Exception:
         return 0
 
+
+def generate_reason(product):
+
+    features = extract_product_features(product)
+
+    if not features:
+        return "符合使用需求"
+
+    reasons = []
+
+    for feature in features:
+
+        reason = FEATURE_REASON.get(feature)
+
+        if reason:
+            reasons.append(reason)
+
+    if reasons:
+        return "、".join(reasons)
+
+    return "、".join(features[:3])
+
 def score_preferences(product, need):
     score = 0
     text = _text(product)
@@ -249,6 +286,7 @@ def calculate_product_score(product, need):
     reason_parts = []
 
     score = 0
+    debug_score = []
 
     text = _text(product)
 
@@ -271,6 +309,9 @@ def calculate_product_score(product, need):
         if device_term in text:
             score += 20
 
+            debug_score.append(
+                "Device +20"
+            )
     # =========================
     # Usage
     # =========================
@@ -286,6 +327,9 @@ def calculate_product_score(product, need):
 
             score += 15
 
+            debug_score.append(
+                f"Usage({usage}) +15"
+            )
     # =========================
     # Feature Score
     # =========================
@@ -313,9 +357,15 @@ def calculate_product_score(product, need):
             )
         ):
 
-            score += WEIGHT_CONFIG.get(
+            weight = WEIGHT_CONFIG.get(
                 feature_name,
                 20
+            )
+
+            score += weight
+
+            debug_score.append(
+                f"Feature({feature_name}) +{weight}"
             )
 
             reason = FEATURE_REASON.get(
@@ -345,6 +395,10 @@ def calculate_product_score(product, need):
         ):
 
             score += 10
+
+            debug_score.append(
+                f"Priority({priority}) +10"
+            )
     # =========================
     # Core Factor
     # =========================
@@ -360,20 +414,33 @@ def calculate_product_score(product, need):
             keyword.lower() in text
             for keyword in keywords
         ):
-
-            score += WEIGHT_CONFIG.get(
+            weight = WEIGHT_CONFIG.get(
                 priority,
                 20
+            )
+
+            score += weight
+
+            debug_score.append(
+                f"CoreFactor({priority}) +{weight}"
             )
 
     # =========================
     # Preference
     # =========================
 
-    score += score_preferences(
+    preference_score = score_preferences(
         product,
         need
     )
+
+    score += preference_score
+
+    if preference_score:
+
+        debug_score.append(
+            f"Preference +{preference_score}"
+        )
 
     # =========================
     # Budget
@@ -385,8 +452,11 @@ def calculate_product_score(product, need):
         and price
         and price <= need.budget.max
     ):
-        score += 10
+        score += 10 
 
+        debug_score.append(
+            "Budget +10"
+        )
     # =========================
     # Rating
     # =========================
@@ -399,8 +469,14 @@ def calculate_product_score(product, need):
         )
     except Exception:
         rating = 0
-    score += int(rating * 5)
-    
+
+    rating_score = int(rating * 5)
+
+    score += rating_score
+
+    debug_score.append(
+        f"Rating +{rating_score}"
+    )
     # =========================
     # Brand
     # =========================
@@ -410,25 +486,29 @@ def calculate_product_score(product, need):
         ""
     )
 
-    score += BRAND_SCORE.get(
+    brand_score = BRAND_SCORE.get(
         brand,
         0
     )
-    
-    # =========================
-    # Reason
-    # =========================
 
-    if reason_parts:
-        reason = "、".join(reason_parts)
-    else:
-        reason = "符合使用需求"
+    score += brand_score
+
+    debug_score.append(
+        f"Brand({brand}) +{brand_score}"
+    )
+    print("\n========== Score ==========")
+    print(product.get("title"))
+
+    for item in debug_score:
+        print(item)
+
+    print(f"Total = {score}")
+    print("===========================\n")
 
     return {
-        "score": min(score, 100),
-        "reason": reason,
+        "score": min(score,100),
+        "reason": generate_reason(product),
     }
-
 
 def rank_products(products, user_need=None):
 

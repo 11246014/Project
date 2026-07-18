@@ -53,7 +53,161 @@ def _keyword_result(
         "age_group": _none_if_empty(age_group)
     }
 
+# =====================
+# Normalize AI Output
+# =====================
 
+def normalize_keyword_result(data, user_message):
+    """
+    將 AI 回傳結果正規化。
+
+    只修正格式與明確錯誤，
+    不進行推薦、不猜測使用者需求。
+    """
+
+    data = dict(data)
+
+    # =====================
+    # 簡體 -> 繁體
+    # =====================
+
+    zh_map = {
+        "睡眠监测": "睡眠監測",
+        "商务": "商務",
+        "运动": "運動",
+        "健康监测": "健康監測",
+    }
+
+    def convert(text):
+        if not isinstance(text, str):
+            return text
+
+        for old, new in zh_map.items():
+            text = text.replace(old, new)
+
+        return text
+
+    for key in [
+        "product_type",
+        "usage",
+        "os",
+        "style",
+        "battery",
+        "occupation",
+        "age_group",
+    ]:
+        if key in data:
+            data[key] = convert(data[key])
+
+    features = []
+
+    for item in data.get("features", []):
+
+        item = convert(item)
+
+        if item not in features:
+            features.append(item)
+
+    data["features"] = features
+
+    # =====================
+    # battery
+    # =====================
+
+    if data.get("battery") in [
+        "未知",
+        "unknown",
+        "Unknown",
+        "N/A",
+        None,
+    ]:
+        data["battery"] = ""
+
+    # =====================
+    # style
+    # =====================
+
+    if not re.search(
+        r"(商務|商务|時尚|时尚|運動|运动)",
+        user_message,
+    ):
+        data["style"] = ""
+
+    # =====================
+    # os
+    # =====================
+
+    if not re.search(
+        r"(iphone|ios|android|安卓)",
+        user_message,
+        re.IGNORECASE,
+    ):
+        if data.get("os") == "Cross":
+            data["os"] = ""
+
+    # =====================
+    # usage
+    # =====================
+
+    usage = data.get("usage", "")
+
+    if isinstance(usage, str):
+
+        usage = convert(usage)
+
+        # 跑步、睡眠
+        parts = re.split(r"[、,，/ ]+", usage)
+
+        new_usage = []
+
+        feature_map = {
+            "睡眠": "睡眠監測",
+            "睡眠品質": "睡眠監測",
+            "記錄睡眠": "睡眠監測",
+        }
+
+        for item in parts:
+
+            item = item.strip()
+
+            if not item:
+                continue
+
+            if item in feature_map:
+
+                feature = feature_map[item]
+
+                if feature not in data["features"]:
+                    data["features"].append(feature)
+
+            else:
+
+                if item not in new_usage:
+                    new_usage.append(item)
+
+        data["usage"] = "、".join(new_usage)
+
+    # =====================
+    # 空值
+    # =====================
+
+    for key in [
+        "product_type",
+        "usage",
+        "os",
+        "style",
+        "battery",
+        "occupation",
+        "age_group",
+    ]:
+        if data.get(key) in [
+            None,
+            "None",
+            "null",
+        ]:
+            data[key] = ""
+
+    return data
 def extract_keyword(user_message):
 
     """
@@ -153,27 +307,42 @@ product_type：
 
 usage：
 
-常見類型：
+請優先保留使用者的實際使用情境。
+不要將具體情境（例如：跑步、游泳、登山）統一改寫成「運動」，
+除非使用者本身只提到「運動」。
 
-- 運動
-- 健康
-- 日常
-- 商務
-- 戶外
+例如：
 
-若使用者描述更具體需求，
-可直接保留原始描述。
+跑步
+游泳
+登山
+健身
+騎車
+健康監測
+日常
+商務
+
+只有當使用者沒有描述具體情境時，
+才使用：
+運動
+健康
+日常
 
 features：
 
+請輸出標準功能名稱。
+
 可包含：
 
-- GPS
-- 睡眠監測
-- 血氧
-- ECG
-- 心率
-- 防水
+GPS
+睡眠監測
+血氧
+ECG
+心率
+防水
+
+若使用者使用近義詞，
+請統一轉換成上述名稱。
 
 os：
 
@@ -241,6 +410,35 @@ budget_max
 14. 只允許輸出合法 JSON
 
 15. 回傳格式必須可直接被 json.loads() 解析
+
+16. features 應填入使用者明確提到的功能名稱。
+
+例如：
+
+GPS
+睡眠監測
+血氧
+ECG
+心率
+防水
+
+若使用者使用不同說法，
+請轉換為最接近的標準功能名稱。
+
+例如：
+
+記錄睡眠 → 睡眠監測
+睡眠品質 → 睡眠監測
+定位 → GPS
+導航 → GPS
+心跳 → 心率
+心電圖 → ECG
+
+若同時符合 usage 與 features，
+
+請優先將功能放入 features，
+
+不要放到 usage。
 """
 
         response = ask_ai(
@@ -266,6 +464,11 @@ budget_max
 
         data = json.loads(
             response.strip()
+        )
+        
+        data = normalize_keyword_result(
+            data,
+            user_message
         )
         # =====================
         # Budget Validation

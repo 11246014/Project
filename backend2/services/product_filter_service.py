@@ -573,6 +573,11 @@ def clean_product(
     features = extract_features(
         feature_text
     )
+    print("\n========== Feature ==========")
+    print("Title:", raw_title)
+    print("Snippet:", snippet)
+    print("Extract:", features)
+    print("=============================")
 
     # Debug
     raw_price = item.get("price", "0")

@@ -91,7 +91,13 @@ def generate_summary(
 """
 
     try:
+        print("========== Summary Input ==========")
 
+        for p in products:
+            print(p)
+
+        print("===================================")
+        
         print("\n[Summary Start]")
         print(
             f"[Product Text Length] {len(product_text)}"
