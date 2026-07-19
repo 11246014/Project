@@ -83,6 +83,16 @@ Map<String, dynamic> _user = {
           'avatar': null,
         };
       });
+
+      // 將後端已存的個人資訊寫入 Provider
+        // 讓使用者不用每次登入都重填年齡層、職業、目前裝置
+        ref.read(userProfileProvider.notifier).hydrate(user);
+
+        // Dropdown 靠 ref.watch 會自動刷新，但文字輸入框要手動同步 controller
+        _occupationController.text = ref.read(userProfileProvider).occupation;
+        _currentDeviceController.text =
+            ref.read(userProfileProvider).currentDevice;
+            
     }
   } catch (e) {
     // 載入失敗就保留預設值，不影響畫面
