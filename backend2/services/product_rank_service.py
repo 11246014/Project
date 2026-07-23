@@ -163,6 +163,20 @@ WEIGHT_CONFIG = {
     "location_accuracy": 20,
     "value": 35,
 }
+
+# ==================================================
+# Base Score Weight
+# （基礎權重，可依需求動態調整）
+# ==================================================
+
+SCORE_WEIGHT = {
+    "device": 20,
+    "usage": 15,
+    "priority": 10,
+    "budget": 10,
+    "rating": 1,
+}
+
 # ==================================================
 # Brand Score
 # ==================================================
@@ -189,9 +203,66 @@ BRAND_SCORE = {
 
     "Suunto": 12,
 }
+
+OS_BRAND_MAPPING = {
+    "iOS": [
+        "Apple",
+    ],
+    "Android": [
+        "Samsung",
+        "Google",
+        "Huawei",
+        "Amazfit",
+        "Xiaomi",
+    ],
+}
+
+DEVICE_KEYWORDS = {
+    "smartwatch": [
+        "智慧手錶",
+        "apple watch",
+        "galaxy watch",
+        "garmin",
+        "amazfit",
+        "huawei watch",
+        "pixel watch",
+        "ticwatch",
+    ],
+
+    "smart_band": [
+        "智慧手環",
+        "smart band",
+        "mi band",
+        "fitbit inspire",
+    ],
+
+    "smart_ring": [
+        "智慧戒指",
+        "smart ring",
+        "oura",
+        "ringconn",
+    ],
+
+    "earbuds": [
+        "藍牙耳機",
+        "airpods",
+        "galaxy buds",
+        "buds",
+        "earbuds",
+    ]
+}
 # =========================
 # Helper Functions
 # =========================
+
+def build_dynamic_weights(need):
+
+    weights = SCORE_WEIGHT.copy()
+
+    if need.usage:
+        weights["usage"] = 40
+
+    return weights
 
 def extract_product_features(product):
 
@@ -286,6 +357,9 @@ def calculate_product_score(product, need):
     reason_parts = []
 
     score = 0
+
+    weights = build_dynamic_weights(need)
+
     debug_score = []
 
     text = _text(product)
@@ -306,12 +380,18 @@ def calculate_product_score(product, need):
             need.device_type
         ).lower()
 
-        if device_term in text:
-            score += 20
+        keywords = DEVICE_KEYWORDS.get(
+            need.device_type,
+            [device_term]
+        )
+
+        if any(keyword.lower() in text for keyword in keywords):
+            score += weights["device"]
 
             debug_score.append(
-                "Device +20"
+                f"Device +{weights['device']}"
             )
+
     # =========================
     # Usage
     # =========================
@@ -325,7 +405,7 @@ def calculate_product_score(product, need):
 
         if usage.lower() in text or term in text:
 
-            score += 15
+            score += weights["usage"]
 
             debug_score.append(
                 f"Usage({usage}) +15"
@@ -394,7 +474,7 @@ def calculate_product_score(product, need):
             for term in evidence_terms
         ):
 
-            score += 10
+            score += weights["priority"]
 
             debug_score.append(
                 f"Priority({priority}) +10"
@@ -452,7 +532,7 @@ def calculate_product_score(product, need):
         and price
         and price <= need.budget.max
     ):
-        score += 10 
+        score += weights["budget"]
 
         debug_score.append(
             "Budget +10"
@@ -477,6 +557,30 @@ def calculate_product_score(product, need):
     debug_score.append(
         f"Rating +{rating_score}"
     )
+
+    # =========================
+    # OS
+    # =========================
+    if need.os:
+
+        brands = OS_BRAND_MAPPING.get(
+            need.os,
+            []
+        )
+
+        brand = product.get(
+            "brand",
+            ""
+        )
+
+        if brand in brands:
+
+            score += 25
+
+            debug_score.append(
+                f"OS({need.os}) +25"
+            )
+
     # =========================
     # Brand
     # =========================

@@ -60,6 +60,15 @@ def fetch_shopping_results(keyword):
 
     data = response.json()
 
+    print("\n========== SerpAPI Response ==========")
+
+    if "error" in data:
+        print("Error:", data["error"])
+    else:
+        print(data.keys())
+
+    print("======================================")
+
     shopping_results = data.get(
         "shopping_results",
         []
@@ -178,7 +187,8 @@ def web_search_products(
             products
         )
 
-        SEARCH_CACHE[keyword] = products
+        if products:
+            SEARCH_CACHE[keyword] = products
 
         print(
             f"[Cache Save] {keyword}"
