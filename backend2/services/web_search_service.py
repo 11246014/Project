@@ -60,6 +60,14 @@ def fetch_shopping_results(keyword):
 
     data = response.json()
 
+    print("\n========== Search Parameters ==========")
+    print(data.get("search_parameters"))
+    print("======================================")
+
+    print("\n========== Search Information ==========")
+    print(data.get("search_information"))
+    print("======================================")
+    print("Query:", keyword)
     print("\n========== SerpAPI Response ==========")
 
     if "error" in data:
@@ -190,9 +198,9 @@ def web_search_products(
         if products:
             SEARCH_CACHE[keyword] = products
 
-        print(
-            f"[Cache Save] {keyword}"
-        )
+            print(
+                f"[Cache Save] {keyword}"
+            )
         return products
 
     except requests.RequestException as e:

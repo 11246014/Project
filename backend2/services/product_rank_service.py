@@ -17,6 +17,13 @@ USAGE_QUERY_TERMS = {
     "hiking": "登山",
     "health_monitoring": "健康監測",
     "sleep": "睡眠",
+
+    # 中文 Mapping
+    "日常": "",
+    "商務": "",
+    "戶外": "",
+    "運動": "運動",
+    "健康": "健康",
 }
 
 FEATURE_QUERY_TERMS = {
@@ -561,10 +568,10 @@ def calculate_product_score(product, need):
     # =========================
     # OS
     # =========================
-    if need.os:
+    if need.preferences.os:
 
         brands = OS_BRAND_MAPPING.get(
-            need.os,
+            need.preferences.os,
             []
         )
 
@@ -578,7 +585,7 @@ def calculate_product_score(product, need):
             score += 25
 
             debug_score.append(
-                f"OS({need.os}) +25"
+                f"OS({need.preferences.os}) +25"
             )
 
     # =========================

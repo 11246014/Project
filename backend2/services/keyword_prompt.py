@@ -12,6 +12,7 @@ def build_keyword_prompt(user_message):
 
 {{
     "product_type":"",
+    "brand":"",
     "usage":"",
     "features":[],
     "os":"",

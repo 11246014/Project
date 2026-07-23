@@ -1,3 +1,4 @@
+#recommendation_pipeline.py
 import asyncio
 
 from services.db_search_service import search_db_products
@@ -25,8 +26,8 @@ PRIORITY_QUERY_TERMS = {
 }
 
 OS_QUERY_TERMS = {
-    "iOS": "iPhone",
-    "Android": "Android",
+    "iOS": "Apple Watch",
+    "Android": "Galaxy Watch",
 }
 
 STYLE_MAPPING = {
@@ -119,6 +120,8 @@ def _price(product):
 def build_search_query(need):
     parts = []
 
+    print("need.usage =", need.usage)
+
     if need.device_type:
         parts.append(
             DEVICE_QUERY_TERMS.get(
@@ -130,12 +133,15 @@ def build_search_query(need):
         parts.append("智慧穿戴")
 
     for usage in _list(need.usage):
-        parts.append(
-            USAGE_QUERY_TERMS.get(
-                usage,
-                usage
-            )
+
+        mapped = USAGE_QUERY_TERMS.get(
+            usage,
+            usage
         )
+
+        # 日常、商務、戶外等沒有搜尋價值就略過
+        if mapped:
+            parts.append(mapped)
 
     for feature in _list(need.features):
         parts.append(
