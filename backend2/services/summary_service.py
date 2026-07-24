@@ -3,6 +3,39 @@ import time
 from config.settings import SUMMARY_MODEL
 from services.ai_service import ask_ai
 
+def _build_persona_text(persona):
+    """
+    將使用者 Persona 轉換成自然語言描述，
+    讓 AI 生成摘要時能參考此背景資訊。
+
+    只有欄位存在時才輸出對應描述，避免產生空泛或誤導的句子。
+    """
+
+    parts = []
+
+    if persona.age_range:
+        parts.append(f"年齡層為{persona.age_range}")
+
+    if persona.occupation:
+        parts.append(f"職業為{persona.occupation}")
+
+    if persona.usage_scope:
+        scope_map = {
+            "個人使用": "此次為個人使用",
+            "家庭共用": "此次為家庭共用",
+            "要送禮": "此次用途為送禮",
+        }
+        parts.append(
+            scope_map.get(persona.usage_scope, f"使用情境為{persona.usage_scope}")
+        )
+
+    if persona.current_device:
+        parts.append(f"目前使用的穿戴裝置為{persona.current_device}")
+
+    if not parts:
+        return ""
+
+    return "使用者背景：" + "、".join(parts) + "。\n\n"
 
 def generate_summary(
     products,
@@ -34,10 +67,12 @@ def generate_summary(
     # Prompt
     # =========================
 
+    persona_text = _build_persona_text(user_need.persona)
+
     summary_prompt = f"""
 你是 WearWise 智慧穿戴推薦顧問。
 
-請依照順位推薦商品。
+{persona_text}請依照順位推薦商品。
 
 規則：
 
@@ -73,6 +108,7 @@ def generate_summary(
 30. 不得根據品牌名稱推測功能。
 31. 不得根據型號推測功能。
 32. 可將推薦原因改寫為自然語句，但不得改變原意。
+33. 若上方提供使用者背景資訊，可適度呼應（例如提及此為送禮用途、或提及升級自目前裝置），但不得虛構背景中未提及的功能或規格。
 
 格式範例：
 
