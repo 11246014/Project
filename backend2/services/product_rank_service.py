@@ -211,6 +211,12 @@ BRAND_SCORE = {
     "Suunto": 12,
 }
 
+# ==================================================
+# User Brand Match Score
+# ==================================================
+
+USER_BRAND_MATCH_SCORE = 30
+
 OS_BRAND_MAPPING = {
     "iOS": [
         "Apple",
@@ -222,6 +228,29 @@ OS_BRAND_MAPPING = {
         "Amazfit",
         "Xiaomi",
     ],
+}
+
+USER_BRAND_MAPPING = {
+    "apple": "Apple",
+    "apple watch": "Apple",
+
+    "garmin": "Garmin",
+
+    "samsung": "Samsung",
+
+    "huawei": "Huawei",
+
+    "amazfit": "Amazfit",
+
+    "fitbit": "Fitbit",
+
+    "google": "Google",
+
+    "coros": "COROS",
+
+    "polar": "Polar",
+
+    "suunto": "Suunto",
 }
 
 DEVICE_KEYWORDS = {
@@ -597,6 +626,7 @@ def calculate_product_score(product, need):
         ""
     )
 
+    # 商品品牌基礎分
     brand_score = BRAND_SCORE.get(
         brand,
         0
@@ -604,9 +634,34 @@ def calculate_product_score(product, need):
 
     score += brand_score
 
-    debug_score.append(
-        f"Brand({brand}) +{brand_score}"
+    if brand_score:
+
+        debug_score.append(
+            f"Brand({brand}) +{brand_score}"
+        )
+
+    # 使用者指定品牌
+    user_brand = (
+        need.preferences.brand
+        if need and need.preferences
+        else None
     )
+
+    if user_brand:
+        user_brand = USER_BRAND_MAPPING.get(
+            user_brand.lower(),
+            user_brand
+        )
+
+    if (
+        user_brand
+        and brand.lower() == user_brand.lower()
+    ):
+        score += USER_BRAND_MATCH_SCORE
+
+        debug_score.append(
+            f"UserBrand({user_brand}) +{USER_BRAND_MATCH_SCORE}"
+        )
     print("\n========== Score ==========")
     print(product.get("title"))
 

@@ -36,6 +36,48 @@ product_type：
 請保留原始名稱，
 不要自行修改。
 
+brand：
+
+若使用者明確提到品牌，
+請保留品牌名稱。
+
+例如：
+
+Apple
+Apple Watch
+Samsung
+Garmin
+Huawei
+Xiaomi
+Amazfit
+Fitbit
+COROS
+
+若未提及品牌，
+請填 ""。
+
+禁止根據品牌推測功能。
+
+例如：
+
+輸入：
+Garmin 智慧手錶
+
+brand：
+Garmin
+
+輸入：
+Apple Watch
+
+brand：
+Apple Watch
+
+輸入：
+推薦智慧手錶
+
+brand：
+""
+
 usage：
 
 請優先保留使用者的實際使用情境。
@@ -49,7 +91,6 @@ usage：
 登山
 健身
 騎車
-健康監測
 日常
 商務
 

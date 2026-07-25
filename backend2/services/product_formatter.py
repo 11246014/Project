@@ -1,3 +1,4 @@
+#product_formatter.py
 def format_product(product):
 
     # =========================
@@ -67,6 +68,11 @@ def format_product(product):
 
         "product_type": product.get(
             "product_type",
+            ""
+        ),
+
+        "brand": product.get(
+            "brand",
             ""
         ),
 

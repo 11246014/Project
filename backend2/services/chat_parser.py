@@ -70,12 +70,19 @@ def parse_chat_message(message):
         ),
 
         preferences=Preferences(
+
             os=normalize_os(
                 keyword_result.get("os")
             ),
+
+            brand=_none_if_empty(
+                keyword_result.get("brand")
+            ),
+
             style=normalize_style(
                 keyword_result.get("style")
             ),
+
             battery=normalize_battery(
                 keyword_result.get("battery")
             )

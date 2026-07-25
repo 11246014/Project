@@ -15,10 +15,52 @@ from services.search_query_builder import (
 
 # 品牌快速查詢
 BRAND_KEYWORDS = {
+
+    # Apple
+    "apple": "Apple",
     "apple watch": "Apple Watch",
-    "garmin": "Garmin",
-    "amazfit": "Amazfit",
+
+    # Samsung
+    "samsung": "Samsung",
+    "galaxy": "Samsung",
     "galaxy watch": "Galaxy Watch",
+    "galaxy buds": "Galaxy Buds",
+
+    # Garmin
+    "garmin": "Garmin",
+
+    # Huawei
+    "huawei": "Huawei",
+
+    # Google
+    "google": "Google",
+    "pixel watch": "Google",
+
+    # Amazfit
+    "amazfit": "Amazfit",
+
+    # Fitbit
+    "fitbit": "Fitbit",
+
+    # Xiaomi
+    "xiaomi": "Xiaomi",
+    "mi band": "Xiaomi",
+
+    # COROS
+    "coros": "COROS",
+
+    # Polar
+    "polar": "Polar",
+
+    # Suunto
+    "suunto": "Suunto",
+
+    # Smart Ring
+    "oura": "Oura",
+    "ringconn": "RingConn",
+
+    # Earbuds
+    "airpods": "AirPods",
 }
 
 # 裝置快速查詢
@@ -100,6 +142,7 @@ def _keyword_result(
     budget_min=0,
     budget_max=0,
     product_type=None,
+    brand=None,
     usage=None,
     features=None,
     os=None,
@@ -117,6 +160,7 @@ def _keyword_result(
         "budget_min": budget_min or 0,
         "budget_max": budget_max or 0,
         "product_type": _none_if_empty(product_type),
+        "brand": _none_if_empty(brand),
         "usage": _none_if_empty(usage),
         "features": _as_list(features),
         "os": _none_if_empty(os),
@@ -180,6 +224,7 @@ def _validate_keyword_result(data):
 
     defaults = {
         "product_type": "",
+        "brand": "",
         "usage": "",
         "features": [],
         "os": "",
@@ -238,6 +283,7 @@ def normalize_keyword_result(data, user_message):
 
     for key in (
         "product_type",
+        "brand",
         "usage",
         "os",
         "style",
@@ -350,6 +396,7 @@ def normalize_keyword_result(data, user_message):
 
     for key in (
         "product_type",
+        "brand",
         "usage",
         "os",
         "style",
@@ -387,9 +434,10 @@ def extract_keyword(user_message):
         if msg in BRAND_KEYWORDS:
 
             return _keyword_result(
-                keyword=BRAND_KEYWORDS[msg]
+                keyword=BRAND_KEYWORDS[msg],
+                brand=BRAND_KEYWORDS[msg]
             )
-
+        
         # --------------------------
         # Device Shortcut
         # --------------------------
@@ -509,6 +557,10 @@ def extract_keyword(user_message):
 
                 product_type=data.get(
                     "product_type"
+                ),
+
+                brand=data.get(
+                    "brand"
                 ),
 
                 usage=data.get(

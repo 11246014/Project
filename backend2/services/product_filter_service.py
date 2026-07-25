@@ -1,3 +1,4 @@
+#product_filter_service.py
 import re
 DEBUG_SEARCH = False
 
@@ -42,11 +43,19 @@ KNOWN_BRANDS = [
     "Apple",
     "Samsung",
     "Garmin",
-    "Xiaomi",
-    "Fitbit",
     "Huawei",
-    "Amazfit",
     "Google",
+    "Amazfit",
+    "Fitbit",
+    "Xiaomi",
+
+    "COROS",
+    "Polar",
+    "Suunto",
+
+    "Oura",
+    "RingConn",
+
     "OPPO",
     "realme",
 ]
