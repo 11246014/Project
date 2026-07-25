@@ -179,8 +179,11 @@ WEIGHT_CONFIG = {
 SCORE_WEIGHT = {
     "device": 20,
     "usage": 15,
+    "feature": 20,
     "priority": 10,
     "budget": 10,
+    "brand": 15,
+    "os": 25,
     "rating": 1,
 }
 
@@ -295,8 +298,51 @@ def build_dynamic_weights(need):
 
     weights = SCORE_WEIGHT.copy()
 
+    # =========================
+    # Usage
+    # =========================
+
     if need.usage:
-        weights["usage"] = 40
+        weights["usage"] = 25
+
+    # =========================
+    # Feature
+    # =========================
+
+    if need.features:
+        weights["feature"] = 30
+
+    # =========================
+    # Budget
+    # =========================
+
+    if (
+        need.budget.min
+        or
+        need.budget.max
+    ):
+        weights["budget"] = 20
+
+    # =========================
+    # Brand
+    # =========================
+
+    if (
+        need.preferences
+        and need.preferences.brand
+    ):
+        weights["brand"] = 30
+
+    # =========================
+    # OS
+    # =========================
+
+    if (
+        need.preferences
+        and need.preferences.os
+        and need.preferences.os != "Cross"
+    ):
+        weights["os"] = 30
 
     return weights
 
@@ -391,8 +437,10 @@ def score_preferences(product, need):
 def calculate_product_score(product, need):
 
     reason_parts = []
-
     score = 0
+    base_score = 0          # 基本能力
+    requirement_score = 0   # 使用者需求
+    adjustment_score = 0    # 品牌修正
 
     weights = build_dynamic_weights(need)
 
@@ -423,6 +471,7 @@ def calculate_product_score(product, need):
 
         if any(keyword.lower() in text for keyword in keywords):
             score += weights["device"]
+            base_score += weights["device"]
 
             debug_score.append(
                 f"Device +{weights['device']}"
@@ -442,6 +491,7 @@ def calculate_product_score(product, need):
         if usage.lower() in text or term in text:
 
             score += weights["usage"]
+            requirement_score += weights["usage"]
 
             debug_score.append(
                 f"Usage({usage}) +15"
@@ -473,12 +523,13 @@ def calculate_product_score(product, need):
             )
         ):
 
-            weight = WEIGHT_CONFIG.get(
-                feature_name,
-                20
+            weight = max(
+                WEIGHT_CONFIG.get(feature_name, 20),
+                weights["feature"]
             )
 
             score += weight
+            requirement_score += weight
 
             debug_score.append(
                 f"Feature({feature_name}) +{weight}"
@@ -569,9 +620,10 @@ def calculate_product_score(product, need):
         and price <= need.budget.max
     ):
         score += weights["budget"]
+        requirement_score += weights["budget"]
 
         debug_score.append(
-            "Budget +10"
+            f"Budget +{weights['budget']}"
         )
     # =========================
     # Rating
@@ -589,6 +641,7 @@ def calculate_product_score(product, need):
     rating_score = int(rating * 5)
 
     score += rating_score
+    base_score += rating_score
 
     debug_score.append(
         f"Rating +{rating_score}"
@@ -633,6 +686,7 @@ def calculate_product_score(product, need):
     )
 
     score += brand_score
+    adjustment_score += brand_score
 
     if brand_score:
 
@@ -657,17 +711,26 @@ def calculate_product_score(product, need):
         user_brand
         and brand.lower() == user_brand.lower()
     ):
-        score += USER_BRAND_MATCH_SCORE
+        score += weights["brand"]
+        requirement_score += weights["brand"]
 
         debug_score.append(
-            f"UserBrand({user_brand}) +{USER_BRAND_MATCH_SCORE}"
+            f"UserBrand({user_brand}) +{weights['brand']}"
         )
     print("\n========== Score ==========")
     print(product.get("title"))
 
     for item in debug_score:
         print(item)
-
+        
+    score = (
+    base_score
+    + requirement_score
+    + adjustment_score
+    )
+    print(f"Base Score = {base_score}")
+    print(f"Requirement Score = {requirement_score}")
+    print(f"Adjustment Score = {adjustment_score}")
     print(f"Total = {score}")
     print("===========================\n")
 
