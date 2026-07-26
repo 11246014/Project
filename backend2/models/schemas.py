@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 class UserRequest(BaseModel):
     message: str
+    persona: Optional[Dict[str, Any]] = None
 
 
 class Budget(BaseModel):

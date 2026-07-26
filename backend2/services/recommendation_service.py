@@ -17,7 +17,7 @@ from services.summary_service import (
 user_history = []
 
 
-def recommend_products(user_message):
+def recommend_products(user_message, persona=None):
 
     total_start = time.time()
 
@@ -87,6 +87,27 @@ def recommend_products(user_message):
         )
 
         user_need = recommendation_request.need
+        
+        # =========================
+        # 結構化 Persona 覆蓋
+        # 前端已將年齡層／職業／目前裝置結構化傳入，
+        # 若有值則優先採用，不依賴 AI 從文字重新猜測，
+        # 避免猜錯或漏抓。usage_scope 對話推薦不需要，故不覆蓋。
+        # =========================
+
+        if persona:
+            if persona.get("age_range"):
+                user_need.persona.age_range = persona["age_range"]
+
+            if persona.get("occupation"):
+                user_need.persona.occupation = persona["occupation"]
+
+            if persona.get("current_device"):
+                user_need.persona.current_device = persona["current_device"]
+
+        print(
+            f"[Persona Merged] {user_need.persona}"
+        )
 
         print(
             f"[Keyword Time] "

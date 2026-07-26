@@ -8,4 +8,4 @@ router = APIRouter()
 
 @router.post("/ai/recommend")
 def ai_recommend(request: UserRequest):
-    return recommend_products(request.message)
+    return recommend_products(request.message, persona=request.persona)
