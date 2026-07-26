@@ -122,6 +122,11 @@ def build_search_query(need):
 
     print("need.usage =", need.usage)
 
+    if need.preferences.brand:
+        parts.append(
+            need.preferences.brand
+        )
+
     if need.device_type:
         parts.append(
             DEVICE_QUERY_TERMS.get(
@@ -286,10 +291,53 @@ def match_device_type(product, need):
 
     elif need.device_type == "smartwatch":
 
-        return (
-            "手錶" in title
-            or "腕錶" in title
-            or "watch" in title
+        SMARTWATCH_KEYWORDS = [
+
+            "手錶",
+            "腕錶",
+            "跑錶",
+            "運動錶",
+            "watch",
+
+            # Garmin
+            "forerunner",
+            "fenix",
+            "epix",
+            "instinct",
+            "venu",
+            "vivoactive",
+
+            # Apple
+            "apple watch",
+
+            # Samsung
+            "galaxy watch",
+
+            # Amazfit
+            "amazfit",
+            "gtr",
+            "gts",
+
+            # COROS
+            "coros",
+            "pace",
+            "apex",
+            "vertix",
+
+            # Polar
+            "polar",
+            "vantage",
+            "ignite",
+
+            # Suunto
+            "suunto",
+            "race",
+            "vertical",
+        ]
+
+        return any(
+            keyword in title
+            for keyword in SMARTWATCH_KEYWORDS
         )
 
     return True
@@ -352,6 +400,7 @@ def match_negative(product, need):
             return False
 
     return True
+    
 
 def hard_filter_candidates(candidates, need):
     filtered = []
@@ -360,25 +409,31 @@ def hard_filter_candidates(candidates, need):
 
     budget_min = need.budget.min or 0
     budget_max = need.budget.max or 0
+    
 
     for product in candidates:
+
+        print(f"[Checking] {product.get('title')}")
 
         if not match_device_type(
             product,
             need
         ):
+            print(f"[Device Filter] {product.get('title')}")
             continue
 
         if not match_os(
             product,
             need
         ):
+            print(f"[OS Filter] {product.get('title')}")
             continue
 
         if not match_negative(
             product,
             need
         ):
+            print(f"[Negative Filter] {product.get('title')}")
             continue
 
         price = _price(product)
@@ -386,11 +441,14 @@ def hard_filter_candidates(candidates, need):
         if price > 0:
 
             if budget_min and price < budget_min:
+                print(f"[Budget Min] {product.get('title')} ({price})")
                 continue
 
             if budget_max and price > budget_max:
+                print(f"[Budget Max] {product.get('title')} ({price})")
                 continue
 
+        print(f"[PASS] {product.get('title')}")
         filtered.append(product)
 
     if filtered:
@@ -439,6 +497,8 @@ def recommend_from_need(
     need,
     limit=3
 ):
+    print("need.brand =", need.preferences.brand)
+
     search_query = build_search_query(need)
 
     candidates = retrieve_candidates(search_query)

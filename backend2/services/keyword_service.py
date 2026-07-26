@@ -246,6 +246,28 @@ def _validate_keyword_result(data):
             data["features"] = []
         else:
             data["features"] = [data["features"]]
+            
+    # 字串欄位一律轉成字串
+    for key in (
+        "product_type",
+        "brand",
+        "usage",
+        "os",
+        "style",
+        "battery",
+        "occupation",
+        "age_group",
+    ):
+        value = data.get(key)
+
+        if isinstance(value, list):
+            data[key] = value[0] if value else ""
+
+        elif value is None:
+            data[key] = ""
+
+        elif not isinstance(value, str):
+            data[key] = str(value)
 
     # usage
     if data["usage"] is None:
@@ -292,9 +314,13 @@ def normalize_keyword_result(data, user_message):
         "age_group",
     ):
 
-        data[key] = _convert_traditional(
-            data.get(key)
-        )
+        value = data.get(key)
+
+        # AI 有時會回 [] 或 ["iOS"]
+        if isinstance(value, list):
+            value = value[0] if value else ""
+
+        data[key] = _convert_traditional(value)
 
     # --------------------------
     # Features

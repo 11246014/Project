@@ -16,9 +16,13 @@ USAGE_MAPPING = {
 
 FEATURE_MAPPING = {
     "GPS": "GPS",
-    "睡眠": "睡眠監測",
-    "健康": "健康監測",
-    "健康監測": "健康監測",
+
+    "睡眠": "睡眠",
+    "睡眠監測": "睡眠",
+
+    "健康": "",
+    "健康監測": "",
+
     "心率": "心率",
     "血氧": "血氧",
     "ECG": "ECG",
@@ -83,7 +87,9 @@ def build_search_query(keyword_result):
         for key, value in FEATURE_MAPPING.items():
 
             if key in feature:
-                query_parts.append(value)
+
+                if value:
+                    query_parts.append(value)
 
     # =========================
     # Remove Duplicate
