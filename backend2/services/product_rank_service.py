@@ -4,6 +4,7 @@
 # Query Mapping
 # （供 Ranking 使用）
 # ==================================================
+DEBUG_RANKING = False
 
 DEVICE_QUERY_TERMS = {
     "smartwatch": "智慧手錶",
@@ -215,19 +216,27 @@ PRIORITY_EVIDENCE_TERMS = {
 # （權重設定）
 # ==================================================
 
-WEIGHT_CONFIG = {
+FEATURE_BONUS = {
 
-    "GPS": 30,
-    "睡眠": 30,
-    "血氧": 35,
-    "ECG": 40,
-    "防水": 20,
-    "心率": 25,
+    "GPS":15,
 
-    "battery_life": 50,
-    "durability": 50,
-    "location_accuracy": 20,
-    "value": 35,
+    "睡眠":15,
+
+    "血氧":18,
+
+    "ECG":20,
+
+    "防水":10,
+
+    "心率":12,
+
+    "battery_life":20,
+
+    "durability":15,
+
+    "location_accuracy":15,
+
+    "value":15,
 }
 
 # ==================================================
@@ -235,7 +244,7 @@ WEIGHT_CONFIG = {
 # （基礎權重，可依需求動態調整）
 # ==================================================
 
-SCORE_WEIGHT = {
+BASE_SCORE = {
     "device": 20,
     "usage": 15,
     "feature": 20,
@@ -251,26 +260,16 @@ SCORE_WEIGHT = {
 # ==================================================
 
 BRAND_SCORE = {
-
-    "Apple": 15,
-
-    "Garmin": 15,
-
-    "Samsung": 12,
-
-    "Huawei": 10,
-
-    "Amazfit": 10,
-
-    "Fitbit": 10,
-
-    "Google": 10,
-
-    "COROS": 12,
-
-    "Polar": 12,
-
-    "Suunto": 12,
+    "Apple": 5,
+    "Garmin": 5,
+    "Samsung": 4,
+    "Huawei": 3,
+    "Amazfit": 3,
+    "Fitbit": 3,
+    "Google": 4,
+    "COROS": 4,
+    "Polar": 4,
+    "Suunto": 4,
 }
 
 # ==================================================
@@ -404,7 +403,7 @@ DEVICE_KEYWORDS = {
 
 def build_dynamic_weights(need):
 
-    weights = SCORE_WEIGHT.copy()
+    weights = BASE_SCORE.copy()
 
     # =========================
     # Usage
@@ -640,7 +639,7 @@ def calculate_product_score(product, need):
         ):
 
             weight = max(
-                WEIGHT_CONFIG.get(feature_name, 20),
+                FEATURE_BONUS.get(feature_name, 20),
                 weights["feature"]
             )
 
@@ -697,7 +696,7 @@ def calculate_product_score(product, need):
             keyword.lower() in text
             for keyword in keywords
         ):
-            weight = WEIGHT_CONFIG.get(
+            weight = FEATURE_BONUS.get(
                 priority,
                 20
             )
@@ -754,7 +753,7 @@ def calculate_product_score(product, need):
     except Exception:
         rating = 0
 
-    rating_score = int(rating * 5)
+    rating_score = int(rating * 2)
 
     score += rating_score
     base_score += rating_score
@@ -780,11 +779,10 @@ def calculate_product_score(product, need):
 
         if brand in brands:
 
-            score += 25
-            requirement_score += 25
+            requirement_score += weights["os"]
 
             debug_score.append(
-                f"OS({need.preferences.os}) +25"
+                f"OS({need.preferences.os}) +{weights['os']}"
             )
 
     # =========================
@@ -828,28 +826,29 @@ def calculate_product_score(product, need):
         user_brand
         and brand.lower() == user_brand.lower()
     ):
-        score += weights["brand"]
-        requirement_score += weights["brand"]
+        requirement_score += USER_BRAND_MATCH_SCORE
 
         debug_score.append(
-            f"UserBrand({user_brand}) +{weights['brand']}"
+            f"UserBrand({user_brand}) +{USER_BRAND_MATCH_SCORE}"
         )
-    print("\n========== Score ==========")
-    print(product.get("title"))
-
-    for item in debug_score:
-        print(item)
-        
     score = (
-    base_score
-    + requirement_score
-    + adjustment_score
+        base_score
+        + requirement_score
+        + adjustment_score
     )
-    print(f"Base Score = {base_score}")
-    print(f"Requirement Score = {requirement_score}")
-    print(f"Adjustment Score = {adjustment_score}")
-    print(f"Total = {score}")
-    print("===========================\n")
+
+    if DEBUG_RANKING:
+        print("\n========== Score ==========")
+        print(product.get("title"))
+
+        for item in debug_score:
+            print(item)
+
+        print(f"Base Score = {base_score}")
+        print(f"Requirement Score = {requirement_score}")
+        print(f"Adjustment Score = {adjustment_score}")
+        print(f"Total = {score}")
+        print("===========================\n")
 
     if not reason_parts:
         reason = generate_reason(product)
@@ -857,9 +856,15 @@ def calculate_product_score(product, need):
         reason = "、".join(reason_parts)
 
     return {
-        "score": min(score,100),
+        "score": score_mapper(score),
         "reason": reason,
     }
+
+def score_mapper(raw_score):
+
+    score = int(raw_score * 0.75 + 35)
+
+    return max(50, min(score, 95))
 
 def rank_products(products, user_need=None):
 
