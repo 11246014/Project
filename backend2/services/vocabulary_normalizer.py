@@ -1,3 +1,4 @@
+#vocabulary_normalizer.py
 def _clean(value):
     if value is None:
         return None

@@ -1,37 +1,21 @@
+#recommendation_pipeline.py
 import asyncio
 
 from services.db_search_service import search_db_products
 from services.product_formatter import format_product
 from services.web_search_service import web_search_products
 from services.backend1_client import save_product
+from services.product_rank_service import (
+    rank_products,
+    DEVICE_QUERY_TERMS,
+    USAGE_QUERY_TERMS,
+    FEATURE_QUERY_TERMS,
+)
 
 # ==================================================
 # Search Query Mapping
 # （建立搜尋關鍵字）
 # ==================================================
-
-DEVICE_QUERY_TERMS = {
-    "smartwatch": "智慧手錶",
-    "smart_band": "智慧手環",
-    "smart_ring": "智慧戒指",
-    "earbuds": "藍牙耳機",
-}
-
-USAGE_QUERY_TERMS = {
-    "running": "跑步",
-    "hiking": "登山",
-    "health_monitoring": "健康監測",
-    "sleep": "睡眠",
-}
-
-FEATURE_QUERY_TERMS = {
-    "gps": "GPS",
-    "heart_rate": "心率",
-    "blood_oxygen": "血氧",
-    "ecg": "ECG",
-    "sleep_tracking": "睡眠監測",
-    "water_resistance": "防水",
-}
 
 PRIORITY_QUERY_TERMS = {
     "battery_life": "長續航",
@@ -42,28 +26,22 @@ PRIORITY_QUERY_TERMS = {
 }
 
 OS_QUERY_TERMS = {
-    "iOS": "iPhone",
-    "Android": "Android",
+    "iOS": "Apple Watch",
+    "Android": "Galaxy Watch",
 }
 
 STYLE_MAPPING = {
 
     "business": [
         "商務",
-        "金屬",
-        "正式",
     ],
 
     "fashion": [
         "時尚",
-        "設計",
-        "AMOLED",
     ],
 
     "sport": [
         "運動",
-        "防水",
-        "GPS",
     ],
 }
 
@@ -81,6 +59,7 @@ BATTERY_MAPPING = {
         "長續航",
     ],
 }
+
 # ==================================================
 # Search Filter Mapping
 # （搜尋階段硬性過濾）
@@ -97,6 +76,7 @@ NEGATIVE_STYLE_KEYWORDS = {
         "粗獷",
     ],
 }
+
 IOS_ONLY_KEYWORDS = [
     "apple watch",
 ]
@@ -105,119 +85,7 @@ ANDROID_ONLY_KEYWORDS = [
     "galaxy watch",
     "wear os",
 ]
-# ==================================================
-# Score Mapping
-# （商品評分）
-# ==================================================
 
-FEATURE_KEYWORDS = {
-    "GPS": [
-        "gps",
-        "定位",
-        "導航",
-        "衛星",
-    ],
-    "睡眠": [
-        "睡眠",
-        "sleep",
-    ],
-    "血氧": [
-        "血氧",
-        "spo2",
-    ],
-    "ECG": [
-        "ecg",
-        "心電圖",
-    ],
-    "防水": [
-        "防水",
-        "ip68",
-        "5atm",
-    ],
-    "心率": [
-        "心率",
-        "heart rate",
-    ],
-}
-
-FEATURE_REASON = {
-    "GPS": "支援GPS定位",
-    "睡眠": "具備睡眠監測",
-    "血氧": "支援血氧偵測",
-    "ECG": "具備ECG心電圖功能",
-    "心率": "提供心率監測",
-    "防水": "具備防水功能",
-}
-
-CORE_FACTOR_KEYWORDS = {
-    "battery_life": [
-        "續航",
-        "長續航",
-        "電池"
-    ],
-    "location_accuracy": [
-        "gps",
-        "定位",
-        "高精度",
-        "精準",
-        "感測"
-    ],
-    "durability": [
-        "軍規",
-        "防摔",
-        "耐用"
-    ],
-    "value": [
-        "cp值",
-        "超值"
-    ]
-}
-
-PRIORITY_EVIDENCE_TERMS = {
-    "battery_life": [
-        "長續航",
-        "強勢續航",
-        "超高續航",
-        "續航",
-        "solar",
-        "太陽能",
-    ],
-    "location_accuracy": [
-        "gps",
-        "gps定位",
-        "定位",
-    ],
-    "durability": [
-        "耐用",
-        "堅固",
-        "軍規",
-        "防摔",
-    ],
-    "ease_of_use": [
-        "操作簡單",
-        "簡單操作",
-        "容易使用",
-        "易用",
-    ],
-}
-# ==================================================
-# Score Config
-# （權重設定）
-# ==================================================
-WEIGHT_CONFIG = {
-
-    "GPS": 30,
-    "睡眠": 30,
-    "血氧": 35,
-    "ECG": 40,
-    "防水": 20,
-    "心率": 25,
-
-    "battery_life": 50,
-    "durability": 50,
-    "location_accuracy": 20,
-    "value": 35,
-}
 
 def _list(value):
     if not value:
@@ -248,26 +116,16 @@ def _price(product):
     except Exception:
         return 0
     
-def score_preferences(product, need):
-    score = 0
-    text = _text(product)
-
-    if (
-        need.preferences.battery
-        and "battery_life" not in _list(need.priorities)
-    ):
-        battery_terms = PRIORITY_EVIDENCE_TERMS["battery_life"]
-
-        if any(
-            term.lower() in text
-            for term in battery_terms
-        ):
-            score += 10
-
-    return score
 
 def build_search_query(need):
     parts = []
+
+    print("need.usage =", need.usage)
+
+    if need.preferences.brand:
+        parts.append(
+            need.preferences.brand
+        )
 
     if need.device_type:
         parts.append(
@@ -280,12 +138,15 @@ def build_search_query(need):
         parts.append("智慧穿戴")
 
     for usage in _list(need.usage):
-        parts.append(
-            USAGE_QUERY_TERMS.get(
-                usage,
-                usage
-            )
+
+        mapped = USAGE_QUERY_TERMS.get(
+            usage,
+            usage
         )
+
+        # 日常、商務、戶外等沒有搜尋價值就略過
+        if mapped:
+            parts.append(mapped)
 
     for feature in _list(need.features):
         parts.append(
@@ -305,9 +166,12 @@ def build_search_query(need):
 
     if (
         need.preferences.os
-        and need.preferences.os != "0"
+        and need.preferences.os not in (
+            "0",
+            "Cross",
+            "cross",
+        )
     ):
-
         parts.append(
             OS_QUERY_TERMS.get(
                 need.preferences.os,
@@ -319,37 +183,45 @@ def build_search_query(need):
 
         style_keywords = STYLE_MAPPING.get(
             need.preferences.style,
-            [need.preferences.style]
+            []
         )
 
-        parts.extend(style_keywords)
+        if style_keywords:
+            parts.append(style_keywords[0])
 
     if need.preferences.battery:
 
         battery_keywords = BATTERY_MAPPING.get(
             need.preferences.battery,
-            ["長續航"]
+            []
         )
 
-        parts.extend(battery_keywords)
+        if battery_keywords:
+            parts.append(battery_keywords[0])
 
     budget_min = need.budget.min
     budget_max = need.budget.max
 
-    if budget_min and budget_max:
-        parts.append(f"{budget_min}到{budget_max}元")
-    elif budget_max:
-        parts.append(f"{budget_max}元以下")
-    elif budget_min:
-        parts.append(f"{budget_min}元以上")
+    # if budget_min and budget_max:
+    #     parts.append(f"{budget_min}到{budget_max}元")
+    # elif budget_max:
+    #     parts.append(f"{budget_max}元以下")
+    # elif budget_min:
+    #     parts.append(f"{budget_min}元以上")
 
     cleaned = []
 
     for part in parts:
-        if part and part not in cleaned:
+
+        if not part:
+            continue
+
+        if part not in cleaned:
             cleaned.append(part)
 
     return " ".join(cleaned)
+
+
 
 
 def _run_async(coro):
@@ -362,15 +234,15 @@ def _run_async(coro):
         "recommend_from_need cannot run async DB search inside an active event loop"
     )
 
-def save_candidates(products):
-    for product in products:
-        try:
-            if product.get("title"):
-                _run_async(
-                    save_product(product)
-                )
-        except Exception as e:
-            print(f"[Save Error] {e}")
+# def save_candidates(products):
+#     for product in products:
+#         try:
+#             if product.get("title"):
+#                 _run_async(
+#                     save_product(product)
+#                 )
+#         except Exception as e:
+#             print(f"[Save Error] {e}")
 
 def retrieve_candidates(search_query):
     candidates = []
@@ -419,10 +291,53 @@ def match_device_type(product, need):
 
     elif need.device_type == "smartwatch":
 
-        return (
-            "手錶" in title
-            or "腕錶" in title
-            or "watch" in title
+        SMARTWATCH_KEYWORDS = [
+
+            "手錶",
+            "腕錶",
+            "跑錶",
+            "運動錶",
+            "watch",
+
+            # Garmin
+            "forerunner",
+            "fenix",
+            "epix",
+            "instinct",
+            "venu",
+            "vivoactive",
+
+            # Apple
+            "apple watch",
+
+            # Samsung
+            "galaxy watch",
+
+            # Amazfit
+            "amazfit",
+            "gtr",
+            "gts",
+
+            # COROS
+            "coros",
+            "pace",
+            "apex",
+            "vertix",
+
+            # Polar
+            "polar",
+            "vantage",
+            "ignite",
+
+            # Suunto
+            "suunto",
+            "race",
+            "vertical",
+        ]
+
+        return any(
+            keyword in title
+            for keyword in SMARTWATCH_KEYWORDS
         )
 
     return True
@@ -485,6 +400,8 @@ def match_negative(product, need):
             return False
 
     return True
+    
+
 def hard_filter_candidates(candidates, need):
     filtered = []
 
@@ -492,25 +409,31 @@ def hard_filter_candidates(candidates, need):
 
     budget_min = need.budget.min or 0
     budget_max = need.budget.max or 0
+    
 
     for product in candidates:
+
+        print(f"[Checking] {product.get('title')}")
 
         if not match_device_type(
             product,
             need
         ):
+            print(f"[Device Filter] {product.get('title')}")
             continue
 
         if not match_os(
             product,
             need
         ):
+            print(f"[OS Filter] {product.get('title')}")
             continue
 
         if not match_negative(
             product,
             need
         ):
+            print(f"[Negative Filter] {product.get('title')}")
             continue
 
         price = _price(product)
@@ -518,11 +441,14 @@ def hard_filter_candidates(candidates, need):
         if price > 0:
 
             if budget_min and price < budget_min:
+                print(f"[Budget Min] {product.get('title')} ({price})")
                 continue
 
             if budget_max and price > budget_max:
+                print(f"[Budget Max] {product.get('title')} ({price})")
                 continue
 
+        print(f"[PASS] {product.get('title')}")
         filtered.append(product)
 
     if filtered:
@@ -561,195 +487,6 @@ def hard_filter_candidates(candidates, need):
     return fallback[:3], budget_fallback
 
 
-def score_product(product, need):
-
-    reason_parts = []
-
-    score = 0
-
-    text = _text(product)
-
-    features = {
-        str(item).lower()
-        for item in _list(product.get("features"))
-    }
-
-    # =========================
-    # Device
-    # =========================
-
-    if need.device_type:
-
-        device_term = DEVICE_QUERY_TERMS.get(
-            need.device_type,
-            need.device_type
-        ).lower()
-
-    if device_term in text:
-        score += 20
-
-    # =========================
-    # Usage
-    # =========================
-
-    for usage in _list(need.usage):
-
-        term = USAGE_QUERY_TERMS.get(
-            usage,
-            usage
-        ).lower()
-
-        if usage.lower() in text or term in text:
-
-            score += 15
-
-    # =========================
-    # Feature Score
-    # =========================
-
-    for feature in _list(need.features):
-
-        feature_name = FEATURE_QUERY_TERMS.get(
-            feature,
-            feature
-        )
-
-        if feature_name == "睡眠監測":
-            feature_name = "睡眠"
-
-        keywords = FEATURE_KEYWORDS.get(
-            feature_name,
-            []
-        )
-
-        if any(
-            keyword.lower() in text
-            for keyword in keywords
-        ):
-
-            score += WEIGHT_CONFIG.get(
-                feature_name,
-                20
-            )
-
-            reason = FEATURE_REASON.get(
-                feature_name
-            )
-
-            if (
-                reason
-                and reason not in reason_parts
-            ):
-                reason_parts.append(reason)
-
-    # =========================
-    # Priority
-    # =========================
-
-    for priority in _list(need.priorities):
-
-        evidence_terms = PRIORITY_EVIDENCE_TERMS.get(
-            priority,
-            [priority]
-        )
-
-        if any(
-            term.lower() in text
-            for term in evidence_terms
-        ):
-
-            score += 10
-    # =========================
-    # Core Factor
-    # =========================
-
-    for priority in _list(need.priorities):
-
-        keywords = CORE_FACTOR_KEYWORDS.get(
-            priority,
-            []
-        )
-
-        if any(
-            keyword.lower() in text
-            for keyword in keywords
-        ):
-
-            score += WEIGHT_CONFIG.get(
-                priority,
-                20
-            )
-
-    # =========================
-    # Preference
-    # =========================
-
-    score += score_preferences(
-        product,
-        need
-    )
-
-    # =========================
-    # Budget
-    # =========================
-
-    price = _price(product)
-    if (
-        need.budget.max
-        and price
-        and price <= need.budget.max
-    ):
-        score += 10
-
-    # =========================
-    # Rating
-    # =========================
-    try:
-        rating = float(
-            product.get(
-                "rating",
-                0
-            )
-        )
-    except Exception:
-        rating = 0
-    score += int(rating * 5)
-
-    # =========================
-    # Reason
-    # =========================
-
-    if reason_parts:
-        reason = "、".join(reason_parts)
-    else:
-        reason = "符合使用需求"
-
-    return {
-        "score": min(score, 100),
-        "reason": reason,
-    }
-
-
-def rank_candidates(candidates, need):
-    ranked = []
-
-    for product in candidates:
-        product = product.copy()
-        result = score_product(product, need)
-        product["match"] = result["score"]
-        product["reason"] = result["reason"]
-        ranked.append(product)
-
-    ranked.sort(
-        key=lambda item: (
-            item.get("match", 0),
-            item.get("rating", 0)
-        ),
-        reverse=True
-    )
-
-    return ranked
-
 def format_products(products, limit=3):
     return [
         format_product(product)
@@ -760,38 +497,46 @@ def recommend_from_need(
     need,
     limit=3
 ):
+    print("need.brand =", need.preferences.brand)
+
     search_query = build_search_query(need)
 
     candidates = retrieve_candidates(search_query)
-    save_candidates(candidates)
+
+    print(f"[Candidates] {len(candidates)}")
 
     filtered, budget_fallback = hard_filter_candidates(
         candidates,
         need
     )
 
-    print("\n========== PIPELINE CANDIDATES ==========")
+    print(f"[After Filter] {len(filtered)}")
 
-    for index, product in enumerate(filtered, start=1):
-        print(f"\n--- Candidate {index} ---")
-        print("title:", product.get("title"))
-        print("price:", product.get("price"))
-        print("features:", product.get("features"))
-        print("desc:", product.get("desc"))
-        print("rating:", product.get("rating"))
-        print("raw_title:", product.get("raw_title", ""))
-
-    print("\n=========================================\n")
-
-    ranked = rank_candidates(
+    ranked = rank_products(
         filtered,
         need
     )
+    print("\n========== Ranked ==========")
+
+    for idx, product in enumerate(ranked[:5], start=1):
+
+        print(
+            f"{idx}. "
+            f"{product.get('title','')} | "
+            f"Score={product.get('match',0)} | "
+            f"Reason={product.get('reason','')}"
+        )
+
+    print("============================")
+    
+    print(f"[After Ranking] {len(ranked)}")
 
     formatted_products = format_products(
         ranked,
         limit
     )
+
+    print(f"[Formatted] {len(formatted_products)}")
 
     return {
         "products": formatted_products,

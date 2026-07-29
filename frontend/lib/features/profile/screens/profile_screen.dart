@@ -9,6 +9,9 @@ import '../../../core/theme/theme_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../services/user_service.dart';
 import '../../../core/providers/user_profile_provider.dart';
+import '../../../core/providers/cart_provider.dart';
+import '../../../core/utils/launch_helper.dart';
+import '../../../core/constants/app_formatters.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -56,21 +59,6 @@ Map<String, dynamic> _user = {
     },
   ];
 
-  // Mock 購物車（W3 串接後從 API 取得）
-  final List<Map<String, dynamic>> _cartItems = [
-    {
-      'name': 'Apple Watch Series 9',
-      'price': 12900,
-      'tags': ['#血氧', '#GPS'],
-      'qty': 1,
-    },
-    {
-      'name': 'Garmin Fenix 7',
-      'price': 18500,
-      'tags': ['#GPS', '#續航14天'],
-      'qty': 1,
-    },
-  ];
 
   @override
   void initState() {
@@ -95,6 +83,16 @@ Map<String, dynamic> _user = {
           'avatar': null,
         };
       });
+
+      // 將後端已存的個人資訊寫入 Provider
+        // 讓使用者不用每次登入都重填年齡層、職業、目前裝置
+        ref.read(userProfileProvider.notifier).hydrate(user);
+
+        // Dropdown 靠 ref.watch 會自動刷新，但文字輸入框要手動同步 controller
+        _occupationController.text = ref.read(userProfileProvider).occupation;
+        _currentDeviceController.text =
+            ref.read(userProfileProvider).currentDevice;
+            
     }
   } catch (e) {
     // 載入失敗就保留預設值，不影響畫面
@@ -110,23 +108,6 @@ Map<String, dynamic> _user = {
     super.dispose();
   }
 
-  /// 購物車總金額
-  int get _cartTotal => _cartItems.fold(
-        0,
-        (sum, item) => sum + (item['price'] as int) * (item['qty'] as int),
-      );
-
-  /// 更新購物車數量
-  void _updateQty(int index, int delta) {
-    setState(() {
-      final newQty = (_cartItems[index]['qty'] as int) + delta;
-      if (newQty <= 0) {
-        _cartItems.removeAt(index);
-      } else {
-        _cartItems[index]['qty'] = newQty;
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -538,8 +519,13 @@ Map<String, dynamic> _user = {
   }
 
   // ── Tab 3：購物車 ──────────────────────────────────────
+  // 已改用 CartProvider 讀取真實資料，不再使用 mock array。
+  // 不提供結帳流程：每個商品改為「前往購買」跳轉外部電商平台，
+  // 底部總金額也改成「預估總金額」純參考文字。
   Widget _buildCartTab() {
-    if (_cartItems.isEmpty) {
+    final cartItems = ref.watch(cartProvider);
+
+    if (cartItems.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -547,131 +533,222 @@ Map<String, dynamic> _user = {
             const Icon(Icons.shopping_cart_outlined,
                 size: 48, color: AppColors.textHint),
             const SizedBox(height: 12),
-            Text('購物車是空的', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSub(context))),
+            Text('購物車是空的',
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.textSub(context))),
           ],
         ),
       );
     }
 
+    // 預估總金額（僅供參考，不是真正的結帳金額）
+    final int estimatedTotal = cartItems.fold(0, (sum, item) {
+      final price = item.price;
+      final intPrice =
+          price is int ? price : (price is double ? price.toInt() : 0);
+      return sum + intPrice * item.qty;
+    });
+
     return Column(
       children: [
-        // 商品列表
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            itemCount: _cartItems.length,
+            itemCount: cartItems.length,
             itemBuilder: (context, index) {
-              final item = _cartItems[index];
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBg(context),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.borderColor(context)),
-                ),
-                child: Row(
-                  children: [
-                    // 商品圖示
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: AppColors.cardVariant(context),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.watch_rounded,
-                          color: AppColors.primary, size: 26),
-                    ),
-                    const SizedBox(width: 12),
-
-                    // 商品資訊
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item['name'],
-                              style: AppTextStyles.bodyLarge.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textMain(context), fontSize: 15)),
-                          const SizedBox(height: 4),
-                          Text(
-                            (item['tags'] as List<String>).join(' '),
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.accent),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'NT\$ ${item['price']}',
-                            style: AppTextStyles.caption.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // 數量控制
-                    Row(
-                      children: [
-                        _QtyButton(
-                          icon: Icons.remove,
-                          onTap: () => _updateQty(index, -1),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(
-                            '${item['qty']}',
-                            style: AppTextStyles.labelLarge.copyWith(
-                              color: AppColors.textMain(context),
-                            ),
-                          ),
-                        ),
-                        _QtyButton(
-                          icon: Icons.add,
-                          onTap: () => _updateQty(index, 1),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
+              return _buildCartItemCard(cartItems[index]);
             },
           ),
         ),
+        _buildCartFooter(estimatedTotal),
+      ],
+    );
+  }
 
-        // 底部總價 + 結帳
-        Container(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-          decoration: BoxDecoration(
-            color: AppColors.cardBg(context),
-            border: Border(top: BorderSide(color: AppColors.borderColor(context))),
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('總計', style: AppTextStyles.bodyLarge
-                      .copyWith(fontWeight: FontWeight.w600,color: AppColors.textMain(context))),
-                  Text(
-                    'NT\$ $_cartTotal',
-                    style: AppTextStyles.displayMedium
-                        .copyWith(color: AppColors.primary, fontSize: 20),
-                  ),
-                ],
+  /// 單一購物車商品卡片
+  /// 點擊卡片可進入商品詳情頁（前往購買、數量按鈕不受影響，
+  /// Flutter 手勢判定會優先由內層按鈕接收點擊事件）
+  Widget _buildCartItemCard(CartItem item) {
+    return GestureDetector(
+      onTap: () => context.push(
+        AppRoutes.product,
+        extra: {
+          'name': item.name,
+          'price': item.price,
+          'image': item.image,
+          'tags': item.tags,
+          'link': item.link,
+          'platform': item.platform,
+        },
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg(context),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.borderColor(context)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _buildCartItemImage(item),
+                const SizedBox(width: 12),
+                Expanded(child: _buildCartItemInfo(item)),
+                _buildCartItemQtyControls(item),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () =>
+                    LaunchHelper.openProductLink(context, item.link),
+                icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                label: const Text('前往購買'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                ),
               ),
-              const SizedBox(height: 14),
-              CustomButton(
-                label: '前往結帳',
-                onTap: () {
-                  // TODO：串接結帳流程
-                },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 商品圖示
+  Widget _buildCartItemImage(CartItem item) {
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: AppColors.cardVariant(context),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: item.image.isNotEmpty
+            ? Image.network(
+                item.image,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.watch_rounded,
+                    color: AppColors.primary,
+                    size: 26),
+              )
+            : const Icon(Icons.watch_rounded,
+                color: AppColors.primary, size: 26),
+      ),
+    );
+  }
+
+  /// 商品名稱、標籤、價格與來源平台
+  Widget _buildCartItemInfo(CartItem item) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          item.name,
+          style: AppTextStyles.bodyLarge.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.textMain(context),
+            fontSize: 15,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 4),
+        if (item.tags.isNotEmpty)
+          Text(
+            item.tags.take(3).join(' '),
+            style: AppTextStyles.caption.copyWith(color: AppColors.accent),
+          ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Text(
+              AppFormatters.formatPrice(item.price),
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (item.platform.isNotEmpty)
+              Text(
+                ' · ${AppFormatters.formatPlatform(item.platform)}',
+                style:
+                    AppTextStyles.caption.copyWith(color: AppColors.textHint),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// 數量加減控制
+  Widget _buildCartItemQtyControls(CartItem item) {
+    return Row(
+      children: [
+        _QtyButton(
+          icon: Icons.remove,
+          onTap: () =>
+              ref.read(cartProvider.notifier).updateQty(item.key, -1),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            '${item.qty}',
+            style: AppTextStyles.labelLarge.copyWith(
+              color: AppColors.textMain(context),
+            ),
+          ),
+        ),
+        _QtyButton(
+          icon: Icons.add,
+          onTap: () => ref.read(cartProvider.notifier).updateQty(item.key, 1),
+        ),
+      ],
+    );
+  }
+
+  /// 底部：預估總金額（僅供參考，不提供結帳）
+  Widget _buildCartFooter(int estimatedTotal) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg(context),
+        border:
+            Border(top: BorderSide(color: AppColors.borderColor(context))),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '預估總金額（僅供參考）',
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.textSub(context)),
+              ),
+              Text(
+                AppFormatters.formatPrice(estimatedTotal),
+                style: AppTextStyles.displayMedium
+                    .copyWith(color: AppColors.primary, fontSize: 20),
               ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          Text(
+            '實際金額請以各平台結帳頁面為準',
+            style: AppTextStyles.caption.copyWith(color: AppColors.textHint),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

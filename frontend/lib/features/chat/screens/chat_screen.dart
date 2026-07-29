@@ -5,6 +5,9 @@ import '../../../services/chat_service.dart';
 import '../../../core/constants/app_formatters.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/user_profile_provider.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_routes.dart';
+import '../../../core/providers/cart_provider.dart';
 
 /// 訊息角色
 enum MessageRole { user, ai }
@@ -332,14 +335,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   /// AI 推薦商品卡片（氣泡內）
+  /// 點擊卡片可進入商品詳情頁
   Widget _buildProductCard(Map<String, dynamic> product) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg(context),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderColor(context)),
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.product, extra: product),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg(context),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
@@ -437,7 +443,36 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ],
             ),
           ),
+          const SizedBox(width: 8),
+          // 加入購物車圖示按鈕：獨立於卡片點擊事件之外
+          GestureDetector(
+            onTap: () {
+              ref.read(cartProvider.notifier).addItem(product);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('已加入購物車：${product['name']}'),
+                  backgroundColor: AppColors.success,
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+            child: Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.cardVariant(context),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderColor(context)),
+              ),
+              child: Icon(
+                Icons.add_shopping_cart_rounded,
+                size: 16,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
         ],
+      ),
       ),
     );
   }

@@ -7,7 +7,8 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../features/profile/screens/profile_screen.dart';
 import '../../../services/product_service.dart';
 import '../../../core/constants/app_formatters.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/cart_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -444,21 +445,25 @@ class _QuickTag extends StatelessWidget {
 }
 
 /// 商品卡片元件
-class _ProductCard extends StatelessWidget {
+/// 改為 ConsumerWidget，才能在卡片上直接呼叫 cartProvider 加入購物車
+class _ProductCard extends ConsumerWidget {
   final Map<String, dynamic> product;
 
   const _ProductCard({required this.product});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cardBg(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderColor(context)),
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 點擊卡片跳轉商品詳情頁，帶入完整商品 Map
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.product, extra: product),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg(context),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderColor(context)),
+        ),
       child: Row(
         children: [
           // 商品圖示佔位（替換為真實圖片 Image.network）
@@ -551,19 +556,54 @@ class _ProductCard extends StatelessWidget {
                         Text(
                           product['rating'] == 0.0 ? 'N/A' : '${product['rating']}',
                           style: AppTextStyles.caption,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
+            // 加入購物車圖示按鈕：獨立於卡片點擊事件之外
+            _buildCartIconButton(context, ref),
+          ],
+        ),
+      ),
+    );
+  }
+  /// 小型加入購物車圖示按鈕
+  /// 點擊時直接寫入 CartProvider，不需要跳轉詳情頁
+  Widget _buildCartIconButton(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      onTap: () {
+        ref.read(cartProvider.notifier).addItem(product);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('已加入購物車：${product['name']}'),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 1),
           ),
-        ],
+        );
+      },
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppColors.cardVariant(context),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.borderColor(context)),
+        ),
+        child: Icon(
+          Icons.add_shopping_cart_rounded,
+          size: 18,
+          color: AppColors.primary,
+        ),
       ),
     );
   }
 }
+
 
 /// 底部導覽列資料模型
 class _NavItem {

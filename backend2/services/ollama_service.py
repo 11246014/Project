@@ -2,21 +2,24 @@ import requests
 
 from config.settings import (
     OLLAMA_URL,
-    MODEL_NAME
+    OLLAMA_MODEL
 )
+
 
 def ask_ollama(
     prompt,
     model_name=None,
     timeout=120
 ):
+    """
+    Send a prompt to Ollama
+    and return the generated text.
+    """
 
-    if not model_name:
-
-        model_name = MODEL_NAME
+    model = model_name or OLLAMA_MODEL
 
     print(
-        f"[Model] {model_name}"
+        f"[Model] {model}"
     )
 
     response = requests.post(
@@ -25,7 +28,7 @@ def ask_ollama(
 
         json={
 
-            "model": model_name,
+            "model": model,
 
             "prompt": prompt,
 

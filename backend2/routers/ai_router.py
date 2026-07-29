@@ -1,15 +1,11 @@
 from fastapi import APIRouter
 
+from models.schemas import UserRequest
 from services.recommendation_service import recommend_products
 
 router = APIRouter()
 
 
 @router.post("/ai/recommend")
-def ai_recommend(data: dict):
-
-    user_message = data.get("message", "")
-
-    result = recommend_products(user_message)
-
-    return result
+def ai_recommend(request: UserRequest):
+    return recommend_products(request.message, persona=request.persona)

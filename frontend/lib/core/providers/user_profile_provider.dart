@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
+import '../../services/user_service.dart';
+import 'package:flutter/foundation.dart';
 
 /// 使用者個人資訊（只放穩定不常變的屬性）
 
@@ -38,9 +41,56 @@ class UserProfile {
 class UserProfileNotifier extends StateNotifier<UserProfile> {
   UserProfileNotifier() : super(const UserProfile());
 
-  void updateAgeRange(String value) => state = state.copyWith(ageRange: value);
-  void updateOccupation(String value) => state = state.copyWith(occupation: value);
-  void updateCurrentDevice(String value) => state = state.copyWith(currentDevice: value);
+  // 用來實作 debounce：使用者停止輸入一段時間後才送出更新
+  Timer? _debounce;
+
+  void updateAgeRange(String value) {
+    state = state.copyWith(ageRange: value);
+    _scheduleSync();
+  }
+
+  void updateOccupation(String value) {
+    state = state.copyWith(occupation: value);
+    _scheduleSync();
+  }
+
+  void updateCurrentDevice(String value) {
+    state = state.copyWith(currentDevice: value);
+    _scheduleSync();
+  }
+
+  /// 登入後呼叫：將後端已存的個人資訊寫入 Provider
+  /// 不會觸發回寫 API，避免「讀取資料」又立刻「送出更新」的無意義請求
+  void hydrate(Map<String, dynamic> data) {
+    state = UserProfile(
+      ageRange: data['age_range']?.toString() ?? '',
+      occupation: data['occupation']?.toString() ?? '',
+      currentDevice: data['current_device']?.toString() ?? '',
+    );
+  }
+
+  /// Debounce 800ms 後才呼叫 API，避免使用者每打一個字就送一次請求
+  void _scheduleSync() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 800), () async {
+      try {
+        await UserService.updateProfile(
+          ageRange: state.ageRange,
+          occupation: state.occupation,
+          currentDevice: state.currentDevice,
+        );
+      } catch (e) {
+        // 同步失敗不影響使用者操作，僅記錄方便除錯
+        debugPrint('個人資訊同步失敗：$e');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
 }
 
 final userProfileProvider =

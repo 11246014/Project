@@ -6,18 +6,20 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../core/constants/app_formatters.dart';
 import '../../../services/filter_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/cart_provider.dart';
 
 //  StatefulWidget，讓頁面自己打 API
-class RecommendationScreen extends StatefulWidget {
+class RecommendationScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> result;
 
   const RecommendationScreen({super.key, required this.result});
 
   @override
-  State<RecommendationScreen> createState() => _RecommendationScreenState();
+  ConsumerState<RecommendationScreen> createState() => _RecommendationScreenState();
 }
 
-class _RecommendationScreenState extends State<RecommendationScreen> {
+class _RecommendationScreenState extends ConsumerState<RecommendationScreen> {
   // 是否正在等待 AI 回應
   bool _isLoading = false;
 
@@ -295,22 +297,25 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
   }
 
   /// 商品推薦卡片
+  /// 點擊卡片（非按鈕區域）可進入商品詳情頁
   Widget _buildProductCard(
       BuildContext context, Map<String, dynamic> product) {
     final isTop = product['isTop'] as bool? ?? false;
     final match = product['match'] as int? ?? 0;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isTop
-            ? AppColors.primary.withOpacity(0.06)
-            : AppColors.cardBg(context),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isTop ? AppColors.primary : AppColors.borderColor(context),
-          width: isTop ? 1.5 : 1,
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.product, extra: product),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isTop
+              ? AppColors.primary.withOpacity(0.06)
+              : AppColors.cardBg(context),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isTop ? AppColors.primary : AppColors.borderColor(context),
+            width: isTop ? 1.5 : 1,
         ),
       ),
       child: Column(
@@ -485,10 +490,11 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
           ),
           const SizedBox(height: 10),
 
-          // 加入購物車按鈕
+          // 加入購物車按鈕：實際寫入 CartProvider
           CustomButton(
             label: '加入購物車',
             onTap: () {
+              ref.read(cartProvider.notifier).addItem(product);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('已加入購物車：${product['name']}'),
@@ -500,6 +506,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
             variant: isTop ? ButtonVariant.primary : ButtonVariant.outline,
           ),
         ],
+      ),
       ),
     );
   }

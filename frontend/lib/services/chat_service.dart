@@ -20,8 +20,10 @@ class ChatService {
     UserProfile? profile,
   }) async {
     String finalMessage = message;
+    Map<String, dynamic>? personaJson;
 
     // 若有個人資訊（皆為選填），組成背景描述附加在訊息前面
+    // 同時額外組一份結構化 JSON，避免完全依賴 AI 從文字重新猜測
     if (profile != null && !profile.isEmpty) {
       final parts = <String>[];
       if (profile.ageRange.isNotEmpty) parts.add('年齡層${profile.ageRange}');
@@ -31,11 +33,19 @@ class ChatService {
       if (parts.isNotEmpty) {
         finalMessage = '[使用者背景：${parts.join('，')}]\n$message';
       }
+
+      personaJson = {
+        'age_range': profile.ageRange.isNotEmpty ? profile.ageRange : null,
+        'occupation': profile.occupation.isNotEmpty ? profile.occupation : null,
+        'current_device':
+            profile.currentDevice.isNotEmpty ? profile.currentDevice : null,
+      };
     }
 
     final res = await _dio.post('/ai/recommend', data: {
       'message': finalMessage,
       'session_id': _sessionId,
+      if (personaJson != null) 'persona': personaJson,
     });
     return res.data;
   }

@@ -1,3 +1,4 @@
+#chat_parser.py
 from models.schemas import (
     Budget,
     Persona,
@@ -27,28 +28,21 @@ def _none_if_empty(value):
     return value
 
 
-def _as_list(value):
-    if value is None or value == "":
-        return []
-
-    if isinstance(value, list):
-        return value
-
-    return [value]
-
-
 def parse_chat_message(message):
+
     keyword_result = extract_keyword(message)
 
-    budget_min = _none_if_empty(
-        keyword_result.get("budget_min")
-    )
-
-    budget_max = _none_if_empty(
-        keyword_result.get("budget_max")
+    budget = Budget(
+        min=_none_if_empty(
+            keyword_result.get("budget_min")
+        ),
+        max=_none_if_empty(
+            keyword_result.get("budget_max")
+        )
     )
 
     need = UserNeed(
+
         persona=Persona(
             age_range=normalize_age_group(
                 keyword_result.get("age_group")
@@ -57,36 +51,47 @@ def parse_chat_message(message):
                 keyword_result.get("occupation")
             )
         ),
-        budget=Budget(
-            min=budget_min,
-            max=budget_max
-        ),
+
+        budget=budget,
+
         device_type=normalize_device_type(
             keyword_result.get("product_type")
             or keyword_result.get("device_type")
         ),
+
         usage=normalize_list(
             keyword_result.get("usage"),
             normalize_usage
         ),
+
         features=normalize_list(
             keyword_result.get("features"),
             normalize_feature
         ),
+
         preferences=Preferences(
+
             os=normalize_os(
                 keyword_result.get("os")
             ),
+
+            brand=_none_if_empty(
+                keyword_result.get("brand")
+            ),
+
             style=normalize_style(
                 keyword_result.get("style")
             ),
+
             battery=normalize_battery(
                 keyword_result.get("battery")
             )
         ),
+
         search_query=_none_if_empty(
             keyword_result.get("keyword")
         ),
+
         raw=RawInput(
             text=message
         )
