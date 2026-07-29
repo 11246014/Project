@@ -543,6 +543,10 @@ def clean_product(
         ""
     )
 
+    print("\n========== Item Keys ==========")
+    print(item.keys())
+    print("================================")
+
     feature_text = (
         raw_title +
         " " +

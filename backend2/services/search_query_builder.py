@@ -34,9 +34,19 @@ OS_MAPPING = {
 }
 
 
-def build_search_query(keyword_result):
+def build_search_query(keyword_result, user_message=""):
 
     query_parts = []
+    message = user_message.lower()
+
+    # 若 AI 沒抓到 OS，從原始訊息補搜尋策略
+    if not keyword_result.get("os"):
+
+        if "iphone" in message:
+            keyword_result["os"] = "iOS"
+
+        elif "android" in message:
+            keyword_result["os"] = "Android"
 
     # =========================
     # Brand
@@ -57,16 +67,25 @@ def build_search_query(keyword_result):
         query_parts.append(product_type)
 
     # =========================
-    # OS
+    # Brand
+    # =========================
+
+    brand = keyword_result.get("brand")
+
+    if brand:
+        query_parts.append(brand)
+
+    # =========================
+    # OS (只有沒有品牌時才補)
     # =========================
 
     os_name = keyword_result.get("os")
 
-    mapped_os = OS_MAPPING.get(os_name)
+    if not brand:
+        mapped_os = OS_MAPPING.get(os_name)
 
-    if mapped_os:
-        query_parts.append(mapped_os)
-
+        if mapped_os:
+            query_parts.append(mapped_os)
     # =========================
     # Usage
     # =========================

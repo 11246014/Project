@@ -4,7 +4,7 @@
 # Query Mapping
 # （供 Ranking 使用）
 # ==================================================
-DEBUG_RANKING = False
+DEBUG_RANKING = True
 
 DEVICE_QUERY_TERMS = {
     "smartwatch": "智慧手錶",
