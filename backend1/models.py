@@ -37,6 +37,10 @@ class User(Base):
     hashed_password = Column(
         String(255)
     )
+    age_range = Column(String(50), nullable=True)
+    occupation = Column(String(100), nullable=True)
+    usage_scope = Column(String(200), nullable=True)
+    current_device = Column(String(200), nullable=True)
 
 
 # =========================

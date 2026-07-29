@@ -147,6 +147,14 @@ class ProductCreate(BaseModel):
 
     reason: str = ""
 
+    link: str=""
+
+class UserProfileUpdate(BaseModel):
+    age_range: str
+    occupation: str
+    usage_scope: str
+    current_device: str
+
 
 # =========================
 # 註冊 API
@@ -307,14 +315,16 @@ def create_product(
         price=product.price,
 
         description=product.description,
-
         platform=product.platform,
 
         image=product.image,
 
         rating=product.rating,
 
-        reason=product.reason
+        reason=product.reason,
+
+        link=product.link
+        
     )
 
     db.add(new_product)
@@ -371,6 +381,7 @@ def update_product(
     product.name = product_data.name
     product.price = product_data.price
     product.description = product_data.description
+    product.link = product_data.link
 
     db.commit()
 
@@ -525,5 +536,53 @@ def render_template_endpoint(name: str, payload: RenderPromptRequest, db: Sessio
     return {
         "template_name": name,
         "rendered_prompt": final_prompt
+    }
+
+@app.put("/users/{email}/profile")
+def update_profile(
+    email: str,
+    profile: UserProfileUpdate,
+    db: Session = Depends(get_db)
+):
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="找不到使用者"
+        )
+
+    user.age_range = profile.age_range
+    user.occupation = profile.occupation
+    user.usage_scope = profile.usage_scope
+    user.current_device = profile.current_device
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "message": "個人資料更新成功"
+    }
+@app.get("/me/{email}")
+def get_me(
+    email: str,
+    db: Session = Depends(get_db)
+):
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="找不到使用者"
+        )
+
+    return {
+        "email": user.email,
+        "age_range": user.age_range,
+        "occupation": user.occupation,
+        "usage_scope": user.usage_scope,
+        "current_device": user.current_device
     }
     
