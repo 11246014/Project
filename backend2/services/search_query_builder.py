@@ -29,10 +29,11 @@ FEATURE_MAPPING = {
 }
 
 OS_MAPPING = {
-    "iOS": "Apple Watch",
-    "Android": "Galaxy Watch",
-}
 
+    "iOS":"Apple Watch",
+
+    "Android":"Samsung",
+}
 
 def build_search_query(keyword_result, user_message=""):
 

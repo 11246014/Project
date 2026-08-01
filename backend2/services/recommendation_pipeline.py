@@ -26,8 +26,8 @@ PRIORITY_QUERY_TERMS = {
 }
 
 OS_QUERY_TERMS = {
-    "iOS": "Apple Watch",
-    "Android": "Galaxy Watch",
+    "iOS": "",
+    "Android": "",
 }
 
 STYLE_MAPPING = {
@@ -117,7 +117,7 @@ def _price(product):
         return 0
     
 
-def build_search_query(need):
+def build_pipeline_search_query(need):
     parts = []
 
     print("need.usage =", need.usage)
@@ -499,7 +499,7 @@ def recommend_from_need(
 ):
     print("need.brand =", need.preferences.brand)
 
-    search_query = build_search_query(need)
+    search_query = build_pipeline_search_query(need)
 
     candidates = retrieve_candidates(search_query)
 

@@ -276,7 +276,7 @@ BRAND_SCORE = {
 # User Brand Match Score
 # ==================================================
 
-USER_BRAND_MATCH_SCORE = 30
+USER_BRAND_MATCH_SCORE = 20
 
 OS_BRAND_MAPPING = {
     "iOS": [
@@ -417,7 +417,7 @@ def build_dynamic_weights(need):
     # =========================
 
     if need.features:
-        weights["feature"] = 30
+        weights["feature"] = 35
 
     # =========================
     # Budget
@@ -449,7 +449,7 @@ def build_dynamic_weights(need):
         and need.preferences.os
         and need.preferences.os != "Cross"
     ):
-        weights["os"] = 30
+        weights["os"] = 20
 
     return weights
 

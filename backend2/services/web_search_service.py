@@ -51,6 +51,9 @@ def fetch_shopping_results(keyword):
         "gl": "tw",
         "hl": "zh-tw",
     }
+    print("\n========== Request Params ==========")
+    print(params)
+    print("====================================")
     response = requests.get(
         url,
         params=params,
