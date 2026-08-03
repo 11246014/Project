@@ -11,6 +11,9 @@ from services.product_rank_service import (
     USAGE_QUERY_TERMS,
     FEATURE_QUERY_TERMS,
 )
+from services.search_strategy import (
+    build_search_strategy,
+)
 
 # ==================================================
 # Search Query Mapping
@@ -120,12 +123,24 @@ def _price(product):
 def build_pipeline_search_query(need):
     parts = []
 
+    strategy = build_search_strategy(
+    need
+    )
+
+    print(strategy)
+
     print("need.usage =", need.usage)
 
     if need.preferences.brand:
         parts.append(
             need.preferences.brand
         )
+    # =========================
+    # Search Strategy
+    # =========================
+
+    for term in strategy["search_terms"]:
+        parts.append(term)
 
     if need.device_type:
         parts.append(
@@ -164,20 +179,20 @@ def build_pipeline_search_query(need):
             )
         )
 
-    if (
-        need.preferences.os
-        and need.preferences.os not in (
-            "0",
-            "Cross",
-            "cross",
-        )
-    ):
-        parts.append(
-            OS_QUERY_TERMS.get(
-                need.preferences.os,
-                need.preferences.os
-            )
-        )
+    # if (
+    #     need.preferences.os
+    #     and need.preferences.os not in (
+    #         "0",
+    #         "Cross",
+    #         "cross",
+    #     )
+    # ):
+    #     parts.append(
+    #         OS_QUERY_TERMS.get(
+    #             need.preferences.os,
+    #             need.preferences.os
+    #         )
+    #     )
 
     if need.preferences.style:
 
