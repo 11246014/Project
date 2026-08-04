@@ -11,6 +11,9 @@ from services.product_rank_service import (
     USAGE_QUERY_TERMS,
     FEATURE_QUERY_TERMS,
 )
+from services.search_strategy import (
+    build_search_strategy,
+)
 
 # ==================================================
 # Search Query Mapping
@@ -26,8 +29,8 @@ PRIORITY_QUERY_TERMS = {
 }
 
 OS_QUERY_TERMS = {
-    "iOS": "Apple Watch",
-    "Android": "Galaxy Watch",
+    "iOS": "",
+    "Android": "",
 }
 
 STYLE_MAPPING = {
@@ -116,111 +119,6 @@ def _price(product):
     except Exception:
         return 0
     
-
-def build_search_query(need):
-    parts = []
-
-    print("need.usage =", need.usage)
-
-    if need.preferences.brand:
-        parts.append(
-            need.preferences.brand
-        )
-
-    if need.device_type:
-        parts.append(
-            DEVICE_QUERY_TERMS.get(
-                need.device_type,
-                need.device_type
-            )
-        )
-    else:
-        parts.append("智慧穿戴")
-
-    for usage in _list(need.usage):
-
-        mapped = USAGE_QUERY_TERMS.get(
-            usage,
-            usage
-        )
-
-        # 日常、商務、戶外等沒有搜尋價值就略過
-        if mapped:
-            parts.append(mapped)
-
-    for feature in _list(need.features):
-        parts.append(
-            FEATURE_QUERY_TERMS.get(
-                feature,
-                feature
-            )
-        )
-
-    for priority in _list(need.priorities):
-        parts.append(
-            PRIORITY_QUERY_TERMS.get(
-                priority,
-                priority
-            )
-        )
-
-    if (
-        need.preferences.os
-        and need.preferences.os not in (
-            "0",
-            "Cross",
-            "cross",
-        )
-    ):
-        parts.append(
-            OS_QUERY_TERMS.get(
-                need.preferences.os,
-                need.preferences.os
-            )
-        )
-
-    if need.preferences.style:
-
-        style_keywords = STYLE_MAPPING.get(
-            need.preferences.style,
-            []
-        )
-
-        if style_keywords:
-            parts.append(style_keywords[0])
-
-    if need.preferences.battery:
-
-        battery_keywords = BATTERY_MAPPING.get(
-            need.preferences.battery,
-            []
-        )
-
-        if battery_keywords:
-            parts.append(battery_keywords[0])
-
-    budget_min = need.budget.min
-    budget_max = need.budget.max
-
-    # if budget_min and budget_max:
-    #     parts.append(f"{budget_min}到{budget_max}元")
-    # elif budget_max:
-    #     parts.append(f"{budget_max}元以下")
-    # elif budget_min:
-    #     parts.append(f"{budget_min}元以上")
-
-    cleaned = []
-
-    for part in parts:
-
-        if not part:
-            continue
-
-        if part not in cleaned:
-            cleaned.append(part)
-
-    return " ".join(cleaned)
-
 
 
 
@@ -499,7 +397,7 @@ def recommend_from_need(
 ):
     print("need.brand =", need.preferences.brand)
 
-    search_query = build_search_query(need)
+    search_query = need.search_query
 
     candidates = retrieve_candidates(search_query)
 

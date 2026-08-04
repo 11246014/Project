@@ -44,6 +44,13 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   // 用來實作 debounce：使用者停止輸入一段時間後才送出更新
   Timer? _debounce;
 
+  /// 登出時呼叫：清空本地個人資訊
+  /// 避免下一次登入（或換帳號）時，畫面還殘留著前一位使用者的資料
+  void reset() {
+    _debounce?.cancel();
+    state = const UserProfile();
+  }
+
   void updateAgeRange(String value) {
     state = state.copyWith(ageRange: value);
     _scheduleSync();

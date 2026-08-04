@@ -1,5 +1,7 @@
 #web_search_service.py
+import json
 import os
+from urllib import response
 
 import requests
 from dotenv import load_dotenv
@@ -51,15 +53,22 @@ def fetch_shopping_results(keyword):
         "gl": "tw",
         "hl": "zh-tw",
     }
+    print("\n========== Request Params ==========")
+    print(params)
+    print("====================================")
     response = requests.get(
         url,
         params=params,
         timeout=SEARCH_TIMEOUT
     )
+    print("Status:", response.status_code)
+    print("URL:", response.url)
 
     response.raise_for_status()
 
     data = response.json()
+    print("shopping_results:",
+        len(data.get("shopping_results", [])))
 
     print("\n========== Search Parameters ==========")
     print(data.get("search_parameters"))

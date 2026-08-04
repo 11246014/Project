@@ -27,12 +27,23 @@ class ProductDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final String name = product['name']?.toString() ?? '未知商品';
     final String image = product['image']?.toString() ?? '';
-    final String desc = product['desc']?.toString() ?? '';
-    final String reason = product['reason']?.toString() ?? '';
+
+    // 相容兩種資料來源：AI 推薦商品用 'desc'，首頁 DB 商品用 'description'
+    final String desc = (product['desc']?.toString().isNotEmpty ?? false)
+        ? product['desc'].toString()
+        : (product['description']?.toString() ?? '');
+
     final String platform = product['platform']?.toString() ?? '';
     final String link = product['link']?.toString() ?? '';
     final List<String> tags =
         List<String>.from(product['tags'] ?? product['features'] ?? []);
+
+    // AI 推薦商品才有 reason；DB 商品沒有時，用標籤組一句概略描述，
+    // 避免「推薦理由」整區塊空白
+    String reason = product['reason']?.toString() ?? '';
+    if (reason.isEmpty && tags.isNotEmpty) {
+      reason = '此商品具備 ${tags.take(3).join('、')} 等功能規格。';
+    }
 
     // match 只有推薦來源的商品才有；用 is int 判斷來決定「符合度」區塊要不要顯示
     final int? match = product['match'] is int ? product['match'] as int : null;
@@ -96,7 +107,7 @@ class ProductDetailScreen extends ConsumerWidget {
 
                     // 前往購買：跳轉外部電商平台
                     CustomButton(
-                      label: '前往購買',
+                      label: link.isEmpty ? '暫無購買連結' : '前往購買',
                       prefixIcon: Icons.open_in_new_rounded,
                       onTap: () => LaunchHelper.openProductLink(context, link),
                     ),

@@ -558,7 +558,8 @@ def extract_keyword(user_message):
         # --------------------------
 
         search_keyword = build_search_query(
-            data
+            data,
+            user_message
         )
 
         if search_keyword:

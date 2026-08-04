@@ -30,8 +30,14 @@ class AppFormatters {
   /// 目前對照表是暫定版本，之後跟後端確認完整的 platform 清單後
   /// 要補齊；找不到對照的值會直接顯示原始字串，不會噴錯或顯示空白。
   static String formatPlatform(String platform) {
+    // 商品本質上都是從外部電商平台抓取後存入資料庫，
+    // 因此預設一律顯示原始平台名稱，不再標示「WearWise 精選」。
+    // 只有真的沒有平台資訊時（意外情況），才顯示備用文字。
+    if (platform.isEmpty) {
+      return '外部電商平台';
+    }
+
     const Map<String, String> mapping = {
-      'MySQL': 'WearWise 精選',
       'momo': 'momo購物網',
       'PChome': 'PChome線上購物',
       '蝦皮': '蝦皮購物',

@@ -329,6 +329,7 @@ Map<String, dynamic> _user = {
                       onPressed: () async {
                         Navigator.pop(context);
                         await const FlutterSecureStorage().deleteAll();
+                        ref.read(userProfileProvider.notifier).reset();
                         if (mounted) context.go(AppRoutes.login);
                       },
                       child: Text('登出',
