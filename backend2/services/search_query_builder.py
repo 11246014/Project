@@ -29,18 +29,20 @@ FEATURE_MAPPING = {
 }
 
 OS_MAPPING = {
-
-    "iOS":"Apple Watch",
-
-    "Android":"Samsung",
+    "iOS": "Apple Watch",
+    "Android": "Samsung",
 }
+
 
 def build_search_query(keyword_result, user_message=""):
 
-    query_parts = []
     message = user_message.lower()
+    query_parts = []
 
-    # 若 AI 沒抓到 OS，從原始訊息補搜尋策略
+    # ==========================================
+    # 若 AI 沒抓到 OS，從原始訊息補
+    # ==========================================
+
     if not keyword_result.get("os"):
 
         if "iphone" in message:
@@ -49,47 +51,35 @@ def build_search_query(keyword_result, user_message=""):
         elif "android" in message:
             keyword_result["os"] = "Android"
 
-    # =========================
+    # ==========================================
+    # Primary Search Query
+    #
+    # 優先順序：
     # Brand
-    # =========================
-
-    brand = keyword_result.get("brand")
-
-    if brand:
-        query_parts.append(brand)
-
-    # =========================
+    #   ↓
+    # OS Mapping
+    #   ↓
     # Product Type
-    # =========================
-
-    product_type = keyword_result.get("product_type")
-
-    if product_type:
-        query_parts.append(product_type)
-
-    # =========================
-    # Brand
-    # =========================
+    # ==========================================
 
     brand = keyword_result.get("brand")
-
-    if brand:
-        query_parts.append(brand)
-
-    # =========================
-    # OS (只有沒有品牌時才補)
-    # =========================
-
+    product_type = keyword_result.get("product_type")
     os_name = keyword_result.get("os")
 
-    if not brand:
-        mapped_os = OS_MAPPING.get(os_name)
+    mapped_os = OS_MAPPING.get(os_name)
 
-        if mapped_os:
-            query_parts.append(mapped_os)
-    # =========================
+    if brand:
+        query_parts.append(brand)
+
+    elif mapped_os:
+        query_parts.append(mapped_os)
+
+    elif product_type:
+        query_parts.append(product_type)
+
+    # ==========================================
     # Usage
-    # =========================
+    # ==========================================
 
     usage = keyword_result.get("usage")
 
@@ -98,26 +88,23 @@ def build_search_query(keyword_result, user_message=""):
     if mapped_usage:
         query_parts.append(mapped_usage)
 
-    # =========================
+    # ==========================================
     # Features
-    # =========================
+    # ==========================================
 
     for feature in keyword_result.get("features", []):
 
-        for key, value in FEATURE_MAPPING.items():
+        mapped_feature = FEATURE_MAPPING.get(feature)
 
-            if key in feature:
+        if mapped_feature:
+            query_parts.append(mapped_feature)
 
-                if value:
-                    query_parts.append(value)
-
-    # =========================
+    # ==========================================
     # Remove Duplicate
-    # =========================
+    # ==========================================
 
     query_parts = list(dict.fromkeys(query_parts))
 
-    # 移除空字串
     query_parts = [
         q.strip()
         for q in query_parts
