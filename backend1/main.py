@@ -32,7 +32,7 @@ from database import (
     SessionLocal,
     engine
 )
-from typing import Dict, Optional
+from typing import Dict,List, Optional
 from models import (
     User,
     Product,
@@ -148,12 +148,14 @@ class ProductCreate(BaseModel):
     reason: str = ""
 
     link: str=""
+    class Config:
+        from_attributes = True
 
 class UserProfileUpdate(BaseModel):
-    age_range: str
-    occupation: str
-    usage_scope: str
-    current_device: str
+    age_range: str=""
+    occupation: str=""
+    usage_scope: str=""
+    current_device: str=""
 
 
 # =========================
@@ -348,7 +350,7 @@ def create_product(
 # =========================
 
 
-@app.get("/products")
+@app.get("/products", response_model=List[ProductCreate])
 def products(
 
     db: Session = Depends(
