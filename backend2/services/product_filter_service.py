@@ -283,6 +283,64 @@ def clean_price(price_text):
         return 0
 
 # =========================
+# Price Parsing
+# =========================
+
+def parse_price(price_text):
+
+    if not price_text:
+
+        return {
+            "price": 0,
+            "currency": "",
+            "display_price": ""
+        }
+
+    display_price = str(price_text).strip()
+
+    text = display_price.upper()
+
+    # 預設幣別
+    currency = ""
+
+    if "NT$" in text or "TWD" in text:
+
+        currency = "TWD"
+
+    elif "US$" in text or "USD" in text:
+
+        currency = "USD"
+
+    elif text.startswith("$"):
+
+        # Google Shopping (US) 常見格式
+        currency = "USD"
+
+    # 保留數字
+    number = re.sub(
+        r"[^\d.]",
+        "",
+        text
+    )
+
+    try:
+
+        price = int(float(number))
+
+    except (TypeError, ValueError):
+
+        price = 0
+
+    return {
+
+        "price": price,
+
+        "currency": currency,
+
+        "display_price": display_price
+    }
+
+# =========================
 # Title
 # =========================
 
@@ -538,14 +596,14 @@ def clean_product(
         ""
     )
 
-    snippet = item.get(
+    snippet = item.get( 
         "snippet",
         ""
     )
-
-    print("\n========== Item Keys ==========")
-    print(item.keys())
-    print("================================")
+    #debug1
+    # print("\n========== Item Keys ==========")
+    # print(item.keys())
+    # print("================================")
 
     feature_text = (
         raw_title +
@@ -586,18 +644,20 @@ def clean_product(
     features = extract_features(
         feature_text
     )
-    print("\n========== Feature ==========")
-    print("Title:", raw_title)
-    print("Snippet:", snippet)
-    print("Extract:", features)
-    print("=============================")
+    #debug2
+    # print("\n========== Feature ==========")
+    # print("Title:", raw_title)
+    # print("Snippet:", snippet)
+    # print("Extract:", features)
+    # print("=============================")
 
-    # Debug
+    #debug3
     raw_price = item.get("price", "0")
-    print("[Raw Price]", raw_price)
 
-    price = clean_price(raw_price)
-    print("[Clean Price]", price)
+    price_info = parse_price(raw_price)
+
+    print("[Raw Price]", raw_price)
+    print("[Price Info]", price_info)
 
     return {
 
@@ -606,12 +666,11 @@ def clean_product(
         "raw_title": raw_title,
 
         
-        "price": clean_price(
-            item.get(
-                "price",
-                "0"
-            )
-        ),
+        "price": price_info["price"],
+
+        "currency": price_info["currency"],
+
+        "display_price": price_info["display_price"],
 
         "platform": item.get(
             "source",
@@ -621,7 +680,7 @@ def clean_product(
         "desc": snippet,
 
         "link": item.get(
-            "link",
+            "product_link",
             ""
         ),
 

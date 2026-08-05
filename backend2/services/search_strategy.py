@@ -1,4 +1,16 @@
-# services/search_strategy.py
+import asyncio
+
+from services.db_search_service import (
+    search_db_products,
+)
+
+from services.web_search_service import (
+    web_search_products,
+)
+
+# ==================================================
+# Search Strategy
+# ==================================================
 
 OS_SEARCH_TERMS = {
     "iOS": ["Apple Watch"],
@@ -24,3 +36,61 @@ def build_search_strategy(need):
         )
 
     return strategy
+
+
+# ==================================================
+# Async Helper
+# ==================================================
+
+def _run_async(coro):
+
+    try:
+        asyncio.get_running_loop()
+
+    except RuntimeError:
+        return asyncio.run(coro)
+
+    raise RuntimeError(
+        "Cannot execute async search inside an active event loop."
+    )
+
+
+# ==================================================
+# Candidate Retrieval
+# ==================================================
+
+def retrieve_candidates(search_query):
+
+    db_products = []
+
+    try:
+
+        db_products = _run_async(
+            search_db_products(search_query)
+        )
+
+    except Exception as e:
+
+        print(
+            f"[DB Search Error] {e}"
+        )
+
+    # 第一版保持目前策略
+    # 有 DB 就回 DB
+    if db_products:
+
+        return db_products
+
+    try:
+
+        return web_search_products(
+            search_query
+        )
+
+    except Exception as e:
+
+        print(
+            f"[Web Search Error] {e}"
+        )
+
+        return []

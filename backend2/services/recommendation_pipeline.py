@@ -1,10 +1,5 @@
 #recommendation_pipeline.py
-import asyncio
-
-from services.db_search_service import search_db_products
 from services.product_formatter import format_product
-from services.web_search_service import web_search_products
-from services.backend1_client import save_product
 from services.product_rank_service import (
     rank_products,
     DEVICE_QUERY_TERMS,
@@ -13,6 +8,7 @@ from services.product_rank_service import (
 )
 from services.search_strategy import (
     build_search_strategy,
+    retrieve_candidates,
 )
 
 # ==================================================
@@ -118,48 +114,6 @@ def _price(product):
         return int(product.get("price", 0) or 0)
     except Exception:
         return 0
-    
-
-
-
-def _run_async(coro):
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        return asyncio.run(coro)
-
-    raise RuntimeError(
-        "recommend_from_need cannot run async DB search inside an active event loop"
-    )
-
-# def save_candidates(products):
-#     for product in products:
-#         try:
-#             if product.get("title"):
-#                 _run_async(
-#                     save_product(product)
-#                 )
-#         except Exception as e:
-#             print(f"[Save Error] {e}")
-
-def retrieve_candidates(search_query):
-    candidates = []
-
-    try:
-        candidates = _run_async(
-            search_db_products(search_query)
-        )
-    except Exception as e:
-        print(f"[Pipeline DB Search Error] {e}")
-
-    if candidates:
-        return candidates
-
-    try:
-        return web_search_products(search_query)
-    except Exception as e:
-        print(f"[Pipeline Web Search Error] {e}")
-        return []
 
 def match_device_type(product, need):
 
@@ -398,6 +352,7 @@ def recommend_from_need(
     print("need.brand =", need.preferences.brand)
 
     search_query = need.search_query
+    print("[Pipeline Search Query]", repr(search_query))
 
     candidates = retrieve_candidates(search_query)
 

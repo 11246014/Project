@@ -65,7 +65,7 @@ def format_product(product):
             "price",
             0
         ),
-
+        
         "product_type": product.get(
             "product_type",
             ""
