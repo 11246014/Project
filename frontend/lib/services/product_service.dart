@@ -36,6 +36,8 @@ class ProductService {
       'rating': 0.0,                // Backend1 沒有評分，先給 0
       'type': type,                 // 給首頁 tag 篩選用
       'image': raw['image']?.toString() ?? '',
+      'platform': raw['platform']?.toString() ?? '',
+      'link': raw['link']?.toString() ?? '',
     };
   }
 
