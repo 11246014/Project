@@ -4,9 +4,9 @@
 Weight Service
 
 負責：
-1. 基礎權重
+1. 基礎權重設定
 2. Feature Bonus
-3. Dynamic Weight
+3. Dynamic Weight 計算
 """
 
 # ==================================================
@@ -23,7 +23,6 @@ BASE_SCORE = {
     "os": 25,
     "rating": 1,
 }
-
 
 # ==================================================
 # Feature Bonus
@@ -43,38 +42,52 @@ FEATURE_BONUS = {
     "value": 15,
 }
 
-
 # ==================================================
 # Dynamic Weight
 # ==================================================
 
 def build_dynamic_weights(need):
     """
-    根據使用者需求動態調整權重
+    根據使用者需求動態調整各項權重。
     """
 
     weights = BASE_SCORE.copy()
 
+    # ==================================================
     # Usage
+    # ==================================================
+
     if getattr(need, "usage", None):
         weights["usage"] = 25
 
+    # ==================================================
     # Feature
+    # ==================================================
+
     if getattr(need, "features", None):
         weights["feature"] = 35
 
+    # ==================================================
     # Priority
+    # ==================================================
+
     if getattr(need, "priorities", None):
         weights["priority"] = 20
 
+    # ==================================================
     # Brand
+    # ==================================================
+
     if (
         getattr(need, "preferences", None)
         and getattr(need.preferences, "brand", None)
     ):
         weights["brand"] = 20
 
+    # ==================================================
     # OS
+    # ==================================================
+
     if (
         getattr(need, "preferences", None)
         and getattr(need.preferences, "os", None)
@@ -82,7 +95,10 @@ def build_dynamic_weights(need):
     ):
         weights["os"] = 20
 
+    # ==================================================
     # Budget
+    # ==================================================
+
     if (
         getattr(need, "budget", None)
         and getattr(need.budget, "max", None)

@@ -1,15 +1,23 @@
 # services/ranking/helper.py
 
+"""
+Helper Service
+
+負責：
+1. 商品資料格式轉換
+2. 共用工具函式
+3. 商品文字與價格解析
+"""
+
+
 def extract_product_features(product):
     """
-    取得商品 Feature 清單
+    取得商品 Feature 清單（去除重複值）
     """
 
     found = []
 
-    features = _list(product.get("features"))
-
-    for feature in features:
+    for feature in _list(product.get("features")):
 
         feature = str(feature).strip()
 
@@ -21,7 +29,7 @@ def extract_product_features(product):
 
 def _list(value):
     """
-    確保資料一定回傳 list
+    將資料統一轉為 list 型別
     """
 
     if not value:
@@ -35,7 +43,7 @@ def _list(value):
 
 def _text(product):
     """
-    將商品所有可搜尋文字合併
+    合併商品所有可搜尋欄位
     """
 
     return " ".join(
@@ -52,7 +60,7 @@ def _text(product):
 
 def _price(product):
     """
-    安全取得商品價格
+    安全取得商品價格（int）
     """
 
     try:

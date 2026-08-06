@@ -3,8 +3,15 @@
 """
 Metadata Score Service
 
-負責商品 Metadata 評分
+負責：
+1. Apple Watch 系列評分
+2. 商品 Metadata 加分
 """
+
+
+# ==================================================
+# Metadata Score
+# ==================================================
 
 def score_metadata(
     product,
@@ -26,9 +33,9 @@ def score_metadata(
 
     series = product.get("series")
 
-    # -------------------------
+    # ==================================================
     # Apple Watch Series
-    # -------------------------
+    # ==================================================
 
     if series == "Ultra":
 

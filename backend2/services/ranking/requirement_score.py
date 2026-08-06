@@ -4,16 +4,22 @@
 Requirement Score Service
 
 負責：
-1. Device Match
-之後 Usage / Feature / Budget 等需求評分也會逐步搬到這裡。
+1. Device Requirement 評分
+2. 後續擴充 Usage、Feature、Budget 等需求評分
 """
 
-from services.product_rank_service import (
-    DEVICE_QUERY_TERMS,
+from services.ranking.constants import (
     DEVICE_KEYWORDS,
+    DEVICE_QUERY_TERMS,
+)
+
+from services.ranking.helper import (
     _text,
 )
 
+# ==================================================
+# Requirement Score
+# ==================================================
 
 def score_requirement(
     product,
@@ -37,9 +43,9 @@ def score_requirement(
 
     text = _text(product)
 
-    # =========================
+    # ==================================================
     # Device
-    # =========================
+    # ==================================================
 
     if need.device_type:
 

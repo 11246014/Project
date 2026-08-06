@@ -1,11 +1,22 @@
 #recommendation_pipeline.py
 from services.product_formatter import format_product
+
 from services.product_rank_service import (
     rank_products,
-    DEVICE_QUERY_TERMS,
-    USAGE_QUERY_TERMS,
-    FEATURE_QUERY_TERMS,
 )
+
+from services.ranking.constants import (
+    DEVICE_QUERY_TERMS,
+    FEATURE_QUERY_TERMS,
+    USAGE_QUERY_TERMS,
+)
+
+from services.ranking.helper import (
+    _list,
+    _price,
+    _text,
+)
+
 from services.search_strategy import (
     build_search_strategy,
     retrieve_candidates,
@@ -86,34 +97,6 @@ ANDROID_ONLY_KEYWORDS = [
 ]
 
 
-def _list(value):
-    if not value:
-        return []
-
-    if isinstance(value, list):
-        return value
-
-    return [value]
-
-
-def _text(product):
-    return " ".join(
-        str(product.get(key, ""))
-        for key in (
-            "title",
-            "raw_title",
-            "name",
-            "desc",
-            "description"
-        )
-    ).lower()
-
-
-def _price(product):
-    try:
-        return int(product.get("price", 0) or 0)
-    except Exception:
-        return 0
 
 def match_device_type(product, need):
 
