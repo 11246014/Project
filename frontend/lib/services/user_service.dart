@@ -14,10 +14,8 @@ class UserService {
 
     if (token == null) throw Exception('尚未登入');
 
-    final res = await _dio.get(
-      '/me',
-      queryParameters: {'email': token},
-    );
+    // 後端路由是 /me/{email}（路徑參數），不是查詢參數，兩者對不上會直接失敗
+    final res = await _dio.get('/me/$token');
 
     return Map<String, dynamic>.from(res.data);
   }
