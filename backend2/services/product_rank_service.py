@@ -575,6 +575,52 @@ def score_preferences(product, need):
 
     return score
 
+def score_product_metadata(product):
+
+    score = 0
+
+    debug = []
+
+    series = product.get("series")
+
+    series_number = product.get("series_number")
+
+    # -------------------------
+    # Apple Watch Series
+    # -------------------------
+
+    if series == "Series":
+
+        score += 5
+
+        debug.append("Metadata(Series) +5")
+
+        if series_number:
+
+            score += series_number
+
+            debug.append(
+                f"Metadata(Series {series_number}) +{series_number}"
+            )
+
+    elif series == "Ultra":
+
+        score += 20
+
+        debug.append(
+            "Metadata(Ultra) +20"
+        )
+
+    elif series == "SE":
+
+        score += 2
+
+        debug.append(
+            "Metadata(SE) +2"
+        )
+
+    return score, debug
+
 # =========================
 # Product Rank Service
 # =========================
@@ -763,6 +809,19 @@ def calculate_product_score(product, need):
         )
 
     # =========================
+    # Metadata
+    # =========================
+
+    metadata_score, metadata_debug = score_product_metadata(
+        product
+    )
+
+    score += metadata_score
+    base_score += metadata_score
+
+    debug_score.extend(metadata_debug)
+
+    # =========================
     # Budget
     # =========================
 
@@ -894,7 +953,8 @@ def calculate_product_score(product, need):
         reason = "、".join(reason_parts)
 
     return {
-        "score": score_mapper(score),
+        "raw_score": score,
+        "score": score,
         "reason": reason,
     }
 

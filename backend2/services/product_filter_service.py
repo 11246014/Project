@@ -258,7 +258,111 @@ SMARTWATCH_KEYWORDS = [
     "xiaomi watch"
 ]
 
+# =========================
+# Product Metadata
+# =========================
 
+SERIES_PATTERNS = {
+
+    "Ultra": [
+        r"\bultra\b",
+    ],
+
+    "SE": [
+        r"\bse\b",
+        r"\bse\s*2\b",
+        r"\bse\s*3\b",
+    ],
+
+    "Series": [
+        r"\bseries\b",
+    ],
+}
+
+def extract_product_metadata(title):
+
+    title_lower = title.lower()
+
+    metadata = {
+
+        "series": "",
+
+        "series_number": None,
+
+        "gps": False,
+
+        "cellular": False,
+
+        "size": None,
+    }
+
+    # -------------------------
+    # Series
+    # -------------------------
+
+    for series, patterns in SERIES_PATTERNS.items():
+
+        if any(
+            re.search(pattern, title_lower)
+            for pattern in patterns
+        ):
+
+            metadata["series"] = series
+
+            break
+    # -------------------------
+    # Series Number
+    # -------------------------
+
+    match = re.search(
+        r"series\s*(\d+)",
+        title,
+        re.IGNORECASE
+    )
+
+    if match:
+
+        metadata["series_number"] = int(
+            match.group(1)
+        )
+
+    # -------------------------
+    # GPS
+    # -------------------------
+
+    if "gps" in title_lower:
+
+        metadata["gps"] = True
+
+    # -------------------------
+    # Cellular
+    # -------------------------
+
+    if (
+        "cellular" in title_lower
+        or
+        "行動網路" in title
+    ):
+
+        metadata["cellular"] = True
+
+    # -------------------------
+    # Size
+    # -------------------------
+
+    match = re.search(
+        r"(\d{2})\s*(mm|公釐)",
+        title,
+        re.IGNORECASE
+    )
+
+    if match:
+
+        metadata["size"] = int(
+            match.group(1)
+        )
+
+    return metadata
 # =========================
 # Price
 # =========================
@@ -434,7 +538,6 @@ def detect_brand(title):
             return brand
 
     return "Other"
-
 
 # =========================
 # Recommendation Reason
@@ -622,6 +725,12 @@ def clean_product(
         raw_title
     )
 
+    metadata = extract_product_metadata(
+        raw_title
+    )
+
+    print("[Metadata]", metadata)
+    
     # =========================
     # 黑名單
     # =========================
@@ -651,26 +760,52 @@ def clean_product(
     # print("Extract:", features)
     # print("=============================")
 
-    #debug3
-    raw_price = item.get("price", "0")
+    raw_price = item.get("price", "")
 
-    price_info = parse_price(raw_price)
+    price = item.get("extracted_price")
 
-    print("[Raw Price]", raw_price)
-    print("[Price Info]", price_info)
+    if price is None:
+
+        price_info = parse_price(raw_price)
+
+        price = price_info["price"]
+
+        currency = price_info["currency"]
+
+    else:
+
+        price = int(price)
+
+        currency = ""
+
+    display_price = raw_price
 
     return {
 
         "title": clean_name,
 
         "raw_title": raw_title,
+                
+        "price": price,
 
-        
-        "price": price_info["price"],
+        "currency": currency,
 
-        "currency": price_info["currency"],
+        "display_price": display_price,
 
-        "display_price": price_info["display_price"],
+        "product_id": item.get(
+            "product_id",
+            ""
+        ),
+
+        "reviews": item.get(
+            "reviews",
+            0
+        ),
+
+        "multiple_sources": item.get(
+            "multiple_sources",
+            False
+        ),
 
         "platform": item.get(
             "source",
@@ -680,7 +815,9 @@ def clean_product(
         "desc": snippet,
 
         "link": item.get(
-            "product_link",
+            "product_link"
+        ) or item.get(
+            "link",
             ""
         ),
 
@@ -707,6 +844,16 @@ def clean_product(
         "brand": detect_brand(
             clean_name
         ),
+
+        "series": metadata["series"],
+
+        "series_number": metadata["series_number"],
+
+        "gps": metadata["gps"],
+
+        "cellular": metadata["cellular"],
+
+        "size": metadata["size"],
 
         "isTop": False
     }

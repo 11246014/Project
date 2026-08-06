@@ -131,7 +131,7 @@ def _build_product_context(products):
 
 商品：{product.get("name", "")}
 品牌：{product.get("brand", "")}
-價格：{product.get("display_price", product.get("price", ""))}
+價格：{product.get("price", "")} 元
 推薦度：{product.get("match", 0)}%
 推薦原因：{product.get("reason", "")}
 標籤：{tag_text}
