@@ -285,7 +285,7 @@ def extract_product_metadata(title):
 
     metadata = {
 
-        "series": "",
+        "series": None,
 
         "series_number": None,
 
@@ -294,6 +294,8 @@ def extract_product_metadata(title):
         "cellular": False,
 
         "size": None,
+
+        "tier": None,
     }
 
     # -------------------------
@@ -362,7 +364,24 @@ def extract_product_metadata(title):
             match.group(1)
         )
 
+    # -------------------------
+    # Product Tier
+    # -------------------------
+
+    if metadata["series"] == "Ultra":
+
+        metadata["tier"] = "Ultra"
+
+    elif metadata["series"] == "Series":
+
+        metadata["tier"] = "Flagship"
+
+    elif metadata["series"] == "SE":
+
+        metadata["tier"] = "Entry"
+
     return metadata
+
 # =========================
 # Price
 # =========================
@@ -854,6 +873,8 @@ def clean_product(
         "cellular": metadata["cellular"],
 
         "size": metadata["size"],
+        
+        "tier": metadata["tier"],
 
         "isTop": False
     }

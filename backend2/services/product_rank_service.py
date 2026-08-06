@@ -1,259 +1,23 @@
 # product_rank_service.py
 
-# ==================================================
-# Query Mapping
-# （供 Ranking 使用）
-# ==================================================
+from services.ranking.constants import *
+
+from services.ranking.helper import (
+    _list,
+    _price,
+    _text,
+    extract_product_features,
+)
+
+from services.ranking.metadata_score import score_metadata
+
+from services.ranking.weight_service import (
+    FEATURE_BONUS,
+    build_dynamic_weights,
+)
+from services.ranking.reason_service import generate_reason
+
 DEBUG_RANKING = True
-
-DEVICE_QUERY_TERMS = {
-    "smartwatch": "智慧手錶",
-    "smart_band": "智慧手環",
-    "smart_ring": "智慧戒指",
-    "earbuds": "藍牙耳機",
-}
-
-USAGE_QUERY_TERMS = {
-    "running": "跑步",
-    "hiking": "登山",
-    "health_monitoring": "健康",
-    "sleep": "睡眠",
-
-    # 中文 Mapping
-    "日常": "",
-    "商務": "",
-    "戶外": "",
-    "運動": "運動",
-    "健康": "健康",
-}
-
-USAGE_KEYWORDS = {
-
-    "running": [
-        "跑步",
-        "跑錶",
-        "forerunner",
-        "runner",
-    ],
-
-    "hiking": [
-        "登山",
-        "戶外",
-        "hiking",
-        "instinct",
-        "fenix",
-    ],
-
-    "health_monitoring": [
-        "健康",
-        "健康監測",
-        "health",
-    ],
-
-    "sleep": [
-        "睡眠",
-        "sleep",
-    ],
-
-    "運動": [
-        "運動",
-        "跑步",
-        "forerunner",
-    ],
-
-    "健康": [
-        "健康",
-        "心率",
-        "血氧",
-    ],
-}
-
-FEATURE_QUERY_TERMS = {
-    "gps": "GPS",
-    "heart_rate": "心率",
-    "blood_oxygen": "血氧",
-    "ecg": "ECG",
-
-    "sleep_tracking": "睡眠",
-    "睡眠監測": "睡眠",
-
-    "water_resistance": "防水",
-}
-
-# ==================================================
-# Score Mapping
-# （商品評分）
-# ==================================================
-
-FEATURE_KEYWORDS = {
-
-    "GPS": [
-        "gps",
-        "定位",
-        "導航",
-        "衛星",
-    ],
-
-    "睡眠": [
-        "睡眠",
-        "sleep",
-    ],
-
-    "血氧": [
-        "血氧",
-        "spo2",
-    ],
-
-    "ECG": [
-        "ecg",
-        "心電圖",
-    ],
-
-    "防水": [
-        "防水",
-        "ip68",
-        "5atm",
-    ],
-
-    "心率": [
-        "心率",
-        "heart rate",
-    ],
-}
-
-FEATURE_REASON = {
-
-    "GPS": "支援GPS定位",
-
-    "睡眠": "具備睡眠監測",
-
-    "血氧": "支援血氧偵測",
-
-    "ECG": "具備ECG心電圖功能",
-
-    "心率": "提供心率監測",
-
-    "防水": "具備防水功能",
-}
-
-USAGE_REASON = {
-
-    "running": "適合跑步訓練",
-
-    "hiking": "適合登山健行",
-
-    "health_monitoring": "適合健康監測",
-
-    "sleep": "適合睡眠監測",
-
-    "運動": "適合運動",
-
-    "健康": "適合健康管理",
-}
-
-CORE_FACTOR_KEYWORDS = {
-
-    "battery_life": [
-        "續航",
-        "長續航",
-        "電池",
-    ],
-
-    "location_accuracy": [
-        "gps",
-        "定位",
-        "高精度",
-        "精準",
-        "感測",
-    ],
-
-    "durability": [
-        "軍規",
-        "防摔",
-        "耐用",
-    ],
-
-    "value": [
-        "cp值",
-        "超值",
-    ],
-}
-
-PRIORITY_EVIDENCE_TERMS = {
-
-    "battery_life": [
-        "長續航",
-        "強勢續航",
-        "超高續航",
-        "續航",
-        "solar",
-        "太陽能",
-    ],
-
-    "location_accuracy": [
-        "gps",
-        "gps定位",
-        "定位",
-    ],
-
-    "durability": [
-        "耐用",
-        "堅固",
-        "軍規",
-        "防摔",
-    ],
-
-    "ease_of_use": [
-        "操作簡單",
-        "簡單操作",
-        "容易使用",
-        "易用",
-    ],
-}
-
-# ==================================================
-# Score Config
-# （權重設定）
-# ==================================================
-
-FEATURE_BONUS = {
-
-    "GPS":15,
-
-    "睡眠":15,
-
-    "血氧":18,
-
-    "ECG":20,
-
-    "防水":10,
-
-    "心率":12,
-
-    "battery_life":20,
-
-    "durability":15,
-
-    "location_accuracy":15,
-
-    "value":15,
-}
-
-# ==================================================
-# Base Score Weight
-# （基礎權重，可依需求動態調整）
-# ==================================================
-
-BASE_SCORE = {
-    "device": 20,
-    "usage": 15,
-    "feature": 20,
-    "priority": 10,
-    "budget": 10,
-    "brand": 15,
-    "os": 25,
-    "rating": 1,
-}
 
 # ==================================================
 # Brand Score
@@ -314,248 +78,6 @@ USER_BRAND_MAPPING = {
     "suunto": "Suunto",
 }
 
-DEVICE_KEYWORDS = {
-    "smartwatch": [
-
-        "智慧手錶",
-        "智慧腕錶",
-
-        "watch",
-        "smartwatch",
-
-        "apple watch",
-        "galaxy watch",
-        "pixel watch",
-        "ticwatch",
-
-        "garmin",
-
-        "forerunner",
-        "fenix",
-        "instinct",
-        "venu",
-        "vivoactive",
-
-        "amazfit",
-
-        "huawei watch",
-
-        "xiaomi watch",
-
-        "mi watch",
-    ],
-
-    "smart_band": [
-
-        "智慧手環",
-
-        "手環",
-
-        "band",
-
-        "smart band",
-
-        "mi band",
-
-        "xiaomi band",
-
-        "huawei band",
-
-        "galaxy fit",
-
-        "fit",
-
-        "fit3",
-
-        "vivosmart",
-
-        "fitbit inspire",
-    ],
-
-    "smart_ring": [
-
-        "智慧戒指",
-
-        "戒指",
-
-        "指環",
-
-        "smart ring",
-
-        "ring",
-
-        "oura",
-
-        "ringconn",
-    ],
-
-    "earbuds": [
-        "藍牙耳機",
-        "airpods",
-        "galaxy buds",
-        "buds",
-        "earbuds",
-    ]
-}
-# =========================
-# Helper Functions
-# =========================
-
-def build_dynamic_weights(need):
-
-    weights = BASE_SCORE.copy()
-
-    # =========================
-    # Usage
-    # =========================
-
-    if need.usage:
-        weights["usage"] = 25
-
-    # =========================
-    # Feature
-    # =========================
-
-    if need.features:
-        weights["feature"] = 35
-
-    # =========================
-    # Brand
-    # =========================
-
-    if (
-        need.preferences
-        and need.preferences.brand
-    ):
-        weights["brand"] = 30
-
-    # =========================
-    # OS
-    # =========================
-
-    if (
-        need.preferences
-        and need.preferences.os
-        and need.preferences.os != "Cross"
-    ):
-        weights["os"] = 20
-
-    return weights
-
-def extract_product_features(product):
-
-    found = []
-
-    features = _list(product.get("features"))
-
-    for feature in features:
-
-        feature = str(feature).strip()
-
-        if feature and feature not in found:
-            found.append(feature)
-
-    return found
-
-def _list(value):
-    if not value:
-        return []
-
-    if isinstance(value, list):
-        return value
-
-    return [value]
-
-
-def _text(product):
-    return " ".join(
-        str(product.get(key, ""))
-        for key in (
-            "title",
-            "raw_title",
-            "name",
-            "desc",
-            "description"
-        )
-    ).lower()
-
-
-def _price(product):
-    try:
-        return int(product.get("price", 0) or 0)
-    except Exception:
-        return 0
-
-
-def generate_reason(product):
-
-    reasons = []
-
-    # =========================
-    # Feature
-    # =========================
-
-    features = extract_product_features(product)
-
-    for feature in features:
-
-        reason = FEATURE_REASON.get(feature)
-
-        if reason and reason not in reasons:
-            reasons.append(reason)
-
-    # =========================
-    # Rating
-    # =========================
-
-    try:
-        rating = float(product.get("rating", 0))
-    except Exception:
-        rating = 0
-
-    if rating >= 4.8:
-        reasons.append("高評價商品")
-
-    # =========================
-    # Price
-    # =========================
-
-    try:
-        price = int(product.get("price", 0))
-    except Exception:
-        price = 0
-
-    if 0 < price <= 3000:
-        reasons.append("價格具競爭力")
-
-    # =========================
-    # Brand
-    # =========================
-
-    brand = product.get("brand", "")
-
-    if brand in [
-        "Apple",
-        "Samsung",
-        "Garmin",
-        "Google",
-    ]:
-        reasons.append("熱門品牌商品")
-
-    # =========================
-    # Remove Duplicate
-    # =========================
-
-    reasons = list(dict.fromkeys(reasons))
-
-    # =========================
-    # Return
-    # =========================
-
-    if reasons:
-        return "、".join(reasons[:2])
-
-    return "符合智慧穿戴需求"
 
 def score_preferences(product, need):
     score = 0
@@ -575,51 +97,53 @@ def score_preferences(product, need):
 
     return score
 
-def score_product_metadata(product):
 
-    score = 0
+def score_requirement(
+    product,
+    need,
+    weights,
+):
 
-    debug = []
+    requirement_score = 0
 
-    series = product.get("series")
+    reason_parts = []
 
-    series_number = product.get("series_number")
+    debug_score = []
 
-    # -------------------------
-    # Apple Watch Series
-    # -------------------------
+    text = _text(product)
 
-    if series == "Series":
+    # =========================
+    # Device
+    # =========================
 
-        score += 5
+    if need.device_type:
 
-        debug.append("Metadata(Series) +5")
+        device_term = DEVICE_QUERY_TERMS.get(
+            need.device_type,
+            need.device_type
+        ).lower()
 
-        if series_number:
+        keywords = DEVICE_KEYWORDS.get(
+            need.device_type,
+            [device_term]
+        )
 
-            score += series_number
+        if any(
+            keyword.lower() in text
+            for keyword in keywords
+        ):
 
-            debug.append(
-                f"Metadata(Series {series_number}) +{series_number}"
+            requirement_score += weights["device"]
+
+            debug_score.append(
+                f"Device +{weights['device']}"
             )
 
-    elif series == "Ultra":
-
-        score += 20
-
-        debug.append(
-            "Metadata(Ultra) +20"
-        )
-
-    elif series == "SE":
-
-        score += 2
-
-        debug.append(
-            "Metadata(SE) +2"
-        )
-
-    return score, debug
+    return (
+        requirement_score,
+        reason_parts,
+        debug_score,
+    )
 
 # =========================
 # Product Rank Service
@@ -644,29 +168,20 @@ def calculate_product_score(product, need):
         for item in _list(product.get("features"))
     }
 
-    # =========================
-    # Device
-    # =========================
+    requirement_score_part, reason_part, requirement_debug = score_requirement(
+        product,
+        need,
+        weights,
+    )
 
-    if need.device_type:
+    score += requirement_score_part
+    requirement_score += requirement_score_part
 
-        device_term = DEVICE_QUERY_TERMS.get(
-            need.device_type,
-            need.device_type
-        ).lower()
+    reason_parts.extend(reason_part)
 
-        keywords = DEVICE_KEYWORDS.get(
-            need.device_type,
-            [device_term]
-        )
+    debug_score.extend(requirement_debug)
 
-        if any(keyword.lower() in text for keyword in keywords):
-            score += weights["device"]
-            base_score += weights["device"]
 
-            debug_score.append(
-                f"Device +{weights['device']}"
-            )
 
     # =========================
     # Usage
@@ -812,8 +327,10 @@ def calculate_product_score(product, need):
     # Metadata
     # =========================
 
-    metadata_score, metadata_debug = score_product_metadata(
-        product
+    metadata_score, metadata_debug = score_metadata(
+        product,
+        need,
+        weights,
     )
 
     score += metadata_score
