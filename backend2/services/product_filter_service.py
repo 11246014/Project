@@ -764,7 +764,18 @@ def clean_product(
     if matched:
         print(f"[Accessory] {matched} -> {clean_name}")
         return None
+    
+    # =========================
+    # Wearable White List
+    # =========================
 
+    if not is_wearable_device(
+        clean_name,
+        snippet,
+    ):
+        print(f"[Not Wearable] {clean_name}")
+        return None
+    
     # =========================
     # Feature Extraction
     # =========================
