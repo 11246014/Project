@@ -84,18 +84,19 @@ def _run_async(coro):
 
 def retrieve_candidates(search_query):
     """
-    取得搜尋候選商品
+    Candidate Retrieval
 
-    搜尋流程：
-    1. Database Search
-    2. Web Search（DB 無結果時）
+    Search Priority
+    1. Database
+    2. Taiwan Shopping
+    3. Global Shopping (Fallback)
     """
 
-    db_products = []
+    # =========================
+    # Database
+    # =========================
 
-    # =========================
-    # Database Search
-    # =========================
+    db_products = []
 
     try:
 
@@ -105,39 +106,68 @@ def retrieve_candidates(search_query):
 
     except Exception as e:
 
-        if DEBUG_SEARCH:
-            print(
-                f"[DB Search Error] {e}"
-            )
+        print(
+            f"[DB Search Error] {e}"
+        )
 
     if db_products:
 
-        if DEBUG_SEARCH:
-            print(
-                f"[DB Search] {len(db_products)} Products"
-            )
+        print(
+            f"[DB Search] {len(db_products)}"
+        )
 
         return db_products
 
     # =========================
-    # Web Search
+    # Taiwan Search
     # =========================
 
     try:
 
-        if DEBUG_SEARCH:
+        tw_products = web_search_products(
+            search_query,
+            region="tw",
+        )
+
+        if tw_products:
+
             print(
-                "[Search Fallback] Web Search"
+                f"[TW Search] {len(tw_products)}"
             )
 
-        return web_search_products(
-            search_query
+            return tw_products
+
+        print(
+            "[TW Search] No Result"
         )
 
     except Exception as e:
 
         print(
-            f"[Web Search Error] {e}"
+            f"[TW Search Error] {e}"
+        )
+
+    # =========================
+    # Global Search (Fallback)
+    # =========================
+
+    try:
+
+        global_products = web_search_products(
+            search_query,
+            region="global",
+        )
+
+        print(
+            f"[Global Search] {len(global_products)}"
+        )
+
+        return global_products
+
+    except Exception as e:
+
+        print(
+            f"[Global Search Error] {e}"
         )
 
         return []

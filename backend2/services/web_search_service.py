@@ -35,7 +35,10 @@ SERPAPI_URL = "https://serpapi.com/search"
 # =========================
 # Web Search
 # =========================
-def fetch_shopping_results(keyword):
+def fetch_shopping_results(
+    keyword,
+    region="tw",
+):
     """
     呼叫 SerpAPI Google Shopping，取得原始搜尋結果
     """
@@ -44,10 +47,12 @@ def fetch_shopping_results(keyword):
         "engine": "google_shopping",
         "q": keyword,
         "api_key": SERPAPI_KEY,
-
-        # "gl": "tw",
-        # "hl": "zh-tw",
     }
+
+    if region == "tw":
+
+        params["gl"] = "tw"
+        params["hl"] = "zh-tw"
 
     response = requests.get(
         SERPAPI_URL,
@@ -230,7 +235,10 @@ def finalize_products(products):
     return products
 
 
-def web_search_products(keyword):
+def web_search_products(
+    keyword,
+    region="tw",
+):
     """
     Web 商品搜尋主流程
 
@@ -262,7 +270,8 @@ def web_search_products(keyword):
     try:
 
         shopping_results = fetch_shopping_results(
-            keyword
+            keyword,
+            region
         )
 
         products = build_products(

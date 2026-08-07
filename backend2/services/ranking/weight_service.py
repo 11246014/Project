@@ -4,6 +4,7 @@
 Weight Service
 
 負責：
+
 1. 基礎權重設定
 2. Feature Bonus
 3. Dynamic Weight 計算
@@ -23,6 +24,17 @@ BASE_SCORE = {
     "os": 25,
     "rating": 1,
 }
+
+# ==================================================
+# Dynamic Weight Config
+# ==================================================
+
+USAGE_WEIGHT = 25
+FEATURE_WEIGHT = 35
+PRIORITY_WEIGHT = 20
+BRAND_WEIGHT = 20
+OS_WEIGHT = 20
+BUDGET_WEIGHT = 15
 
 # ==================================================
 # Feature Bonus
@@ -58,21 +70,21 @@ def build_dynamic_weights(need):
     # ==================================================
 
     if getattr(need, "usage", None):
-        weights["usage"] = 25
+        weights["usage"] = USAGE_WEIGHT
 
     # ==================================================
     # Feature
     # ==================================================
 
     if getattr(need, "features", None):
-        weights["feature"] = 35
+        weights["feature"] = FEATURE_WEIGHT
 
     # ==================================================
     # Priority
     # ==================================================
 
     if getattr(need, "priorities", None):
-        weights["priority"] = 20
+        weights["priority"] = PRIORITY_WEIGHT
 
     # ==================================================
     # Brand
@@ -82,7 +94,7 @@ def build_dynamic_weights(need):
         getattr(need, "preferences", None)
         and getattr(need.preferences, "brand", None)
     ):
-        weights["brand"] = 20
+        weights["brand"] = BRAND_WEIGHT
 
     # ==================================================
     # OS
@@ -93,7 +105,7 @@ def build_dynamic_weights(need):
         and getattr(need.preferences, "os", None)
         and need.preferences.os != "Cross"
     ):
-        weights["os"] = 20
+        weights["os"] = OS_WEIGHT
 
     # ==================================================
     # Budget
@@ -103,6 +115,6 @@ def build_dynamic_weights(need):
         getattr(need, "budget", None)
         and getattr(need.budget, "max", None)
     ):
-        weights["budget"] = 15
+        weights["budget"] = BUDGET_WEIGHT
 
     return weights

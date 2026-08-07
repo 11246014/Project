@@ -23,6 +23,11 @@ POPULAR_BRANDS = {
     "Samsung",
     "Garmin",
     "Google",
+    "Huawei",
+    "Amazfit",
+    "COROS",
+    "Polar",
+    "Suunto",
 }
 
 # ==================================================
