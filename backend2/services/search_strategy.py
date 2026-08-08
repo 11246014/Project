@@ -213,9 +213,10 @@ def retrieve_candidates(search_query):
 
     if db_products:
 
-        print(
-            f"[DB Search] {len(db_products)}"
-        )
+        if DEBUG_SEARCH:
+            print(
+                f"[DB Search] {len(db_products)}"
+            )
 
         all_products.extend(
             db_products
@@ -234,17 +235,21 @@ def retrieve_candidates(search_query):
 
         if tw_products:
 
-            print(
-                f"[TW Search] {len(tw_products)}"
-            )
+            if DEBUG_SEARCH:
+                print(
+                    f"[TW Search] {len(tw_products)}"
+                )
 
             all_products.extend(
                 tw_products
             )
 
-        print(
-            "[TW Search] No Result"
-        )
+        else:
+
+            if DEBUG_SEARCH:
+                print(
+                    "[TW Search] No Result"
+                )
 
     except Exception as e:
 
@@ -286,10 +291,11 @@ def retrieve_candidates(search_query):
 
         if global_products:
 
-            print(
-                f"[Global Search] "
-                f"{len(global_products)}"
-            )
+            if DEBUG_SEARCH:
+                print(
+                    f"[Global Search] "
+                    f"{len(global_products)}"
+                )
 
             all_products.extend(
                 global_products
@@ -297,9 +303,10 @@ def retrieve_candidates(search_query):
 
         else:
 
-            print(
-                "[Global Search] No Result"
-            )
+            if DEBUG_SEARCH:
+                print(
+                    "[Global Search] No Result"
+                )
 
         all_products = deduplicate_products(
             all_products

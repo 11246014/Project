@@ -1,10 +1,14 @@
-#summary_service.py
 import time
 
 from config.settings import SUMMARY_MODEL
 from services.ai_service import ask_ai
 
+from services.summary_validator import (
+    validate_summary,
+)
+
 DEBUG_SUMMARY = True
+
 
 # ==================================================
 # Persona Context
@@ -18,10 +22,14 @@ def _build_persona_text(persona):
     parts = []
 
     if persona.age_range:
-        parts.append(f"年齡層：{persona.age_range}")
+        parts.append(
+            f"年齡層：{persona.age_range}"
+        )
 
     if persona.occupation:
-        parts.append(f"職業：{persona.occupation}")
+        parts.append(
+            f"職業：{persona.occupation}"
+        )
 
     if persona.usage_scope:
 
@@ -34,7 +42,7 @@ def _build_persona_text(persona):
         parts.append(
             scope_map.get(
                 persona.usage_scope,
-                persona.usage_scope
+                persona.usage_scope,
             )
         )
 
@@ -71,32 +79,42 @@ def _build_user_need_context(user_need):
 
     if user_need.usage:
         lines.append(
-            "用途：" +
-            "、".join(user_need.usage)
+            "用途："
+            + "、".join(user_need.usage)
         )
 
     if user_need.features:
         lines.append(
-            "需求功能：" +
-            "、".join(user_need.features)
-        )
-
-    if user_need.preferences.os:
-        lines.append(
-            f"手機系統：{user_need.preferences.os}"
-        )
-
-    if user_need.preferences.brand:
-        lines.append(
-            f"偏好品牌：{user_need.preferences.brand}"
+            "需求功能："
+            + "、".join(user_need.features)
         )
 
     if (
-        user_need.budget.max
+        user_need.preferences
+        and user_need.preferences.os
+    ):
+        lines.append(
+            f"手機系統："
+            f"{user_need.preferences.os}"
+        )
+
+    if (
+        user_need.preferences
+        and user_need.preferences.brand
+    ):
+        lines.append(
+            f"偏好品牌："
+            f"{user_need.preferences.brand}"
+        )
+
+    if (
+        user_need.budget
+        and user_need.budget.max
         and user_need.budget.max > 0
     ):
         lines.append(
-            f"預算：約 {user_need.budget.max} 元"
+            f"預算：約 "
+            f"{user_need.budget.max} 元"
         )
 
     if not lines:
@@ -117,29 +135,46 @@ def _build_product_context(products):
 
     result = []
 
-    for idx, product in enumerate(products, start=1):
+    for idx, product in enumerate(
+        products,
+        start=1,
+    ):
 
-        tags = product.get("tags", [])
+        tags = product.get(
+            "tags",
+            [],
+        )
 
         if isinstance(tags, list):
-            tag_text = "、".join(tags)
+
+            tag_text = "、".join(
+                str(tag)
+                for tag in tags
+                if tag
+            )
+
         else:
+
             tag_text = str(tags)
 
         result.append(
             f"""
 【第 {idx} 名】
 
-商品：{product.get("name", "")}
+商品名稱：{product.get("name", "")}
 品牌：{product.get("brand", "")}
 價格：{product.get("price", "")} 元
 推薦度：{product.get("match", 0)}%
 推薦原因：{product.get("reason", "")}
-標籤：{tag_text}
+已知標籤：{tag_text}
 """.strip()
         )
 
-    return "\n\n-----------------------------\n\n".join(result)
+    return (
+        "\n\n"
+        "-----------------------------"
+        "\n\n"
+    ).join(result)
 
 
 # ==================================================
@@ -155,77 +190,166 @@ def _build_summary_prompt(
     return f"""
 你是 WearWise AI 智慧穿戴導購顧問。
 
-你的工作是根據系統提供的推薦結果，
-以自然、專業、容易閱讀的方式向使用者介紹商品。
+你的任務是：
+根據「使用者需求」以及「系統提供的商品資料」，
+將推薦結果改寫成自然、簡短、容易閱讀的繁體中文介紹。
 
-========================
-使用者背景
-========================
+你不是商品搜尋引擎。
+你不是商品資料庫。
+你不能自行查詢或補充商品資訊。
 
 {persona_text}
 
-========================
-使用者需求
-========================
-
 {user_need_text}
 
-========================
-推薦商品
-========================
+【系統提供的商品資料】
 
 {product_text}
 
-========================
-輸出規則（必須遵守）
-========================
 
-【商品規則】
+【最高優先級規則】
 
-1. 只能介紹系統提供的商品。
-2. 不得新增任何商品。
-3. 商品名稱必須完全一致。
-4. 不得省略任何商品。
-5. 若有三項商品，必須介紹三項。
-6. 若只有一項商品，只介紹該商品。
-7. 不得改變推薦順位。
+只能使用上方「系統提供的商品資料」。
 
-【內容規則】
+系統沒有提供的商品資訊，一律視為不存在。
 
-8. 第一順位介紹較完整（2~3句）。
-9. 第二順位簡短介紹（1~2句）。
-10. 第三順位一句即可。
-11. 優先根據「推薦原因」介紹。
-12. 可以參考標籤(Tag)自然帶入。
-13. 可以呼應使用者需求。
-14. 可以呼應使用者背景(Persona)。
+如果你不知道某項商品資訊，
+就不要提及該資訊。
 
-【禁止事項】
 
-15. 不得虛構商品功能。
-16. 不得根據品牌猜測規格。
-17. 不得自行補充不存在的資訊。
-18. 不得比較商品優劣。
-19. 不得推薦未提供商品。
-20. 不得加入自己的意見。
+【允許使用的資訊】
+
+你只能使用：
+
+1. 商品名稱
+2. 品牌
+3. 價格
+4. 推薦度
+5. 推薦原因
+6. 已知標籤
+7. 使用者需求
+8. 使用者背景
+
+你可以重新組合以上資訊，
+但不能增加新的商品事實。
+
+
+【絕對禁止】
+
+禁止：
+
+1. 自行新增商品功能。
+2. 自行新增商品規格。
+3. 自行新增續航時間。
+4. 自行新增感測器。
+5. 自行新增 GPS、血氧、心率、ECG 等功能。
+6. 自行新增防水能力。
+7. 自行新增材質。
+8. 自行新增尺寸。
+9. 自行新增通訊功能。
+10. 自行新增健康功能。
+11. 自行新增運動功能。
+12. 自行新增價格以外的數字。
+13. 根據品牌推測商品功能。
+14. 根據型號推測商品功能。
+15. 根據你對產品的既有知識補充資訊。
+16. 使用系統沒有提供的規格進行比較。
+17. 宣稱「一定適合」、「最佳」、「最強」等系統沒有提供的結論。
+
+
+【非常重要】
+
+即使你知道某個品牌或型號通常具有某項功能，
+也禁止使用該知識。
+
+例如：
+
+如果系統只提供：
+
+商品名稱：Apple Watch Series 11
+品牌：Apple
+價格：13488 元
+推薦原因：高評價商品、熱門品牌商品
+
+你只能根據這些資訊介紹。
+
+你不能因為知道 Apple Watch
+就自行加入 GPS、心率、血氧、續航、
+防水、運動模式或其他功能。
+
+
+【推薦順位】
+
+必須完全按照系統提供的順位介紹。
+
+第 1 名 → 第一個介紹
+第 2 名 → 第二個介紹
+第 3 名 → 第三個介紹
+
+不得重新排序。
+
+
+【內容要求】
+
+第 1 名：
+2 句左右。
+可以稍微完整。
+
+第 2 名：
+1～2 句。
+
+第 3 名：
+1 句。
+
+如果商品少於 3 項，
+只介紹實際提供的商品。
+
+
+【推薦原因】
+
+推薦原因是系統已經計算完成的結果。
+
+你可以把推薦原因改寫成自然語句。
+
+例如：
+
+「高評價商品、熱門品牌商品」
+
+可以改寫成：
+
+「這款商品評價表現不錯，也是目前推薦結果中的熱門品牌選擇。」
+
+但不能改寫成不存在的功能或規格。
+
 
 【語氣】
 
-21. 使用自然繁體中文。
-22. 像門市導購，而不是商品規格表。
-23. 每項商品都像是在向使用者介紹。
-24. 不要流水帳。
-25. 不要照抄推薦原因。
+使用自然、簡潔的繁體中文。
+
+像台灣門市導購在介紹商品。
+
+不要像商品規格表。
+
+不要過度行銷。
+
+不要誇大。
+
+不要編造。
+
 
 【格式】
 
-26. 不要使用 Markdown。
-27. 不要使用項目符號。
-28. 不要寫開場白。
-29. 不要寫結論。
-30. 直接輸出推薦內容。
+不要 Markdown。
 
-格式如下：
+不要項目符號。
+
+不要開場白。
+
+不要結論。
+
+不要額外解釋。
+
+直接輸出：
 
 【第1名】
 商品名稱
@@ -239,12 +363,29 @@ def _build_summary_prompt(
 商品名稱
 介紹內容
 
-開始撰寫推薦內容。
 
-========================
-開始撰寫
-========================
+【輸出前自我檢查】
+
+在輸出之前，逐項檢查：
+
+1. 每個商品名稱是否與系統提供的完全一致？
+2. 是否按照推薦順位？
+3. 是否只介紹系統提供的商品？
+4. 是否加入任何系統沒有提供的功能？
+5. 是否加入任何系統沒有提供的規格？
+6. 是否根據品牌或型號自行推測？
+7. 是否加入系統沒有提供的數字？
+8. 是否加入系統沒有提供的比較？
+9. 如果刪除所有你自己的產品知識，
+   內容是否仍然可以完全由系統提供資料支持？
+
+如果任何一句無法由系統提供的資料直接支持，
+刪除該句。
+
+現在開始撰寫推薦內容。
 """
+
+
 # ==================================================
 # Summary Generator
 # ==================================================
@@ -252,13 +393,18 @@ def _build_summary_prompt(
 def generate_summary(
     products,
     user_need,
-    budget_fallback=False
+    budget_fallback=False,
 ):
 
-    print("[Summary Service]")
+    print(
+        "[Summary Service]"
+    )
 
     if not products:
-        return "目前沒有找到符合條件的推薦商品。"
+
+        return (
+            "目前沒有找到符合條件的推薦商品。"
+        )
 
     # =========================
     # Build Context
@@ -279,27 +425,38 @@ def generate_summary(
     summary_prompt = _build_summary_prompt(
         persona_text,
         user_need_text,
-        product_text
+        product_text,
     )
 
     # =========================
     # Debug
     # =========================
 
-    print("\n========== Summary Context ==========")
-
     if DEBUG_SUMMARY:
 
+        print(
+            "\n========== Summary Context =========="
+        )
+
         print(persona_text)
+
         print(user_need_text)
+
         print(product_text)
 
-    print("=====================================\n")
+        print(
+            "=====================================\n"
+        )
+
+    # =========================
+    # Budget Notice
+    # =========================
 
     budget_notice = ""
 
     if (
         budget_fallback
+        and user_need.budget
         and user_need.budget.max
     ):
 
@@ -310,15 +467,21 @@ def generate_summary(
             f"以下推薦價格最接近需求的商品。\n\n"
         )
 
+    # =========================
+    # AI Summary
+    # =========================
+
     try:
 
-        print("[Summary Start]")
+        print(
+            "[Summary Start]"
+        )
 
         start = time.time()
 
         ai_reply = ask_ai(
             summary_prompt,
-            model_name=SUMMARY_MODEL
+            model_name=SUMMARY_MODEL,
         )
 
         elapsed = (
@@ -326,19 +489,28 @@ def generate_summary(
         )
 
         print(
-            f"[Summary Time] {elapsed:.2f}s"
+            f"[Summary Time] "
+            f"{elapsed:.2f}s"
         )
 
+        # =========================
+        # Budget Notice
+        # =========================
+
         if budget_notice:
+
             ai_reply = (
                 budget_notice
                 + ai_reply
             )
 
+        # =========================
+        # Empty Response
+        # =========================
+
         if (
             not ai_reply
-            or
-            not ai_reply.strip()
+            or not ai_reply.strip()
         ):
 
             ai_reply = (
@@ -346,15 +518,27 @@ def generate_summary(
                 "請參考以下推薦。"
             )
 
+        # =========================
+        # Debug Output
+        # =========================
+
+        if DEBUG_SUMMARY:
+
+            print(
+                "\n========== Summary =========="
+            )
+
+            print(
+                ai_reply
+            )
+
+            print(
+                "=============================\n"
+            )
+
         print(
-            "\n========== Summary =========="
+            "[Summary End]"
         )
-
-        print(ai_reply)
-
-        print("=============================\n")
-
-        print("[Summary End]")
 
         return ai_reply
 

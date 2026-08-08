@@ -722,10 +722,19 @@ def clean_product(
         "snippet",
         ""
     )
-    #debug1
-    print("\n========== Item Keys ==========")
-    print(item.keys())
-    print("================================")
+    if DEBUG_SEARCH:
+
+        print(
+            "\n========== Item Keys =========="
+        )
+
+        print(
+            item.keys()
+        )
+
+        print(
+            "================================"
+        )
 
     feature_text = (
         raw_title +
@@ -748,7 +757,11 @@ def clean_product(
         raw_title
     )
 
-    print("[Metadata]", metadata)
+    if DEBUG_SEARCH:
+        print(
+            "[Metadata]",
+            metadata
+        )
     
     # =========================
     # 黑名單
@@ -762,7 +775,13 @@ def clean_product(
             break
 
     if matched:
-        print(f"[Accessory] {matched} -> {clean_name}")
+
+        if DEBUG_SEARCH:
+            print(
+                f"[Accessory] "
+                f"{matched} -> {clean_name}"
+            )
+
         return None
     
     # =========================
@@ -773,7 +792,13 @@ def clean_product(
         clean_name,
         snippet,
     ):
-        print(f"[Not Wearable] {clean_name}")
+
+        if DEBUG_SEARCH:
+            print(
+                f"[Not Wearable] "
+                f"{clean_name}"
+            )
+
         return None
     
     # =========================

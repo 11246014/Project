@@ -53,7 +53,9 @@ def recommend_from_need(
     1. Search
     2. Search Filter
     3. Ranking
-    4. Product Format
+    4. Top Products
+    5. Resolve Product Links
+    6. Product Format
     """
 
     if DEBUG_PIPELINE:
@@ -201,8 +203,7 @@ def recommend_from_need(
     # =========================
 
     formatted_products = format_products(
-        ranked,
-        limit,
+        top_products,
     )
 
     if DEBUG_PIPELINE:
