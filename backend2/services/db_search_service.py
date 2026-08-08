@@ -2,6 +2,11 @@ from services.backend1_client import get_db_products
 
 
 async def search_db_products(keyword):
+    """
+    從 Backend1 / MySQL 搜尋商品。
+
+    回傳統一的 WearWise 商品格式。
+    """
 
     try:
 
@@ -52,7 +57,7 @@ async def search_db_products(keyword):
                     "amazfit",
                     "samsung",
                     "galaxy",
-                    "huawei"
+                    "huawei",
                 ]:
 
                     score += 30
@@ -67,7 +72,7 @@ async def search_db_products(keyword):
                     "心率",
                     "血氧",
                     "ecg",
-                    "防水"
+                    "防水",
                 ]:
 
                     score += 15
@@ -125,7 +130,25 @@ async def search_db_products(keyword):
                         ""
                     ),
 
-                    "link": ""
+                    # =====================
+                    # Product Source
+                    # =====================
+
+                    "source": "db",
+
+                    # Backend1 如果有 shop 欄位就使用，
+                    # 沒有則保持空字串
+                    "shop": product.get(
+                        "shop",
+                        ""
+                    ),
+
+                    # Backend1 如果有 link 欄位就使用，
+                    # 沒有則保持空字串
+                    "link": product.get(
+                        "link",
+                        ""
+                    ),
                 })
 
         # =====================

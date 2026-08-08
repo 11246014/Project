@@ -77,6 +77,102 @@ def _run_async(coro):
         "Cannot execute async search inside an active event loop."
     )
 
+# ==================================================
+# Product Deduplication
+# ==================================================
+
+def normalize_product_title(product):
+    """
+    將商品名稱標準化，供去重使用。
+    """
+
+    title = product.get(
+        "title",
+        "",
+    )
+
+    if not title:
+        return ""
+
+    title = title.strip().lower()
+
+    return " ".join(
+        title.split()
+    )
+
+def get_product_completeness(product):
+    """
+    計算商品資料完整度。
+
+    分數越高，代表商品資訊越完整。
+    """
+
+    score = 0
+
+    if product.get("link"):
+        score += 5
+
+    if product.get("price"):
+        score += 2
+
+    if product.get("image"):
+        score += 2
+
+    if product.get("rating"):
+        score += 1
+
+    if product.get("brand"):
+        score += 1
+
+    if product.get("desc"):
+        score += 1
+
+    return score
+
+def deduplicate_products(products):
+    """
+    移除重複商品。
+
+    若相同商品出現多次，
+    保留資訊完整度較高的版本。
+    """
+
+    unique_products = {}
+    
+    for product in products:
+
+        title = normalize_product_title(
+            product
+        )
+
+        if not title:
+            continue
+
+        current_score = get_product_completeness(
+            product
+        )
+
+        existing_product = unique_products.get(
+            title
+        )
+
+        if existing_product is None:
+
+            unique_products[title] = product
+
+            continue
+
+        existing_score = get_product_completeness(
+            existing_product
+        )
+
+        if current_score > existing_score:
+
+            unique_products[title] = product
+
+    return list(
+        unique_products.values()
+    )
 
 # ==================================================
 # Candidate Retrieval
@@ -93,11 +189,16 @@ def retrieve_candidates(search_query):
     """
 
     # =========================
+    # Candidate Pool
+    # =========================
+
+    all_products = []
+
+    # =========================
     # Database
     # =========================
 
     db_products = []
-
     try:
 
         db_products = _run_async(
@@ -116,7 +217,9 @@ def retrieve_candidates(search_query):
             f"[DB Search] {len(db_products)}"
         )
 
-        return db_products
+        all_products.extend(
+            db_products
+        )
 
     # =========================
     # Taiwan Search
@@ -135,7 +238,9 @@ def retrieve_candidates(search_query):
                 f"[TW Search] {len(tw_products)}"
             )
 
-            return tw_products
+            all_products.extend(
+                tw_products
+            )
 
         print(
             "[TW Search] No Result"
@@ -151,6 +256,27 @@ def retrieve_candidates(search_query):
     # Global Search (Fallback)
     # =========================
 
+    if all_products:
+
+        if DEBUG_SEARCH:
+            print(
+                f"[Hybrid Search] "
+                f"DB + TW = {len(all_products)}"
+            )
+
+        all_products = deduplicate_products(
+            all_products
+        )
+
+        if DEBUG_SEARCH:
+            print(
+                f"[Hybrid Search] "
+                f"After Dedup = {len(all_products)}"
+            )
+
+        return all_products
+
+
     try:
 
         global_products = web_search_products(
@@ -158,11 +284,34 @@ def retrieve_candidates(search_query):
             region="global",
         )
 
-        print(
-            f"[Global Search] {len(global_products)}"
+        if global_products:
+
+            print(
+                f"[Global Search] "
+                f"{len(global_products)}"
+            )
+
+            all_products.extend(
+                global_products
+            )
+
+        else:
+
+            print(
+                "[Global Search] No Result"
+            )
+
+        all_products = deduplicate_products(
+            all_products
         )
 
-        return global_products
+        if DEBUG_SEARCH:
+            print(
+                f"[Hybrid Search] "
+                f"After Dedup = {len(all_products)}"
+            )
+
+        return all_products
 
     except Exception as e:
 
@@ -170,4 +319,4 @@ def retrieve_candidates(search_query):
             f"[Global Search Error] {e}"
         )
 
-        return []
+        return all_products

@@ -723,9 +723,9 @@ def clean_product(
         ""
     )
     #debug1
-    # print("\n========== Item Keys ==========")
-    # print(item.keys())
-    # print("================================")
+    print("\n========== Item Keys ==========")
+    print(item.keys())
+    print("================================")
 
     feature_text = (
         raw_title +
@@ -792,6 +792,48 @@ def clean_product(
 
     raw_price = item.get("price", "")
 
+    # =========================
+    # Link Debug
+    # =========================
+
+    if DEBUG_SEARCH:
+
+        print(
+            "[Link Source]"
+        )
+
+        print(
+            "product_link:",
+            item.get(
+                "product_link",
+                ""
+            )
+        )
+
+        print(
+            "link:",
+            item.get(
+                "link",
+                ""
+            )
+        )
+
+        print(
+            "immersive_product_api:",
+            item.get(
+                "serpapi_immersive_product_api",
+                ""
+            )
+        )
+
+        print(
+            "source:",
+            item.get(
+                "source",
+                ""
+            )
+        )
+
     price = item.get("extracted_price")
 
     if price is None:
@@ -826,6 +868,11 @@ def clean_product(
             "product_id",
             ""
         ),
+        
+        "immersive_product_api": item.get(
+            "serpapi_immersive_product_api",
+            ""
+        ),
 
         "reviews": item.get(
             "reviews",
@@ -842,7 +889,19 @@ def clean_product(
             ""
         ),
 
+        "source": "web",
+
+        "shop": item.get(
+            "source",
+            ""
+        ),
+
         "desc": snippet,
+
+        "product_link": item.get(
+            "product_link",
+            ""
+        ),
 
         "link": item.get(
             "product_link"

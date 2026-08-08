@@ -14,6 +14,9 @@ from services.search_strategy import (
     retrieve_candidates,
 )
 
+from services.product_link_service import (
+    fetch_immersive_product,
+)
 # ==================================================
 # Pipeline Config
 # ==================================================
@@ -127,6 +130,72 @@ def recommend_from_need(
             f"[After Ranking] {len(ranked)}"
         )
 
+    # =========================
+    # Top Products
+    # =========================
+
+    top_products = ranked[:limit]
+
+    if DEBUG_PIPELINE:
+        print(
+            f"[Top Products] {len(top_products)}"
+        )
+        
+    # =========================
+    # Resolve Product Links
+    # =========================
+
+    for product in top_products:
+
+        api_url = product.get(
+            "immersive_product_api",
+            "",
+        )
+
+        if not api_url:
+
+            if DEBUG_PIPELINE:
+                print(
+                    "[Product Link] No Immersive API:",
+                    product.get(
+                        "title",
+                        "",
+                    )
+                )
+
+            continue
+
+        link = fetch_immersive_product(
+            api_url,
+        )
+
+        if link:
+
+            product["link"] = link
+
+            if DEBUG_PIPELINE:
+                print(
+                    "[Product Link] Resolved:",
+                    product.get(
+                        "title",
+                        "",
+                    )
+                )
+
+                print(
+                    "Link:",
+                    link,
+                )
+
+        elif DEBUG_PIPELINE:
+
+            print(
+                "[Product Link] Failed:",
+                product.get(
+                    "title",
+                    "",
+                )
+            )
     # =========================
     # Format
     # =========================
