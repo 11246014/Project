@@ -260,8 +260,15 @@ Future<void> _loadHistory() async {
 
           _buildProfileDropdown(
             label: '年齡層',
-            value: ref.watch(userProfileProvider).ageRange,
-            options: const ['18 以下', '18–25', '26–35', '36–45', '46 以上'],
+            // 如果舊資料不在新選項清單裡，就當作沒填，讓使用者重選
+            value: const [
+              '18 歲以下', '19–25 歲', '26–35 歲', '36–45 歲', '46–55 歲', '56 歲以上',
+            ].contains(ref.watch(userProfileProvider).ageRange)
+                ? ref.watch(userProfileProvider).ageRange
+                : '',
+            options: const [
+              '18 歲以下', '19–25 歲', '26–35 歲', '36–45 歲', '46–55 歲', '56 歲以上',
+            ],
             onChanged: ref.read(userProfileProvider.notifier).updateAgeRange,
           ),
           const SizedBox(height: 12),
@@ -276,8 +283,8 @@ Future<void> _loadHistory() async {
 
           _buildProfileTextField(
             controller: _currentDeviceController,
-            label: '目前使用的穿戴裝置',
-            hint: '例如：Apple Watch SE、無、小米手環 7',
+            label: '目前已經在使用的商品',
+            hint: '例如：手機型號、Apple Watch SE、小米手環 7、無',
             onChanged: ref.read(userProfileProvider.notifier).updateCurrentDevice,
           ),
           const SizedBox(height: 28),
