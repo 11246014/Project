@@ -510,7 +510,22 @@ Future<void> _loadHistory() async {
         final item = _history[index];
         final tags = List<String>.from(item['tags'] ?? []);
 
-        return Container(
+        // 點擊卡片可進入商品詳情頁
+        // 注意：歷史紀錄目前沒有存 link（外部購買連結），
+        // 詳情頁會顯示「暫無購買連結」，其餘資訊（名稱、價格、圖片、標籤）正常顯示
+        return GestureDetector(
+          onTap: () => context.push(
+            AppRoutes.product,
+            extra: {
+              'name': item['name'],
+              'price': item['price'],
+              'image': item['image'],
+              'tags': tags,
+              'platform': item['platform'],
+              'link': '', // 歷史紀錄未儲存連結，先給空字串避免 key 不存在
+            },
+          ),
+          child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -578,6 +593,7 @@ Future<void> _loadHistory() async {
                 ),
               ),
             ],
+            ),
           ),
         );
       },
