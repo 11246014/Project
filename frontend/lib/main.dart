@@ -128,7 +128,7 @@ class WebLayout extends StatelessWidget {
 
   const WebLayout({super.key, required this.child});
 
-  static const double contentWidth = 560;
+  static const double contentWidth = 600;
   static const Color bgColor = Color(0xFF1E2A3A);
 
   @override
@@ -172,31 +172,31 @@ class WebLayout extends StatelessWidget {
 // GoRouter 路由設定
 // ════════════════════════════════════════════════════
 final _router = GoRouter(
-  initialLocation: AppRoutes.login,
+  initialLocation: AppRoutes.home,
 
-  redirect: (context, state) async {
-    final token = await const FlutterSecureStorage().read(key: 'token');
-    final isLoggedIn = token != null && token.isNotEmpty;
+  // redirect: (context, state) async {
+  //   final token = await const FlutterSecureStorage().read(key: 'token');
+  //   final isLoggedIn = token != null && token.isNotEmpty;
 
-    // 不需要登入就能進入的頁面
-    final isOnPublicPage =
-        state.matchedLocation == AppRoutes.login ||
-        state.matchedLocation == AppRoutes.register ||
-        state.matchedLocation == AppRoutes.forgotPassword;
+  //   // 不需要登入就能進入的頁面
+  //   final isOnPublicPage =
+  //       state.matchedLocation == AppRoutes.login ||
+  //       state.matchedLocation == AppRoutes.register ||
+  //       state.matchedLocation == AppRoutes.forgotPassword;
 
-    // 沒有 Token 且不在公開頁 → 強制去登入頁
-    if (!isLoggedIn && !isOnPublicPage) return AppRoutes.login;
+  //   // 沒有 Token 且不在公開頁 → 強制去登入頁
+  //   if (!isLoggedIn && !isOnPublicPage) return AppRoutes.login;
 
-    // 有 Token 且在登入／註冊頁 → 直接進首頁
-    if (isLoggedIn &&
-        (state.matchedLocation == AppRoutes.login ||
-         state.matchedLocation == AppRoutes.register)) {
-      return AppRoutes.home;
-    }
+  //   // 有 Token 且在登入／註冊頁 → 直接進首頁
+  //   if (isLoggedIn &&
+  //       (state.matchedLocation == AppRoutes.login ||
+  //        state.matchedLocation == AppRoutes.register)) {
+  //     return AppRoutes.home;
+  //   }
 
-    // 其他情況不做跳轉
-    return null;
-  },
+  //   // 其他情況不做跳轉
+  //   return null;
+  // },
   routes: [
     GoRoute(
       path: AppRoutes.login,

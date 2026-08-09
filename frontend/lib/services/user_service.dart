@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/constants/api_config.dart';
+import 'package:flutter/foundation.dart';
 
 class UserService {
   static final _dio = Dio(BaseOptions(baseUrl: ApiConfig.dbBaseUrl));
@@ -42,5 +43,37 @@ class UserService {
         'current_device': currentDevice,
       },
     );
+  }
+  /// 取得使用者的歷史紀錄（依時間新到舊，最多 20 筆）
+  /// 對應後端1新增的 GET /history/{email}
+  static Future<List<Map<String, dynamic>>> getHistory() async {
+    final token = await _storage.read(key: 'token');
+    if (token == null) throw Exception('尚未登入');
+
+    final res = await _dio.get('/history/$token');
+    return List<Map<String, dynamic>>.from(res.data);
+  }
+
+  /// 新增一筆歷史紀錄
+  /// 對應後端1新增的 POST /history/{email}
+  /// 用途：使用者看到 AI 推薦或篩選結果時呼叫，記錄「看過哪些商品」
+  /// 失敗不影響主流程（不會讓推薦畫面因此壞掉），只記錄 log 方便除錯
+  static Future<void> addHistory(Map<String, dynamic> product) async {
+    final token = await _storage.read(key: 'token');
+    if (token == null) return; // 未登入不記錄
+
+    try {
+      await _dio.post('/history/$token', data: {
+        'name': product['name'] ?? '',
+        'price': product['price'] ?? 0,
+        'image': product['image'] ?? '',
+        'tags': List<String>.from(
+            product['tags'] ?? product['features'] ?? []),
+        'rating': product['rating'] ?? 0,
+        'platform': product['platform'] ?? '',
+      });
+    } catch (e) {
+      debugPrint('新增歷史紀錄失敗：$e');
+    }
   }
 }
