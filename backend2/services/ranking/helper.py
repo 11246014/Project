@@ -40,21 +40,37 @@ def _list(value):
 
     return [value]
 
-
 def _text(product):
     """
-    合併商品所有可搜尋欄位
+    合併商品可用的文字與功能資訊
     """
 
+    text_parts = [
+        product.get("title", ""),
+        product.get("raw_title", ""),
+        product.get("name", ""),
+        product.get("desc", ""),
+        product.get("description", ""),
+    ]
+
+    features = product.get("features", [])
+
+    if isinstance(features, list):
+        text_parts.extend(features)
+    elif features:
+        text_parts.append(str(features))
+
+    tags = product.get("tags", [])
+
+    if isinstance(tags, list):
+        text_parts.extend(tags)
+    elif tags:
+        text_parts.append(str(tags))
+
     return " ".join(
-        str(product.get(key, ""))
-        for key in (
-            "title",
-            "raw_title",
-            "name",
-            "desc",
-            "description",
-        )
+        str(value)
+        for value in text_parts
+        if value
     ).lower()
 
 

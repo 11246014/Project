@@ -29,13 +29,26 @@ TITLE_REMOVE_PATTERNS = [
 ]
 
 FEATURE_KEYWORDS = {
-
     "gps": "GPS",
+    "定位": "GPS",
+    "導航": "GPS",
+    "衛星": "GPS",
+
     "睡眠": "睡眠",
+    "sleep": "睡眠",
+
     "心率": "心率",
+    "heart rate": "心率",
+
     "血氧": "血氧",
+    "spo2": "血氧",
+
     "ecg": "ECG",
     "心電圖": "ECG",
+
+    "防水": "防水",
+    "ip68": "防水",
+    "5atm": "防水",
 }
 
 KNOWN_BRANDS = [

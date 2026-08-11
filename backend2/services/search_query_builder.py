@@ -6,6 +6,7 @@
 
 USAGE_MAPPING = {
     "運動": "運動",
+    "跑步": "跑步",
     "健康": "健康",
 
     # 這些對 Google Shopping 幾乎沒有搜尋價值

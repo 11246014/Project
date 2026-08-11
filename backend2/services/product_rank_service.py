@@ -23,9 +23,8 @@ def calculate_match_score(raw_score):
     將 Raw Score 映射成前端顯示的 Match (%)
     """
 
-    score = int(raw_score * 0.75 + 35)
-
-    return max(50, min(score, 95))
+    score = round(raw_score)
+    return max(0, min(score, 100))
 
 
 # ==================================================
