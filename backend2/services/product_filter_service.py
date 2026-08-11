@@ -1,6 +1,6 @@
 #product_filter_service.py
 import re
-DEBUG_SEARCH = False
+DEBUG_SEARCH = True
 
 # =========================
 # Product Filter Config

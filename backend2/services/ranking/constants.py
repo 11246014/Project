@@ -140,7 +140,8 @@ USAGE_KEYWORDS = {
     "運動": [
         "運動",
         "跑步",
-        "forerunner",
+        "跑錶",
+        "runner",
     ],
 
     "健康": [
