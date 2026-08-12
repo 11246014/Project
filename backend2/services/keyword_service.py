@@ -525,23 +525,49 @@ def extract_keyword(user_message):
         # --------------------------
 
         has_budget = bool(
-
             re.search(
-
                 r"(預算|\d+)",
-
                 user_message
-
             )
-
         )
 
         if not has_budget:
 
             data["budget_min"] = 0
-
             data["budget_max"] = 0
 
+        else:
+
+            # 使用者明確表示「以下／以內／不超過／最多／最高」
+            # 代表數字是「最高預算」，不是最低預算。
+            if re.search(
+                r"(以下|以內|不超過|最多|最高)",
+                user_message
+            ):
+
+                if (
+                    data.get("budget_min", 0) > 0
+                    and data.get("budget_max", 0) == 0
+                ):
+
+                    data["budget_max"] = data["budget_min"]
+                    data["budget_min"] = 0
+
+            # 使用者明確表示「以上／至少／最低」
+            # 代表數字是「最低預算」。
+            elif re.search(
+                r"(以上|至少|最低)",
+                user_message
+            ):
+
+                if (
+                    data.get("budget_min", 0) == 0
+                    and data.get("budget_max", 0) > 0
+                ):
+
+                    data["budget_min"] = data["budget_max"]
+                    data["budget_max"] = 0
+                    
         print("\n========== Parsed ==========")
         print(data)
 

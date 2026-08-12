@@ -135,9 +135,17 @@ def _build_product_context(products):
 
     print("\n========== SUMMARY PRODUCT RAW ==========")
 
-    for idx, product in enumerate(products, start=1):
+    for idx, product in enumerate(
+        products,
+        start=1,
+    ):
         print(
-            f"[{idx}] name = {product.get('name', '')}"
+            f"[{idx}] "
+            f"name={product.get('name', '')} | "
+            f"title={product.get('title', '')} | "
+            f"brand={product.get('brand', '')} | "
+            f"price={product.get('price', '')} | "
+            f"match={product.get('match', '')}"
         )
 
     print("=========================================\n")
@@ -148,6 +156,59 @@ def _build_product_context(products):
         products,
         start=1,
     ):
+
+        # ==================================================
+        # Product Name
+        #
+        # Summary 優先使用 name。
+        # 若 name 不存在，使用 title。
+        # ==================================================
+
+        product_name = (
+            product.get("name")
+            or product.get("title")
+            or ""
+        )
+
+        # ==================================================
+        # Brand
+        # ==================================================
+
+        brand = (
+            product.get("brand")
+            or ""
+        )
+
+        # ==================================================
+        # Price
+        # ==================================================
+
+        price = (
+            product.get("price")
+            or ""
+        )
+
+        # ==================================================
+        # Match
+        # ==================================================
+
+        match = product.get(
+            "match",
+            0,
+        )
+
+        # ==================================================
+        # Reason
+        # ==================================================
+
+        reason = (
+            product.get("reason")
+            or ""
+        )
+
+        # ==================================================
+        # Tags
+        # ==================================================
 
         tags = product.get(
             "tags",
@@ -166,15 +227,19 @@ def _build_product_context(products):
 
             tag_text = str(tags)
 
+        # ==================================================
+        # Build Context
+        # ==================================================
+
         result.append(
             f"""
 【第 {idx} 名】
 
-商品名稱：{product.get("name", "")}
-品牌：{product.get("brand", "")}
-價格：{product.get("price", "")} 元
-推薦度：{product.get("match", 0)}%
-推薦原因：{product.get("reason", "")}
+商品名稱：{product_name}
+品牌：{brand}
+價格：{price} 元
+推薦度：{match}%
+推薦原因：{reason}
 已知標籤：{tag_text}
 """.strip()
         )
@@ -578,10 +643,6 @@ def generate_summary(
                 "AI Summary contains unsupported information."
             )
 
-            ai_reply = (
-                "已為您整理推薦商品，"
-                "以下內容依照系統計算的推薦結果提供。"
-            )
         elapsed = (
             time.time() - start
         )
