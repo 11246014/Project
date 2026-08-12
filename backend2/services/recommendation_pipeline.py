@@ -77,7 +77,8 @@ def recommend_from_need(
     # =========================
 
     candidates = retrieve_candidates(
-        search_query
+        search_query,
+        need,
     )
 
     if DEBUG_PIPELINE:

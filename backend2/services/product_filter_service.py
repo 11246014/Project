@@ -1,6 +1,6 @@
 #product_filter_service.py
 import re
-DEBUG_SEARCH = True
+DEBUG_SEARCH = False
 
 # =========================
 # Product Filter Config
@@ -302,7 +302,7 @@ def extract_product_metadata(title):
 
         "series_number": None,
 
-        "gps": False,
+        "gps": None,
 
         "cellular": False,
 
@@ -422,7 +422,7 @@ def clean_price(price_text):
 # Price Parsing
 # =========================
 
-def parse_price(price_text):
+def parse_price(price_text, region=""):
 
     if not price_text:
 
@@ -449,8 +449,10 @@ def parse_price(price_text):
 
     elif text.startswith("$"):
 
-        # Google Shopping (US) 常見格式
-        currency = "USD"
+        if region.lower() == "tw":
+            currency = "TWD"
+        elif region.lower() == "us":
+            currency = "USD"
 
     # 保留數字
     number = re.sub(
@@ -710,7 +712,8 @@ def is_wearable_device(
 
 def clean_product(
     item,
-    keyword
+    keyword,
+    region=""
 ):
 
     rating = item.get(
@@ -821,15 +824,17 @@ def clean_product(
     features = extract_features(
         feature_text
     )
-    #debug2
-    # print("\n========== Feature ==========")
-    # print("Title:", raw_title)
-    # print("Snippet:", snippet)
-    # print("Extract:", features)
-    # print("=============================")
 
     raw_price = item.get("price", "")
 
+    if DEBUG_SEARCH:
+        print("[Price Debug]")
+        print("title:", raw_title)
+        print("price:", item.get("price"))
+        print("extracted_price:", item.get("extracted_price"))
+        print("old_price:", item.get("old_price"))
+        print("extracted_old_price:", item.get("extracted_old_price"))
+        print("=" * 50)
     # =========================
     # Link Debug
     # =========================
@@ -872,21 +877,25 @@ def clean_product(
             )
         )
 
+    price_info = parse_price(
+        raw_price,
+        region=region
+    )
+
     price = item.get("extracted_price")
 
     if price is None:
-
-        price_info = parse_price(raw_price)
-
         price = price_info["price"]
-
-        currency = price_info["currency"]
-
     else:
-
         price = int(price)
 
-        currency = ""
+    currency = price_info["currency"]
+
+    print(
+        "[Price Result]",
+        "price =", price,
+        "currency =", currency
+    )
 
     display_price = raw_price
 

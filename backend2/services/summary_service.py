@@ -133,6 +133,15 @@ def _build_user_need_context(user_need):
 
 def _build_product_context(products):
 
+    print("\n========== SUMMARY PRODUCT RAW ==========")
+
+    for idx, product in enumerate(products, start=1):
+        print(
+            f"[{idx}] name = {product.get('name', '')}"
+        )
+
+    print("=========================================\n")
+
     result = []
 
     for idx, product in enumerate(
@@ -533,6 +542,46 @@ def generate_summary(
             model_name=SUMMARY_MODEL,
         )
 
+        # =========================
+        # Summary Validation
+        # =========================
+
+        validation_result = validate_summary(
+            ai_reply,
+            products,
+        )
+
+        if DEBUG_SUMMARY:
+
+            print(
+                "\n========== Summary Validation =========="
+            )
+
+            print(
+                f"[Valid] "
+                f"{validation_result['valid']}"
+            )
+
+            print(
+                f"[Violations] "
+                f"{validation_result['violations']}"
+            )
+
+            print(
+                "========================================\n"
+            )
+
+        if not validation_result["valid"]:
+
+            print(
+                "[Summary Validator] "
+                "AI Summary contains unsupported information."
+            )
+
+            ai_reply = (
+                "已為您整理推薦商品，"
+                "以下內容依照系統計算的推薦結果提供。"
+            )
         elapsed = (
             time.time() - start
         )

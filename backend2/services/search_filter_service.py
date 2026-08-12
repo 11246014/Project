@@ -37,6 +37,7 @@ IOS_ONLY_KEYWORDS = [
     "apple watch",
 ]
 
+
 ANDROID_ONLY_KEYWORDS = [
     "galaxy watch",
     "wear os",
@@ -267,16 +268,12 @@ def hard_filter_candidates(
     3. Negative Style
     4. Budget
 
+    Feature 不在這裡做 Hard Filter。
+    Feature 由 Ranking 的 Feature Evidence
+    統一處理。
+
     如果所有商品都因預算被排除，
     則啟用 Budget Fallback。
-
-    Budget Fallback 會保留：
-
-    1. Device Type
-    2. OS
-    3. Negative Style
-
-    然後選擇價格最接近需求的商品。
     """
 
     filtered = []
@@ -368,6 +365,29 @@ def hard_filter_candidates(
         # Budget
         # ==================================================
 
+        currency = str(
+            product.get(
+                "currency",
+                ""
+            )
+        ).upper()
+
+        if (
+            (budget_min or budget_max)
+            and currency
+            and currency != "TWD"
+        ):
+
+            if DEBUG_SEARCH_FILTER:
+
+                print(
+                    f"[Budget Currency Filter] "
+                    f"{product.get('title')} "
+                    f"(currency={currency})"
+                )
+
+            continue
+
         price = _price(
             product
         )
@@ -445,7 +465,7 @@ def hard_filter_candidates(
     if not budget_max:
 
         return (
-            candidates,
+            filtered,
             budget_fallback
         )
 
@@ -456,9 +476,7 @@ def hard_filter_candidates(
     budget_fallback = True
 
     fallback_candidates = [
-
         product
-
         for product in candidates
 
         if match_device_type(
@@ -474,6 +492,13 @@ def hard_filter_candidates(
         and match_negative(
             product,
             need
+        )
+
+        and (
+            not product.get("currency")
+            or str(
+                product.get("currency")
+            ).upper() == "TWD"
         )
     ]
 

@@ -225,8 +225,11 @@ def calculate_product_score(
                 reason_parts.append(reason)
 
     # ==================================================
-    # Feature
+    # Required Feature
     # ==================================================
+
+    required_feature_unknown = False
+    required_feature_failed = False
 
     for feature in _list(need.features):
 
@@ -243,6 +246,10 @@ def calculate_product_score(
             [],
         )
 
+        # --------------------------------------------------
+        # Feature Evidence
+        # --------------------------------------------------
+
         feature_text_match = any(
             keyword.lower() in text
             for keyword in keywords
@@ -252,26 +259,69 @@ def calculate_product_score(
             feature_name.lower() in features
         )
 
+        # --------------------------------------------------
+        # GPS 使用獨立 metadata
+        # --------------------------------------------------
+
+        metadata_value = None
+
+        if feature_name.lower() == "gps":
+            metadata_value = product.get("gps")
+
+        # --------------------------------------------------
+        # Evidence Status
+        #
+        # ok      = 有明確證據
+        # unknown = 沒有足夠證據
+        # failed  = 明確不符合
+        # --------------------------------------------------
+
+        if metadata_value is True:
+            evidence = True
+            feature_status = "ok"
+
+        elif feature_list_match or feature_text_match:
+            evidence = True
+            feature_status = "ok"
+
+        elif metadata_value is False:
+            evidence = False
+            feature_status = "failed"
+
+        else:
+            evidence = None
+            feature_status = "unknown"
+
         if DEBUG_RANKING:
             print(
                 f"[Feature Debug] "
                 f"feature={feature} | "
                 f"feature_name={feature_name} | "
-                f"keywords={keywords} | "
+                f"metadata={metadata_value} | "
                 f"feature_list={features} | "
                 f"text_match={feature_text_match} | "
-                f"list_match={feature_list_match}"
+                f"list_match={feature_list_match} | "
+                f"evidence={evidence}"
             )
 
-        if feature_list_match or feature_text_match:
-
-            weight = max(
-                FEATURE_BONUS.get(
-                    feature_name,
-                    20,
-                ),
-                weights["feature"],
+            print(
+                f"[Required Feature Status] "
+                f"{feature_status}"
             )
+
+        # --------------------------------------------------
+        # Required Feature Ranking Policy
+        # --------------------------------------------------
+
+        weight = max(
+            FEATURE_BONUS.get(
+                feature_name,
+                20,
+            ),
+            weights["feature"],
+        )
+
+        if feature_status == "ok":
 
             requirement_score += weight
 
@@ -288,6 +338,29 @@ def calculate_product_score(
                 and reason not in reason_parts
             ):
                 reason_parts.append(reason)
+
+        elif feature_status == "unknown":
+
+            required_feature_unknown = True
+
+            adjustment_score -= weight
+
+            debug_score.append(
+                f"Feature({feature_name}) UNKNOWN -{weight}"
+            )
+
+        elif feature_status == "failed":
+
+            required_feature_failed = True
+
+            adjustment_score -= (
+                weight * 2
+            )
+
+            debug_score.append(
+                f"Feature({feature_name}) FAILED -{weight * 2}"
+            )
+            
     # ==================================================
     # Priority
     # ==================================================
@@ -492,12 +565,29 @@ def calculate_product_score(
     # ==================================================
     # Final Score
     # ==================================================
+    
+    required_feature_status = "ok"
+
+    if required_feature_failed:
+
+        required_feature_status = "failed"
+
+    elif required_feature_unknown:
+
+        required_feature_status = "unknown"
 
     score = (
         base_score
         + requirement_score
         + adjustment_score
     )
+
+    if DEBUG_RANKING:
+
+        print(
+            "[Required Feature Status]",
+            required_feature_status
+        )
 
     # ==================================================
     # Debug
