@@ -23,8 +23,9 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    ForeignKey,
+    DateTime,
     func,
-    ForeignKey
 )
 from passlib.context import CryptContext
 
@@ -115,6 +116,7 @@ class UserCreate(BaseModel):
 
     password: str
 
+    username: str = ""
 
 # =========================
 # 登入 Schema
@@ -156,7 +158,18 @@ class UserProfileUpdate(BaseModel):
     occupation: str=""
     usage_scope: str=""
     current_device: str=""
+class History(Base):
+    __tablename__ = "history"
 
+    id = Column(Integer, primary_key=True, index=True)
+    user_email = Column(String(255), index=True)
+    name = Column(String(255))
+    price = Column(Integer, default=0)
+    image = Column(Text)
+    tags = Column(Text)              # 用逗號分隔字串存 List[str]，例如 "#GPS,#防水"
+    rating = Column(Integer, default=0)
+    platform = Column(String(255))
+    created_at = Column(DateTime, server_default=func.now())
 
 # =========================
 # 註冊 API
@@ -383,6 +396,10 @@ def update_product(
     product.name = product_data.name
     product.price = product_data.price
     product.description = product_data.description
+    product.platform = product_data.platform
+    product.image = product_data.image
+    product.rating = product_data.rating
+    product.reason = product_data.reason
     product.link = product_data.link
 
     db.commit()
@@ -582,9 +599,80 @@ def get_me(
 
     return {
         "email": user.email,
+        "username": user.username or user.email.split("@")[0],
         "age_range": user.age_range,
         "occupation": user.occupation,
         "usage_scope": user.usage_scope,
         "current_device": user.current_device
     }
-    
+#歷史紀錄 Schema
+
+
+class HistoryItem(BaseModel):
+    name: str
+    price: int = 0
+    image: str = ""
+    tags: List[str] = []
+    rating: float = 0
+    platform: str = ""
+
+
+# =========================
+# 新增歷史紀錄 API
+# =========================
+
+@app.post("/history/{email}")
+def add_history(
+    email: str,
+    item: HistoryItem,
+    db: Session = Depends(get_db)
+):
+
+    record = models.History(
+        user_email=email,
+        name=item.name,
+        price=item.price,
+        image=item.image,
+        tags=",".join(item.tags),
+        rating=int(item.rating),
+        platform=item.platform,
+    )
+
+    db.add(record)
+    db.commit()
+
+    return {
+        "message": "已加入歷史紀錄"
+    }
+
+
+# =========================
+# 查詢歷史紀錄 API
+# =========================
+
+@app.get("/history/{email}")
+def get_history(
+    email: str,
+    db: Session = Depends(get_db)
+):
+
+    records = (
+        db.query(models.History)
+        .filter(models.History.user_email == email)
+        .order_by(models.History.id.desc())
+        .limit(20)
+        .all()
+    )
+
+    return [
+        {
+            "name": r.name,
+            "price": r.price,
+            "image": r.image,
+            "tags": r.tags.split(",") if r.tags else [],
+            "rating": r.rating,
+            "platform": r.platform,
+            "viewedAt": r.created_at.strftime("%m/%d %H:%M") if r.created_at else "",
+        }
+        for r in records
+    ]
