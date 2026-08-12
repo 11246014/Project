@@ -448,19 +448,42 @@ def calculate_product_score(
     # ==================================================
 
     price = _price(product)
-
-    if (
+    budget_max = (
         need.budget.max
-        and price
-        and price <= need.budget.max
-    ):
+        if need.budget
+        else None
+    )
 
-        requirement_score += weights["budget"]
+    if budget_max and price:
 
-        debug_score.append(
-            f"Budget +{weights['budget']}"
-        )
+        if price <= budget_max:
 
+            requirement_score += weights["budget"]
+
+            debug_score.append(
+                f"Budget +{weights['budget']}"
+            )
+
+        else:
+
+            over_ratio = (
+                price - budget_max
+            ) / budget_max
+
+            budget_penalty = min(
+                weights["budget"],
+                round(
+                    over_ratio
+                    * weights["budget"]
+                )
+            )
+
+            requirement_score -= budget_penalty
+
+            debug_score.append(
+                f"Budget Over +{-budget_penalty}"
+            )
+            
     # ==================================================
     # Rating
     # ==================================================

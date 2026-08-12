@@ -60,12 +60,66 @@ def rank_products(
 
         ranked.append(product)
 
-    ranked.sort(
-        key=lambda item: (
-            item.get("raw_score", 0),
-            item.get("rating", 0),
-        ),
-        reverse=True,
+    # ==================================================
+    # Ranking Sort
+    # ==================================================
+
+    budget_max = None
+
+    if (
+        user_need
+        and user_need.budget
+        and user_need.budget.max
+    ):
+        budget_max = user_need.budget.max
+
+
+    def price_distance(product):
+        if budget_max is None:
+            return float("inf")
+
+        try:
+            price = float(product.get("price", 0))
+        except (TypeError, ValueError):
+            return float("inf")
+
+        if price <= 0:
+            return float("inf")
+
+        return abs(price - budget_max)
+
+
+    # 如果所有候選商品都超過預算，
+    # 代表目前是 Budget Fallback，
+    # 此時優先選擇最接近使用者預算的商品。
+    budget_fallback = (
+        budget_max is not None
+        and len(ranked) > 0
+        and all(
+            price_distance(product) > 0
+            for product in ranked
+        )
     )
+
+    if budget_fallback:
+
+        ranked.sort(
+            key=lambda item: (
+                item.get("raw_score", 0),
+                -price_distance(item),
+                item.get("rating", 0),
+            ),
+            reverse=True,
+        )
+
+    else:
+
+        ranked.sort(
+            key=lambda item: (
+                item.get("raw_score", 0),
+                item.get("rating", 0),
+            ),
+            reverse=True,
+        )
 
     return ranked

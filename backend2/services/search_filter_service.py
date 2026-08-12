@@ -249,6 +249,80 @@ def match_negative(product, need):
 
     return True
 
+# ==================================================
+# Usage Filter
+# ==================================================
+
+USAGE_KEYWORDS = {
+    "running": [
+        "跑步",
+        "跑錶",
+        "forerunner",
+        "runner",
+    ],
+
+    "運動": [
+        "運動",
+        "跑步",
+        "跑錶",
+        "forerunner",
+        "runner",
+    ],
+
+    "跑步": [
+        "跑步",
+        "跑錶",
+        "forerunner",
+        "runner",
+    ],
+}
+
+
+def match_usage(product, need):
+    """
+    檢查商品是否符合使用者指定的用途。
+
+    目前只在 Budget Fallback 使用，
+    避免預算不足時推薦完全不符合用途的商品。
+    """
+
+    usages = getattr(
+        need,
+        "usage",
+        []
+    ) or []
+
+    # 使用者沒有指定用途
+    if not usages:
+        return True
+
+    title = product.get(
+        "title",
+        ""
+    ).lower()
+
+    desc = product.get(
+        "desc",
+        ""
+    ).lower()
+
+    text = f"{title} {desc}"
+
+    for usage in usages:
+
+        keywords = USAGE_KEYWORDS.get(
+            usage,
+            [str(usage)]
+        )
+
+        if any(
+            keyword.lower() in text
+            for keyword in keywords
+        ):
+            return True
+
+    return False
+
 
 # ==================================================
 # Hard Filter
@@ -507,17 +581,13 @@ def hard_filter_candidates(
     # ==================================================
 
     fallback = sorted(
-
         fallback_candidates,
 
         key=lambda p: (
-
-            _price(p) < budget_min,
-
+            _price(p) > budget_max,
             abs(
-                _price(p) - budget_min
+                _price(p) - budget_max
             )
-
         )
     )
 

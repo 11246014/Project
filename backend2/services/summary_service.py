@@ -507,7 +507,223 @@ def _build_summary_prompt(
 
 現在開始撰寫推薦內容。
 """
+# ==================================================
+# Strict Summary Check
+# ==================================================
 
+def _strict_summary_check(ai_reply, products):
+    """
+    本地檢查 AI Summary 是否只使用系統提供的商品資料。
+
+    這一層不相信 AI Validator 的判斷，
+    直接使用 products 作為唯一真實來源。
+    """
+
+    if not ai_reply or not ai_reply.strip():
+        print("[Strict Summary Check] FAIL: empty response")
+        return False
+
+    # --------------------------------------------------
+    # 建立系統允許的商品名稱集合
+    # --------------------------------------------------
+
+    allowed_names = []
+
+    for product in products:
+
+        name = (
+            product.get("name")
+            or product.get("title")
+            or ""
+        )
+
+        name = str(name).strip()
+
+        if name:
+            allowed_names.append(name)
+
+    # --------------------------------------------------
+    # 檢查 AI 是否提到不存在的商品
+    # --------------------------------------------------
+
+    found_names = []
+
+    for name in allowed_names:
+
+        if name in ai_reply:
+            found_names.append(name)
+
+    print(
+        f"[Strict Summary Check] "
+        f"allowed_products={len(allowed_names)}"
+    )
+
+    print(
+        f"[Strict Summary Check] "
+        f"found_products={len(found_names)}"
+    )
+
+    # --------------------------------------------------
+    # AI 必須至少正確引用商品
+    # --------------------------------------------------
+
+    if not found_names:
+
+        print(
+            "[Strict Summary Check] FAIL: "
+            "no valid product name found"
+        )
+
+        return False
+
+    # --------------------------------------------------
+    # 商品名稱完整性檢查
+    #
+    # 如果 AI 出現商品名稱的明顯縮短版本，
+    # 例如：
+    #
+    # 系統：
+    # Amazfit Active 3 Premium 45mm 智慧跑錶
+    #
+    # AI：
+    # Amazfit Active 3 Premium 45mm
+    #
+    # 就視為不可信。
+    # --------------------------------------------------
+
+    for product in products:
+
+        full_name = (
+            product.get("name")
+            or product.get("title")
+            or ""
+        )
+
+        full_name = str(full_name).strip()
+
+        if not full_name:
+            continue
+
+        # 找到名稱中的品牌/型號主要部分
+        words = full_name.split()
+
+        if len(words) >= 2:
+
+            # 如果 AI 出現前兩個以上的主要名稱，
+            # 卻沒有完整名稱，視為可能被截短。
+            prefix = " ".join(words[:2])
+
+            if prefix in ai_reply and full_name not in ai_reply:
+
+                print(
+                    "[Strict Summary Check] FAIL: "
+                    f"product name truncated -> {full_name}"
+                )
+
+                return False
+
+    # --------------------------------------------------
+    # 檢查價格
+    # --------------------------------------------------
+
+    allowed_prices = set()
+
+    for product in products:
+
+        price = product.get("price")
+
+        if price is not None:
+            allowed_prices.add(str(price))
+
+    # --------------------------------------------------
+    # 檢查推薦原因
+    # --------------------------------------------------
+
+    allowed_reasons = set()
+
+    for product in products:
+
+        reason = product.get("reason")
+
+        if reason:
+            allowed_reasons.add(str(reason).strip())
+
+    # --------------------------------------------------
+    # 檢查明顯的虛構推薦詞
+    #
+    # 這不是禁止所有自然語言，
+    # 而是先擋掉已經知道會出現的
+    # 「系統沒有提供的產品結論」。
+    # --------------------------------------------------
+
+    forbidden_phrases = [
+        "專業跑者的好選擇",
+        "最佳選擇",
+        "最強",
+        "頂級",
+        "性能強大",
+        "續航力強",
+        "功能完整",
+        "功能豐富",
+        "非常適合",
+    ]
+
+    for phrase in forbidden_phrases:
+
+        if phrase in ai_reply:
+
+            print(
+                "[Strict Summary Check] FAIL: "
+                f"unsupported phrase -> {phrase}"
+            )
+
+            return False
+
+    print("[Strict Summary Check] PASS")
+
+    return True
+
+# ==================================================
+# Strict Summary Check
+# ==================================================
+
+def _build_fallback_summary(products):
+    lines = []
+
+    for idx, product in enumerate(products, start=1):
+
+        name = (
+            product.get("name")
+            or product.get("title")
+            or ""
+        )
+
+        price = product.get("price") or ""
+        reason = product.get("reason") or ""
+
+        tags = product.get("tags") or []
+
+        if isinstance(tags, list):
+            tags = [
+                str(tag)
+                for tag in tags
+                if tag
+            ]
+            tag_text = "、".join(tags)
+        else:
+            tag_text = str(tags)
+
+        lines.append(
+            f"【第{idx}名】\n"
+            f"商品名稱：{name}\n"
+            f"價格：{price} 元\n"
+            f"推薦原因：{reason}"
+        )
+
+        if tag_text:
+            lines[-1] += f"\n已知標籤：{tag_text}"
+
+    return "\n\n".join(lines)
 
 # ==================================================
 # Summary Generator
@@ -582,132 +798,27 @@ def generate_summary(
         and user_need.budget
         and user_need.budget.max
     ):
-
         budget_notice = (
-            f"未找到符合 "
-            f"{user_need.budget.min} ~ "
-            f"{user_need.budget.max} 元預算的商品，"
+            f"未找到符合 {user_need.budget.max} 元以下預算的商品，"
             f"以下推薦價格最接近需求的商品。\n\n"
         )
 
     # =========================
-    # AI Summary
+    # Deterministic Summary
     # =========================
 
-    try:
+    print("[Summary Mode] DETERMINISTIC")
 
-        print(
-            "[Summary Start]"
-        )
+    summary = _build_fallback_summary(products)
 
-        start = time.time()
+    if budget_notice:
+        summary = budget_notice + summary
 
-        ai_reply = ask_ai(
-            summary_prompt,
-            model_name=SUMMARY_MODEL,
-        )
+    if DEBUG_SUMMARY:
+        print("\n========== Summary ==========")
+        print(summary)
+        print("=============================\n")
 
-        # =========================
-        # Summary Validation
-        # =========================
+    print("[Summary End]")
 
-        validation_result = validate_summary(
-            ai_reply,
-            products,
-        )
-
-        if DEBUG_SUMMARY:
-
-            print(
-                "\n========== Summary Validation =========="
-            )
-
-            print(
-                f"[Valid] "
-                f"{validation_result['valid']}"
-            )
-
-            print(
-                f"[Violations] "
-                f"{validation_result['violations']}"
-            )
-
-            print(
-                "========================================\n"
-            )
-
-        if not validation_result["valid"]:
-
-            print(
-                "[Summary Validator] "
-                "AI Summary contains unsupported information."
-            )
-
-        elapsed = (
-            time.time() - start
-        )
-
-        print(
-            f"[Summary Time] "
-            f"{elapsed:.2f}s"
-        )
-
-        # =========================
-        # Budget Notice
-        # =========================
-
-        if budget_notice:
-
-            ai_reply = (
-                budget_notice
-                + ai_reply
-            )
-
-        # =========================
-        # Empty Response
-        # =========================
-
-        if (
-            not ai_reply
-            or not ai_reply.strip()
-        ):
-
-            ai_reply = (
-                "已為您整理符合需求的商品，"
-                "請參考以下推薦。"
-            )
-
-        # =========================
-        # Debug Output
-        # =========================
-
-        if DEBUG_SUMMARY:
-
-            print(
-                "\n========== Summary =========="
-            )
-
-            print(
-                ai_reply
-            )
-
-            print(
-                "=============================\n"
-            )
-
-        print(
-            "[Summary End]"
-        )
-
-        return ai_reply
-
-    except Exception as e:
-
-        print(
-            f"[Summary Error] {e}"
-        )
-
-        return (
-            "目前 AI 暫時無法產生推薦摘要，"
-            "但已為您整理符合需求的商品。"
-        )
+    return summary
