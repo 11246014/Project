@@ -411,7 +411,7 @@ class _HomeTabState extends State<_HomeTab> {
       setState(() => _filteredProducts = _products);
     } else {
       setState(() => _filteredProducts =
-          _products.where((p) => p['type'] == tag).toList());
+          _products.where((p) => (p['name'] as String).contains(tag)).toList());
     }
   }
 }
