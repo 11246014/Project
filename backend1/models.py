@@ -41,6 +41,7 @@ class User(Base):
     occupation = Column(String(100), nullable=True)
     usage_scope = Column(String(200), nullable=True)
     current_device = Column(String(200), nullable=True)
+    username = Column(String(100), nullable=True)
 
 
 # =========================
@@ -67,33 +68,15 @@ class Product(Base):
         primary_key=True
     )
 
-    name = Column(
-        String(255)
-    )
+    name = Column(String(255))
+    price = Column(Integer)
+    description = Column(Text, default="")
+    platform = Column(String(255), default="")
+    image = Column(Text, default="")
+    rating = Column(Integer, default=0)
+    reason = Column(Text, default="")
+    link = Column(String(255))
 
-    price = Column(
-        Integer
-    )
-
-    description = Column(
-        Text
-    )
-
-    platform = Column(
-        String(255)
-    )
-
-    image = Column(
-        Text
-    )
-
-    rating = Column(
-        Integer
-    )
-
-    reason = Column(
-        Text
-    )
 class Tag(Base):
     __tablename__ = "tags"
     id = Column(Integer, primary_key=True)
@@ -103,7 +86,7 @@ class ProductTag(Base):
     __tablename__ = "product_tags"
 
     product_id = Column(Integer, ForeignKey("products.id"), primary_key=True)
-    tag_id = Column(Integer, ForeignKey("tag.id"), primary_key=True)
+    tag_id = Column(Integer, ForeignKey("tags.id"), primary_key=True)
 
 class PromptTemplateCreate(BaseModel):
     name: str
