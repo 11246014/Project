@@ -262,22 +262,21 @@ def login(user: UserLogin):
 
         .first()
     )
+# =========================
+# 帳號不存在
+# =========================
+    if not db_user:
+    
+            db.close()
+    
+            raise HTTPException(
+    
+                status_code=401,
+    
+                detail="帳號或密碼錯誤"
+            )
     print("DB hash:", db_user.hashed_password)
 
-    # =========================
-    # 帳號不存在
-    # =========================
-
-    if not db_user:
-
-        db.close()
-
-        raise HTTPException(
-
-            status_code=401,
-
-            detail="帳號或密碼錯誤"
-        )
 
     # =========================
     # 密碼錯誤
