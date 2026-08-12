@@ -22,6 +22,10 @@ def product_filter(filters: dict):
             filters
         )
 
+        print("\n========== API RESPONSE ==========")
+        print(result)
+        print("==================================\n")
+
         print(
             "[Filter Router] Success"
         )
