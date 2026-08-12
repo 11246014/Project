@@ -70,7 +70,7 @@ class Product(Base):
 
     name = Column(String(255))
     price = Column(Integer)
-    description: str = ""
+    description = Column(Text, default="")
     platform = Column(String(255), default="")
     image = Column(Text, default="")
     rating = Column(Integer, default=0)
