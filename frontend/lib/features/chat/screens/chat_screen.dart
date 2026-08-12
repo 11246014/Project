@@ -8,6 +8,7 @@ import '../../../core/providers/user_profile_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/providers/cart_provider.dart';
+import '../../../services/user_service.dart';
 
 /// 訊息角色
 enum MessageRole { user, ai }
@@ -96,18 +97,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         profile: ref.read(userProfileProvider),
       );
       if (mounted) {
+        final products = List<Map<String, dynamic>>.from(
+          response['products'] ?? [],
+        );
+
         setState(() {
           _messages.add(ChatMessage(
             content: response['summary'] ?? '目前沒有回應，請稍後再試',
             role: MessageRole.ai,
             time: DateTime.now(),
-            products: List<Map<String, dynamic>>.from(
-              response['products'] ?? [],
-            ),
+            products: products,
           ));
           _isLoading = false;
         });
         _scrollToBottom();
+
+        // 將本次 AI 推薦的前 3 項商品記錄到歷史紀錄
+        for (final product in products.take(3)) {
+          UserService.addHistory(product);
+        }
       }
           } catch (e) {
             debugPrint('ChatService Error: $e');

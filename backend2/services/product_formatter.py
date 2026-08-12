@@ -49,10 +49,6 @@ def format_product(product):
         ""
     )
 
-    if len(name) > 45:
-
-        name = name[:45] + "..."
-
     # =========================
     # 回傳格式
     # =========================
@@ -65,7 +61,7 @@ def format_product(product):
             "price",
             0
         ),
-
+        
         "product_type": product.get(
             "product_type",
             ""

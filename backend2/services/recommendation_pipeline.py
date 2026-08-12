@@ -1,444 +1,220 @@
-#recommendation_pipeline.py
-import asyncio
+from services.product_formatter import (
+    format_product,
+)
 
-from services.db_search_service import search_db_products
-from services.product_formatter import format_product
-from services.web_search_service import web_search_products
-from services.backend1_client import save_product
 from services.product_rank_service import (
     rank_products,
-    DEVICE_QUERY_TERMS,
-    USAGE_QUERY_TERMS,
-    FEATURE_QUERY_TERMS,
 )
+
+from services.search_filter_service import (
+    hard_filter_candidates,
+)
+
 from services.search_strategy import (
-    build_search_strategy,
+    retrieve_candidates,
 )
 
+from services.product_link_service import (
+    fetch_immersive_product,
+)
 # ==================================================
-# Search Query Mapping
-# （建立搜尋關鍵字）
-# ==================================================
-
-PRIORITY_QUERY_TERMS = {
-    "battery_life": "長續航",
-    "location_accuracy": "GPS",
-    "value": "高CP值",
-    "durability": "耐用",
-    "ease_of_use": "操作簡單",
-}
-
-OS_QUERY_TERMS = {
-    "iOS": "",
-    "Android": "",
-}
-
-STYLE_MAPPING = {
-
-    "business": [
-        "商務",
-    ],
-
-    "fashion": [
-        "時尚",
-    ],
-
-    "sport": [
-        "運動",
-    ],
-}
-
-BATTERY_MAPPING = {
-
-    "low": [
-        "高性能",
-    ],
-
-    "medium": [
-        "續航",
-    ],
-
-    "high": [
-        "長續航",
-    ],
-}
-
-# ==================================================
-# Search Filter Mapping
-# （搜尋階段硬性過濾）
+# Pipeline Config
 # ==================================================
 
-NEGATIVE_STYLE_KEYWORDS = {
-    "business": [
-        "兒童",
-        "卡通",
-        "玩具",
-    ],
-    "fashion": [
-        "軍規",
-        "粗獷",
-    ],
-}
+DEBUG_PIPELINE = True
 
-IOS_ONLY_KEYWORDS = [
-    "apple watch",
-]
 
-ANDROID_ONLY_KEYWORDS = [
-    "galaxy watch",
-    "wear os",
-]
-
-
-def _list(value):
-    if not value:
-        return []
-
-    if isinstance(value, list):
-        return value
-
-    return [value]
-
-
-def _text(product):
-    return " ".join(
-        str(product.get(key, ""))
-        for key in (
-            "title",
-            "raw_title",
-            "name",
-            "desc",
-            "description"
-        )
-    ).lower()
-
-
-def _price(product):
-    try:
-        return int(product.get("price", 0) or 0)
-    except Exception:
-        return 0
-    
-
-
-
-def _run_async(coro):
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        return asyncio.run(coro)
-
-    raise RuntimeError(
-        "recommend_from_need cannot run async DB search inside an active event loop"
-    )
-
-# def save_candidates(products):
-#     for product in products:
-#         try:
-#             if product.get("title"):
-#                 _run_async(
-#                     save_product(product)
-#                 )
-#         except Exception as e:
-#             print(f"[Save Error] {e}")
-
-def retrieve_candidates(search_query):
-    candidates = []
-
-    try:
-        candidates = _run_async(
-            search_db_products(search_query)
-        )
-    except Exception as e:
-        print(f"[Pipeline DB Search Error] {e}")
-
-    if candidates:
-        return candidates
-
-    try:
-        return web_search_products(search_query)
-    except Exception as e:
-        print(f"[Pipeline Web Search Error] {e}")
-        return []
-
-def match_device_type(product, need):
-
-    if not need.device_type:
-        return True
-
-    title = product.get(
-        "title",
-        ""
-    ).lower()
-
-    if need.device_type == "smart_ring":
-
-        return (
-            "戒指" in title
-            or "指環" in title
-            or "ring" in title
-        )
-
-    elif need.device_type == "smart_band":
-
-        return (
-            "手環" in title
-            or "band" in title
-            or "fit" in title
-        )
-
-    elif need.device_type == "smartwatch":
-
-        SMARTWATCH_KEYWORDS = [
-
-            "手錶",
-            "腕錶",
-            "跑錶",
-            "運動錶",
-            "watch",
-
-            # Garmin
-            "forerunner",
-            "fenix",
-            "epix",
-            "instinct",
-            "venu",
-            "vivoactive",
-
-            # Apple
-            "apple watch",
-
-            # Samsung
-            "galaxy watch",
-
-            # Amazfit
-            "amazfit",
-            "gtr",
-            "gts",
-
-            # COROS
-            "coros",
-            "pace",
-            "apex",
-            "vertix",
-
-            # Polar
-            "polar",
-            "vantage",
-            "ignite",
-
-            # Suunto
-            "suunto",
-            "race",
-            "vertical",
-        ]
-
-        return any(
-            keyword in title
-            for keyword in SMARTWATCH_KEYWORDS
-        )
-
-    return True
-
-def match_os(product, need):
-
-    os_type = need.preferences.os
-
-    if not os_type:
-        return True
-
-    title = product.get(
-        "title",
-        ""
-    ).lower()
-
-    if os_type == "iOS":
-
-        for keyword in ANDROID_ONLY_KEYWORDS:
-
-            if keyword.lower() in title:
-                return False
-
-    elif os_type == "Android":
-
-        for keyword in IOS_ONLY_KEYWORDS:
-
-            if keyword.lower() in title:
-                return False
-
-    return True
-
-def match_negative(product, need):
-
-    style = need.preferences.style
-
-    if not style:
-        return True
-
-    title = product.get(
-        "title",
-        ""
-    ).lower()
-
-    desc = product.get(
-        "desc",
-        ""
-    ).lower()
-
-    text = f"{title} {desc}"
-
-    bad_keywords = NEGATIVE_STYLE_KEYWORDS.get(
-        style,
-        []
-    )
-
-    for keyword in bad_keywords:
-
-        if keyword.lower() in text:
-            return False
-
-    return True
-    
-
-def hard_filter_candidates(candidates, need):
-    filtered = []
-
-    budget_fallback = False
-
-    budget_min = need.budget.min or 0
-    budget_max = need.budget.max or 0
-    
-
-    for product in candidates:
-
-        print(f"[Checking] {product.get('title')}")
-
-        if not match_device_type(
-            product,
-            need
-        ):
-            print(f"[Device Filter] {product.get('title')}")
-            continue
-
-        if not match_os(
-            product,
-            need
-        ):
-            print(f"[OS Filter] {product.get('title')}")
-            continue
-
-        if not match_negative(
-            product,
-            need
-        ):
-            print(f"[Negative Filter] {product.get('title')}")
-            continue
-
-        price = _price(product)
-
-        if price > 0:
-
-            if budget_min and price < budget_min:
-                print(f"[Budget Min] {product.get('title')} ({price})")
-                continue
-
-            if budget_max and price > budget_max:
-                print(f"[Budget Max] {product.get('title')} ({price})")
-                continue
-
-        print(f"[PASS] {product.get('title')}")
-        filtered.append(product)
-
-    if filtered:
-        return filtered, budget_fallback
-
-    if not budget_max:
-        return candidates, budget_fallback
-
-    budget_fallback = True
-
-    fallback_candidates = [
-
-        product
-
-        for product in candidates
-
-        if match_device_type(
-            product,
-            need
-        )
-    ]
-
-    fallback = sorted(
-
-        fallback_candidates,
-
-        key=lambda p: (
-
-            _price(p) < budget_min,
-
-            abs(_price(p) - budget_min)
-
-        )
-    )
-
-    return fallback[:3], budget_fallback
-
+# ==================================================
+# Product Format
+# ==================================================
 
 def format_products(products, limit=3):
+    """
+    將商品轉換成 Frontend 格式
+    """
+
     return [
         format_product(product)
         for product in products[:limit]
     ]
 
+
+# ==================================================
+# Recommendation Pipeline
+# ==================================================
+
 def recommend_from_need(
     need,
-    limit=3
+    limit=3,
 ):
-    print("need.brand =", need.preferences.brand)
+    """
+    推薦流程
+
+    1. Search
+    2. Search Filter
+    3. Ranking
+    4. Top Products
+    5. Resolve Product Links
+    6. Product Format
+    """
+
+    if DEBUG_PIPELINE:
+        print(
+            "need.brand =",
+            need.preferences.brand,
+        )
 
     search_query = need.search_query
 
-    candidates = retrieve_candidates(search_query)
+    if DEBUG_PIPELINE:
+        print(
+            "[Pipeline Search Query]",
+            repr(search_query),
+        )
 
-    print(f"[Candidates] {len(candidates)}")
+    # =========================
+    # Search
+    # =========================
 
-    filtered, budget_fallback = hard_filter_candidates(
-        candidates,
-        need
+    candidates = retrieve_candidates(
+        search_query,
+        need,
     )
 
-    print(f"[After Filter] {len(filtered)}")
+    if DEBUG_PIPELINE:
+        print(
+            f"[Candidates] {len(candidates)}"
+        )
+
+    # =========================
+    # Search Filter
+    # =========================
+
+    filtered, budget_fallback = (
+        hard_filter_candidates(
+            candidates,
+            need,
+        )
+    )
+
+    if DEBUG_PIPELINE:
+        print(
+            f"[After Filter] {len(filtered)}"
+        )
+
+    # =========================
+    # Ranking
+    # =========================
 
     ranked = rank_products(
         filtered,
-        need
+        need,
     )
-    print("\n========== Ranked ==========")
 
-    for idx, product in enumerate(ranked[:5], start=1):
+    if DEBUG_PIPELINE:
+
+        print("\n========== Ranked ==========")
+
+        for idx, product in enumerate(
+            ranked[:5],
+            start=1,
+        ):
+
+            print(
+                f"{idx}. "
+                f"{product.get('title','')} | "
+                f"Score={product.get('match',0)} | "
+                f"Reason={product.get('reason','')}"
+            )
+
+        print("============================")
 
         print(
-            f"{idx}. "
-            f"{product.get('title','')} | "
-            f"Score={product.get('match',0)} | "
-            f"Reason={product.get('reason','')}"
+            f"[After Ranking] {len(ranked)}"
         )
 
-    print("============================")
-    
-    print(f"[After Ranking] {len(ranked)}")
+    # =========================
+    # Top Products
+    # =========================
+
+    top_products = ranked[:limit]
+
+    if DEBUG_PIPELINE:
+        print(
+            f"[Top Products] {len(top_products)}"
+        )
+        
+    # =========================
+    # Resolve Product Links
+    # =========================
+
+    for product in top_products:
+
+        api_url = product.get(
+            "immersive_product_api",
+            "",
+        )
+
+        if not api_url:
+
+            if DEBUG_PIPELINE:
+                print(
+                    "[Product Link] No Immersive API:",
+                    product.get(
+                        "title",
+                        "",
+                    )
+                )
+
+            continue
+
+        link = fetch_immersive_product(
+            api_url,
+        )
+
+        if link:
+
+            product["link"] = link
+
+            if DEBUG_PIPELINE:
+                print(
+                    "[Product Link] Resolved:",
+                    product.get(
+                        "title",
+                        "",
+                    )
+                )
+
+                print(
+                    "Link:",
+                    link,
+                )
+
+        elif DEBUG_PIPELINE:
+
+            print(
+                "[Product Link] Failed:",
+                product.get(
+                    "title",
+                    "",
+                )
+            )
+    # =========================
+    # Format
+    # =========================
 
     formatted_products = format_products(
-        ranked,
-        limit
+        top_products,
     )
 
-    print(f"[Formatted] {len(formatted_products)}")
+    if DEBUG_PIPELINE:
+        print(
+            f"[Formatted] {len(formatted_products)}"
+        )
 
     return {
         "products": formatted_products,
         "search_query": search_query,
         "user_need": need.to_dict(),
-        "budget_fallback": budget_fallback
+        "budget_fallback": budget_fallback,
     }

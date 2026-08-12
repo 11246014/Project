@@ -1,19 +1,22 @@
-#web_search_service.py
-import json
 import os
-from urllib import response
 
 import requests
 from dotenv import load_dotenv
+
 from services.product_filter_service import (
-    clean_product
+    clean_product,
 )
+
 load_dotenv()
 
-# =========================
+
+# =========================================================
 # Search Config
-# =========================
+# =========================================================
+
 SEARCH_CACHE = {}
+
+DEBUG_SEARCH = False
 
 SEARCH_TIMEOUT = 30
 
@@ -23,114 +26,401 @@ MIN_PRODUCT_PRICE = 100
 
 MAX_PRODUCT_PRICE = 30000
 
-TOP_MATCH_SCORE = 98
-
 SERPAPI_KEY = os.getenv(
     "SERPAPI_KEY"
 )
 
-# =========================
-# Web Search
-# =========================
+SERPAPI_URL = (
+    "https://serpapi.com/search"
+)
 
-def fetch_shopping_results(keyword):
 
-    print("=" * 50)
+# =========================================================
+# Region Config
+# =========================================================
 
-    print(
-        f"[Web Search] {keyword}"
+REGION_CONFIG = {
+
+    "tw": {
+        "google_domain": "google.com",
+        "hl": "zh-tw",
+        "gl": "tw",
+    },
+
+    "us": {
+        "google_domain": "google.com",
+        "hl": "en",
+        "gl": "us",
+    },
+
+    "global": {
+        "google_domain": "google.com",
+        "hl": "en",
+        "gl": "us",
+    },
+}
+
+
+def normalize_region(region):
+    """
+    統一 Search Region。
+
+    支援：
+    tw
+    us
+    global
+
+    未知 region 預設使用 tw。
+    """
+
+    if not region:
+        return "tw"
+
+    region = str(
+        region
+    ).lower().strip()
+
+    if region in REGION_CONFIG:
+        return region
+
+    return "tw"
+
+
+# =========================================================
+# SerpAPI Search
+# =========================================================
+
+def fetch_shopping_results(
+    keyword,
+    region="tw",
+):
+    """
+    呼叫 SerpAPI Google Shopping，
+    取得原始 Shopping Search Results。
+
+    注意：
+    這裡只負責 Search。
+    不負責 Ranking。
+    不負責 Summary。
+    """
+
+    region = normalize_region(
+        region
     )
 
-    url = (
-        "https://serpapi.com/search"
-    )
+    config = REGION_CONFIG[
+        region
+    ]
 
     params = {
         "engine": "google_shopping",
         "q": keyword,
         "api_key": SERPAPI_KEY,
-        
-        "gl": "tw",
-        "hl": "zh-tw",
+
+        "google_domain": config[
+            "google_domain"
+        ],
+
+        "hl": config[
+            "hl"
+        ],
+
+        "gl": config[
+            "gl"
+        ],
+
+        "device": "desktop",
     }
-    print("\n========== Request Params ==========")
-    print(params)
-    print("====================================")
+
     response = requests.get(
-        url,
+        SERPAPI_URL,
         params=params,
-        timeout=SEARCH_TIMEOUT
+        timeout=SEARCH_TIMEOUT,
     )
-    print("Status:", response.status_code)
-    print("URL:", response.url)
 
     response.raise_for_status()
 
     data = response.json()
-    print("shopping_results:",
-        len(data.get("shopping_results", [])))
 
-    print("\n========== Search Parameters ==========")
-    print(data.get("search_parameters"))
-    print("======================================")
+    print_search_debug(
+        keyword,
+        region,
+        params,
+        response,
+        data,
+    )
 
-    print("\n========== Search Information ==========")
-    print(data.get("search_information"))
-    print("======================================")
-    print("Query:", keyword)
-    print("\n========== SerpAPI Response ==========")
-
-    if "error" in data:
-        print("Error:", data["error"])
-    else:
-        print(data.keys())
-
-    print("======================================")
-
-    shopping_results = data.get(
+    return data.get(
         "shopping_results",
-        []
+        [],
+    )
+
+
+# =========================================================
+# SerpAPI Debug
+# =========================================================
+
+def print_search_debug(
+    keyword,
+    region,
+    params,
+    response,
+    data,
+):
+    """
+    SerpAPI Debug。
+
+    API Key 不直接輸出。
+    """
+
+    if not DEBUG_SEARCH:
+        return
+
+    print("=" * 50)
+
+    print(
+        f"[Web Search] "
+        f"{keyword} "
+        f"(region={region})"
+    )
+
+    # -----------------------------------------------------
+    # Request Params
+    # -----------------------------------------------------
+
+    print(
+        "\n========== Search Parameters =========="
+    )
+
+    safe_params = params.copy()
+
+    safe_params["api_key"] = "***"
+
+    print(
+        safe_params
     )
 
     print(
-        f"[Shopping Results Count] "
-        f"{len(shopping_results)}"
+        "======================================"
     )
 
-    return shopping_results
+    # -----------------------------------------------------
+    # HTTP Status
+    # -----------------------------------------------------
+
+    print(
+        "Status:",
+        response.status_code,
+    )
+
+    # -----------------------------------------------------
+    # Shopping Results Count
+    # -----------------------------------------------------
+
+    shopping_results = data.get(
+        "shopping_results",
+        [],
+    )
+
+    print(
+        "Shopping Results:",
+        len(
+            shopping_results
+        ),
+    )
+
+    # -----------------------------------------------------
+    # Search Information
+    # -----------------------------------------------------
+
+    print(
+        "\n========== Search Information =========="
+    )
+
+    print(
+        data.get(
+            "search_information"
+        )
+    )
+
+    print(
+        "======================================"
+    )
+
+    # -----------------------------------------------------
+    # Query
+    # -----------------------------------------------------
+
+    print(
+        "Query:",
+        keyword,
+    )
+
+    # -----------------------------------------------------
+    # API Error
+    # -----------------------------------------------------
+
+    if "error" in data:
+
+        print(
+            "Error:",
+            data["error"],
+        )
+
+    print("=" * 50)
+
+
+# =========================================================
+# Product Validation
+# =========================================================
+
+def is_valid_product(product):
+    """
+    商品至少需要有名稱。
+    """
+
+    return bool(
+        product.get(
+            "title"
+        )
+    )
+
+
+def is_valid_price(product):
+    """
+    檢查商品價格是否存在，
+    並確認是否落在合理範圍。
+
+    注意：
+    這不是 User Budget Filter。
+
+    User Budget 由
+    search_filter_service.py
+    負責。
+
+    這裡只做 Web 商品資料的基本品質檢查。
+    """
+
+    price = product.get(
+        "price"
+    )
+
+    if price is None:
+        return False
+
+    try:
+
+        price = float(
+            price
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+
+        return False
+
+    return (
+        MIN_PRODUCT_PRICE
+        <= price
+        <= MAX_PRODUCT_PRICE
+    )
+
+
+# =========================================================
+# Build Products
+# =========================================================
 
 def build_products(
     shopping_results,
-    keyword
+    keyword,
+    region="tw",
 ):
+    """
+    將 SerpAPI Shopping Results
+    轉換成 WearWise Product。
+
+    Web Search 在這裡只負責：
+
+    1. 呼叫 clean_product()
+    2. 基本 Product Validation
+
+    不負責：
+
+    - Ranking
+    - Top Product
+    - Summary
+    - User Requirement Filter
+    """
+
+    region = normalize_region(
+        region
+    )
 
     products = []
 
-    for item in shopping_results[:MAX_SEARCH_RESULTS]:
+    for item in shopping_results[
+        :MAX_SEARCH_RESULTS
+    ]:
 
-        print(
-            f"[Item] {item.get('title')}"
-        )
+        if DEBUG_SEARCH:
+
+            print(
+                f"[Item] "
+                f"{item.get('title')}"
+            )
+
+        # -------------------------------------------------
+        # Product Clean
+        # -------------------------------------------------
+
         product = clean_product(
             item=item,
-            keyword=keyword
+            keyword=keyword,
+            region=region,
         )
 
         if not product:
-
             continue
 
-        if (
-            product["price"] < MIN_PRODUCT_PRICE
-            or
-            product["price"] > MAX_PRODUCT_PRICE
+        # -------------------------------------------------
+        # Basic Validation
+        # -------------------------------------------------
+
+        if not is_valid_product(
+            product
         ):
-
             continue
 
-        if not product["title"]:
-
+        if not is_valid_price(
+            product
+        ):
             continue
+
+        # -------------------------------------------------
+        # Product Debug
+        # -------------------------------------------------
+
+        if DEBUG_SEARCH:
+
+            print(
+                "[Product]",
+                product.get(
+                    "title",
+                    "",
+                ),
+                "| price =",
+                product.get(
+                    "price",
+                    "",
+                ),
+                "| currency =",
+                product.get(
+                    "currency",
+                    "",
+                ),
+            )
 
         products.append(
             product
@@ -139,86 +429,123 @@ def build_products(
     return products
 
 
-def finalize_products(products):
-
-    print(
-        f"[Before Dedup] "
-        f"{len(products)}"
-    )
-
-    # products = remove_duplicate_brand(
-    #     products
-    # )
-
-    print(
-        f"[After Dedup] "
-        f"{len(products)}"
-    )
-
-    products.sort(
-
-        key=lambda x: x["rating"],
-
-        reverse=True
-    )
-
-    if products:
-
-        products[0]["isTop"] = True
-
-        products[0]["match"] = TOP_MATCH_SCORE
-
-    print(
-        f"[Web Search] 找到 "
-        f"{len(products)} 筆商品"
-    )
-
-    print("=" * 50)
-
-    return products
-
+# =========================================================
+# Main Web Search
+# =========================================================
 
 def web_search_products(
-    keyword
+    keyword,
+    region="tw",
 ):
+    """
+    Web 商品搜尋主流程：
 
-    if keyword in SEARCH_CACHE:
+    1. Normalize Region
+    2. Cache Check
+    3. SerpAPI Search
+    4. Product Clean
+    5. Basic Validation
+    6. Cache Save
 
-        print(
-            f"[Cache Hit] {keyword}"
-        )
+    注意：
 
-        return SEARCH_CACHE[keyword]
+    Web Search 不做：
+    - Ranking
+    - Top Product
+    - User Budget Filter
+    - Summary
+    """
+
+    region = normalize_region(
+        region
+    )
+
+    # =====================================================
+    # Cache Key
+    # =====================================================
+
+    cache_key = (
+        keyword,
+        region,
+    )
+
+    # =====================================================
+    # Cache Hit
+    # =====================================================
+
+    if cache_key in SEARCH_CACHE:
+
+        if DEBUG_SEARCH:
+
+            print(
+                f"[Cache Hit] "
+                f"{keyword} "
+                f"(region={region})"
+            )
+
+        return SEARCH_CACHE[
+            cache_key
+        ]
+
+    # =====================================================
+    # Search
+    # =====================================================
 
     try:
 
-        shopping_results = fetch_shopping_results(
-            keyword
+        shopping_results = (
+            fetch_shopping_results(
+                keyword,
+                region,
+            )
         )
+
+        # =================================================
+        # Product Build
+        # =================================================
 
         products = build_products(
             shopping_results,
-            keyword
+            keyword,
+            region,
         )
 
-        products = finalize_products(
-            products
-        )
-
-        if products:
-            SEARCH_CACHE[keyword] = products
+        if DEBUG_SEARCH:
 
             print(
-                f"[Cache Save] {keyword}"
+                f"[Clean Products] "
+                f"{len(products)}"
             )
+
+        # =================================================
+        # Cache Save
+        # =================================================
+
+        if products:
+
+            SEARCH_CACHE[
+                cache_key
+            ] = products
+
+            if DEBUG_SEARCH:
+
+                print(
+                    f"[Cache Save] "
+                    f"{keyword} "
+                    f"(region={region})"
+                )
+
         return products
+
+    # =====================================================
+    # Request Error
+    # =====================================================
 
     except requests.RequestException as e:
 
         print(
-            f"[Web Search Error] {e}"
+            f"[Web Search Error] "
+            f"{e}"
         )
-
-        print("=" * 50)
 
         return []

@@ -128,7 +128,7 @@ class WebLayout extends StatelessWidget {
 
   const WebLayout({super.key, required this.child});
 
-  static const double contentWidth = 560;
+  static const double contentWidth = 600;
   static const Color bgColor = Color(0xFF1E2A3A);
 
   @override

@@ -8,6 +8,7 @@ import '../../../core/constants/app_formatters.dart';
 import '../../../services/filter_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/cart_provider.dart';
+import '../../../services/user_service.dart';
 
 //  StatefulWidget，讓頁面自己打 API
 class RecommendationScreen extends ConsumerStatefulWidget {
@@ -67,6 +68,12 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen> {
               
           _isLoading = false;
         });
+
+        // 將本次推薦出的前 3 項商品記錄到歷史紀錄
+        // 失敗不影響畫面顯示，UserService.addHistory 內部已處理例外
+        for (final product in _products.take(3)) {
+          UserService.addHistory(product);
+        }
       }
     } catch (e) {
       if (mounted) {

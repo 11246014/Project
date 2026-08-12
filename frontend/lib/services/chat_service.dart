@@ -28,7 +28,7 @@ class ChatService {
       final parts = <String>[];
       if (profile.ageRange.isNotEmpty) parts.add('年齡層${profile.ageRange}');
       if (profile.occupation.isNotEmpty) parts.add('職業為${profile.occupation}');
-      if (profile.currentDevice.isNotEmpty) parts.add('目前使用${profile.currentDevice}');
+      if (profile.currentDevice.isNotEmpty) parts.add('目前正在使用${profile.currentDevice}');
 
       if (parts.isNotEmpty) {
         finalMessage = '[使用者背景：${parts.join('，')}]\n$message';

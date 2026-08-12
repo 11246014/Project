@@ -6,6 +6,7 @@
 
 USAGE_MAPPING = {
     "運動": "運動",
+    "跑步": "跑步",
     "健康": "健康",
 
     # 這些對 Google Shopping 幾乎沒有搜尋價值
@@ -54,34 +55,36 @@ def build_search_query(keyword_result, user_message=""):
     # ==========================================
     # Primary Search Query
     #
-    # 優先順序：
+    # Search Query 只使用：
     # Brand
-    #   ↓
-    # OS Mapping
-    #   ↓
     # Product Type
+    # Usage
+    #
+    # OS 不再轉換成品牌
+    # Feature 暫時不加入 Query
     # ==========================================
 
     brand = keyword_result.get("brand")
     product_type = keyword_result.get("product_type")
-    os_name = keyword_result.get("os")
+    usage = keyword_result.get("usage")
 
-    mapped_os = OS_MAPPING.get(os_name)
+    # ==========================================
+    # Brand
+    # ==========================================
 
     if brand:
         query_parts.append(brand)
 
-    elif mapped_os:
-        query_parts.append(mapped_os)
+    # ==========================================
+    # Product Type
+    # ==========================================
 
-    elif product_type:
+    if product_type:
         query_parts.append(product_type)
 
     # ==========================================
     # Usage
     # ==========================================
-
-    usage = keyword_result.get("usage")
 
     mapped_usage = USAGE_MAPPING.get(usage)
 
@@ -90,14 +93,10 @@ def build_search_query(keyword_result, user_message=""):
 
     # ==========================================
     # Features
+    #
+    # 暫時不要加入 Search Query。
+    # Features 留給後面的 Filter / Ranking 處理。
     # ==========================================
-
-    for feature in keyword_result.get("features", []):
-
-        mapped_feature = FEATURE_MAPPING.get(feature)
-
-        if mapped_feature:
-            query_parts.append(mapped_feature)
 
     # ==========================================
     # Remove Duplicate

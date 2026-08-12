@@ -34,30 +34,10 @@ Map<String, dynamic> _user = {
 };
 
 
-  // Mock 歷史紀錄（W3 串接後從 API 取得）
-  final List<Map<String, dynamic>> _history = [
-    {
-      'name': 'Apple Watch Series 9',
-      'price': 'NT\$ 12,900',
-      'tags': ['#血氧', '#GPS', '#防水'],
-      'rating': 4.8,
-      'viewedAt': '今天 14:32',
-    },
-    {
-      'name': 'Garmin Fenix 7',
-      'price': 'NT\$ 18,500',
-      'tags': ['#GPS', '#續航14天', '#登山'],
-      'rating': 4.7,
-      'viewedAt': '今天 13:15',
-    },
-    {
-      'name': 'Samsung Galaxy Watch 6',
-      'price': 'NT\$ 9,990',
-      'tags': ['#血壓', '#睡眠', '#Android'],
-      'rating': 4.5,
-      'viewedAt': '昨天 20:04',
-    },
-  ];
+  // 歷史紀錄改為向後端拉取真實資料，不再使用 mock
+  List<Map<String, dynamic>> _history = [];
+  bool _isHistoryLoading = true;
+  bool _hasHistoryError = false;
 
 
   @override
@@ -77,9 +57,15 @@ Map<String, dynamic> _user = {
     final user = await UserService.getMe();
     if (mounted) {
       setState(() {
+        // 後端 /me 會回傳 username（註冊時填的暱稱）
+        // 若是舊帳號沒有暱稱資料，退回顯示 email 帳號名稱，不顯示「載入中」
+        final rawUsername = user['username']?.toString() ?? '';
+        final email = user['email']?.toString() ?? '';
         _user = {
-          'name': user['username'] ?? '使用者',
-          'email': user['email'] ?? '',
+          'name': rawUsername.isNotEmpty
+              ? rawUsername
+              : (email.contains('@') ? email.split('@').first : '使用者'),
+          'email': email,
           'avatar': null,
         };
       });
@@ -95,8 +81,41 @@ Map<String, dynamic> _user = {
             
     }
   } catch (e) {
-    // 載入失敗就保留預設值，不影響畫面
+    // 失敗時也要更新畫面，不然名稱會永遠卡在初始值「載入中...」
     debugPrint('載入使用者資訊失敗：$e');
+    if (mounted) {
+      setState(() {
+        _user = {'name': '使用者', 'email': '', 'avatar': null};
+      });
+    }
+  }
+
+  // 個人資訊處理完（無論成功失敗）後，接著載入歷史紀錄
+  _loadHistory();
+}
+
+/// 向後端取得歷史紀錄，並更新載入 / 錯誤狀態
+Future<void> _loadHistory() async {
+  setState(() {
+    _isHistoryLoading = true;
+    _hasHistoryError = false;
+  });
+  try {
+    final history = await UserService.getHistory();
+    if (mounted) {
+      setState(() {
+        _history = history;
+        _isHistoryLoading = false;
+      });
+    }
+  } catch (e) {
+    debugPrint('載入歷史紀錄失敗：$e');
+    if (mounted) {
+      setState(() {
+        _hasHistoryError = true;
+        _isHistoryLoading = false;
+      });
+    }
   }
 }
 
@@ -241,8 +260,15 @@ Map<String, dynamic> _user = {
 
           _buildProfileDropdown(
             label: '年齡層',
-            value: ref.watch(userProfileProvider).ageRange,
-            options: const ['18 以下', '18–25', '26–35', '36–45', '46 以上'],
+            // 如果舊資料不在新選項清單裡，就當作沒填，讓使用者重選
+            value: const [
+              '18 歲以下', '19–25 歲', '26–35 歲', '36–45 歲', '46–55 歲', '56 歲以上',
+            ].contains(ref.watch(userProfileProvider).ageRange)
+                ? ref.watch(userProfileProvider).ageRange
+                : '',
+            options: const [
+              '18 歲以下', '19–25 歲', '26–35 歲', '36–45 歲', '46–55 歲', '56 歲以上',
+            ],
             onChanged: ref.read(userProfileProvider.notifier).updateAgeRange,
           ),
           const SizedBox(height: 12),
@@ -257,8 +283,8 @@ Map<String, dynamic> _user = {
 
           _buildProfileTextField(
             controller: _currentDeviceController,
-            label: '目前使用的穿戴裝置',
-            hint: '例如：Apple Watch SE、無、小米手環 7',
+            label: '目前已經在使用的商品',
+            hint: '例如：手機型號、Apple Watch SE、小米手環 7、無',
             onChanged: ref.read(userProfileProvider.notifier).updateCurrentDevice,
           ),
           const SizedBox(height: 28),
@@ -441,6 +467,35 @@ Map<String, dynamic> _user = {
 
   // ── Tab 2：歷史紀錄 ────────────────────────────────────
   Widget _buildHistoryTab() {
+    // 狀態一：載入中
+    if (_isHistoryLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
+    }
+
+    // 狀態二：載入失敗
+    if (_hasHistoryError) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.wifi_off_rounded, size: 48, color: AppColors.textHint),
+            const SizedBox(height: 12),
+            Text('載入歷史紀錄失敗',
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.textSub(context))),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: _loadHistory,
+              child: const Text('重新載入'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 狀態三：沒有紀錄
     if (_history.isEmpty) {
       return Center(
         child: Column(
@@ -454,12 +509,30 @@ Map<String, dynamic> _user = {
       );
     }
 
+    // 狀態四：正常顯示（資料來自後端 /history/{email}）
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: _history.length,
       itemBuilder: (context, index) {
         final item = _history[index];
-        return Container(
+        final tags = List<String>.from(item['tags'] ?? []);
+
+        // 點擊卡片可進入商品詳情頁
+        // 注意：歷史紀錄目前沒有存 link（外部購買連結），
+        // 詳情頁會顯示「暫無購買連結」，其餘資訊（名稱、價格、圖片、標籤）正常顯示
+        return GestureDetector(
+          onTap: () => context.push(
+            AppRoutes.product,
+            extra: {
+              'name': item['name'],
+              'price': item['price'],
+              'image': item['image'],
+              'tags': tags,
+              'platform': item['platform'],
+              'link': '', // 歷史紀錄未儲存連結，先給空字串避免 key 不存在
+            },
+          ),
+          child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -469,7 +542,7 @@ Map<String, dynamic> _user = {
           ),
           child: Row(
             children: [
-              // 商品圖示
+              // 商品圖片：有圖顯示圖片，沒有或載入失敗顯示備用圖示
               Container(
                 width: 52,
                 height: 52,
@@ -477,8 +550,20 @@ Map<String, dynamic> _user = {
                   color: AppColors.cardVariant(context),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.watch_rounded,
-                    color: AppColors.primary, size: 26),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: (item['image'] != null &&
+                          item['image'].toString().isNotEmpty)
+                      ? Image.network(
+                          item['image'].toString(),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.watch_rounded,
+                                  color: AppColors.primary, size: 26),
+                        )
+                      : const Icon(Icons.watch_rounded,
+                          color: AppColors.primary, size: 26),
+                ),
               ),
               const SizedBox(width: 12),
 
@@ -487,25 +572,27 @@ Map<String, dynamic> _user = {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item['name'],
+                    Text(item['name']?.toString() ?? '',
                         style: AppTextStyles.bodyLarge.copyWith(
                           fontWeight: FontWeight.w600,
                           color: AppColors.textMain(context), fontSize: 15)),
                     const SizedBox(height: 4),
-                    Text(
-                      (item['tags'] as List<String>).join(' '),
-                      style: AppTextStyles.caption
-                          .copyWith(color: AppColors.accent),
-                    ),
+                    if (tags.isNotEmpty)
+                      Text(
+                        tags.take(3).join(' '),
+                        style: AppTextStyles.caption
+                            .copyWith(color: AppColors.accent),
+                      ),
                     const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(item['price'],
+                        // price 是後端回傳的 int，統一用 AppFormatters 格式化
+                        Text(AppFormatters.formatPrice(item['price']),
                             style: AppTextStyles.caption.copyWith(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w600)),
-                        Text(item['viewedAt'],
+                        Text(item['viewedAt']?.toString() ?? '',
                             style: AppTextStyles.caption),
                       ],
                     ),
@@ -513,6 +600,7 @@ Map<String, dynamic> _user = {
                 ),
               ),
             ],
+            ),
           ),
         );
       },
