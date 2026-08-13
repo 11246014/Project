@@ -48,6 +48,7 @@ dependencies:
 
   # 開啟外部電商平台商品頁
   url_launcher: ^6.3.0
+  shared_preferences: ^2.5.5
 
 
 dev_dependencies:
