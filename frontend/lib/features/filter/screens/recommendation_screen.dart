@@ -364,7 +364,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen> {
                   child: (product['image'] != null &&
                           product['image'].toString().isNotEmpty)
                       ? Image.network(
-                          product['image'].toString(),
+                          AppFormatters.proxyImageUrl(product['image'].toString()),
                           fit: BoxFit.cover,
                           // 新增 loadingBuilder
                           loadingBuilder: (context, child, loadingProgress) {
