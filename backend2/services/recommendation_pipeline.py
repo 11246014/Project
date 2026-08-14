@@ -17,6 +17,11 @@ from services.search_strategy import (
 from services.product_link_service import (
     fetch_immersive_product,
 )
+
+from services.search_query_builder import (
+    USAGE_MAPPING,
+)
+
 # ==================================================
 # Pipeline Config
 # ==================================================
@@ -66,12 +71,51 @@ def recommend_from_need(
 
     search_query = need.search_query
 
-    if DEBUG_PIPELINE:
-        print(
-            "[Pipeline Search Query]",
-            repr(search_query),
+    # =========================
+    # Filter Search Query
+    # =========================
+
+    if not search_query:
+
+        query_parts = []
+
+        # Brand
+        if need.preferences.brand:
+            query_parts.append(
+                need.preferences.brand
+            )
+
+        # Device Type
+        if need.device_type:
+            query_parts.append(
+                need.device_type
+            )
+
+        # Usage
+        for usage in need.usage:
+
+            mapped_usage = USAGE_MAPPING.get(
+                usage,
+                usage,
+            )
+
+            if mapped_usage:
+                query_parts.append(
+                    mapped_usage
+                )
+
+        # Remove Duplicate
+        query_parts = list(
+            dict.fromkeys(
+                query_parts
+            )
         )
 
+        search_query = " ".join(
+            str(part).strip()
+            for part in query_parts
+            if part and str(part).strip()
+        )
     # =========================
     # Search
     # =========================

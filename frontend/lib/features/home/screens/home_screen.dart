@@ -411,7 +411,7 @@ class _HomeTabState extends State<_HomeTab> {
       setState(() => _filteredProducts = _products);
     } else {
       setState(() => _filteredProducts =
-          _products.where((p) => p['type'] == tag).toList());
+          _products.where((p) => (p['name'] as String).contains(tag)).toList());
     }
   }
 }
@@ -478,7 +478,7 @@ class _ProductCard extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               child: (product['image'] != null && product['image'].toString().isNotEmpty)
                   ? Image.network(
-                      product['image'].toString(),
+                      AppFormatters.proxyImageUrl(product['image'].toString()),
                       fit: BoxFit.cover,
                       // 圖片載入中的動畫提示
                       loadingBuilder: (context, child, loadingProgress) {

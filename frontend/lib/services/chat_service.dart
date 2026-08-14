@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../core/constants/api_config.dart';
 import '../core/providers/user_profile_provider.dart';
+import '../core/utils/dio_client.dart';
 
 class ChatService {
 
@@ -8,11 +9,11 @@ class ChatService {
   static final String _sessionId =
       DateTime.now().millisecondsSinceEpoch.toString();
 
-  static final _dio = Dio(BaseOptions(
-    baseUrl: ApiConfig.aiBaseUrl,
+  static final _dio = DioClient.create(
+    ApiConfig.aiBaseUrl,
     connectTimeout: const Duration(seconds: 30),
     receiveTimeout: const Duration(minutes: 5),
-  ));
+  );
 
   // 發送訊息給 AI（聊天室用）
   static Future<Map<String, dynamic>> sendMessage(

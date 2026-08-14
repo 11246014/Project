@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'api_config.dart';
 
 /// 全域格式化工具
 class AppFormatters {
@@ -44,5 +46,28 @@ class AppFormatters {
       'Yahoo購物': 'Yahoo購物中心',
     };
     return mapping[platform] ?? platform;
+  }
+  
+  /// 將商品圖片網址轉換成後端代理網址（僅限 Web 版使用）
+  ///
+  /// 背景：
+  /// Flutter Web 版的 CanvasKit 渲染器要求圖片來源提供 CORS header，
+  /// 電商圖片伺服器大多不支援，導致 Image.network() 在 Web 版讀取失敗。
+  /// 後端2提供 /image-proxy 端點代為抓取圖片並附上 CORS header，解決這個問題。
+  ///
+  /// 手機 App 版本沒有這個限制（沒有瀏覽器 CORS 規則），
+  /// 直接用原始網址即可，這樣可以省去代理的額外延遲，
+  /// 也不會讓後端多背負原本不需要的圖片轉發流量。
+  static String proxyImageUrl(String originalUrl) {
+    if (originalUrl.isEmpty) return '';
+
+    // 非 http 開頭的網址（例如本機路徑或空值）不需要代理
+    if (!originalUrl.startsWith('http')) return originalUrl;
+
+    // 只有 Web 版才需要透過後端代理，App 版直接回傳原始網址
+    if (!kIsWeb) return originalUrl;
+
+    final encoded = Uri.encodeComponent(originalUrl);
+    return '${ApiConfig.aiBaseUrl}/image-proxy?url=$encoded';
   }
 }

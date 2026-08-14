@@ -555,7 +555,7 @@ Future<void> _loadHistory() async {
                   child: (item['image'] != null &&
                           item['image'].toString().isNotEmpty)
                       ? Image.network(
-                          item['image'].toString(),
+                          AppFormatters.proxyImageUrl(item['image'].toString()),
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               const Icon(Icons.watch_rounded,
@@ -722,7 +722,7 @@ Future<void> _loadHistory() async {
         borderRadius: BorderRadius.circular(10),
         child: item.image.isNotEmpty
             ? Image.network(
-                item.image,
+                AppFormatters.proxyImageUrl(item.image),
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => const Icon(
                     Icons.watch_rounded,

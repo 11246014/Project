@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
 import '../core/constants/api_config.dart';
+import '../core/utils/dio_client.dart';
 
 class AuthService {
-  static final _dio = Dio(BaseOptions(baseUrl: ApiConfig.dbBaseUrl,));
+  static final _dio = DioClient.create(ApiConfig.dbBaseUrl);
 
   // 登入，回傳 Token
   static Future<String> login(String email, String password) async {

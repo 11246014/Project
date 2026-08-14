@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
 import '../core/constants/api_config.dart';
+import '../core/utils/dio_client.dart';
 
 class ProductService {
-  static final _dio = Dio(BaseOptions(baseUrl: ApiConfig.dbBaseUrl));
+  static final _dio = DioClient.create(ApiConfig.dbBaseUrl);
 
   // 取得所有商品
   static Future<List<Map<String, dynamic>>> getProducts() async {

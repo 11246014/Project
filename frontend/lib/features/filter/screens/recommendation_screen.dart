@@ -364,7 +364,7 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen> {
                   child: (product['image'] != null &&
                           product['image'].toString().isNotEmpty)
                       ? Image.network(
-                          product['image'].toString(),
+                          AppFormatters.proxyImageUrl(product['image'].toString()),
                           fit: BoxFit.cover,
                           // 新增 loadingBuilder
                           loadingBuilder: (context, child, loadingProgress) {
@@ -380,12 +380,18 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen> {
                               ),
                             );
                           },
+                            errorBuilder: (context, error, stackTrace) {
+                              debugPrint('❌ 商品圖片載入失敗');
+                              debugPrint('Image URL: ${product['image']}');
+                              debugPrint('Error: $error');
+                              debugPrint('StackTrace: $stackTrace');
 
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.watch_rounded,
-                            color: AppColors.primary,
-                            size: 26,
-                          ),
+                              return Icon(
+                                Icons.watch_rounded,
+                                color: AppColors.primary,
+                                size: 26,
+                              );
+                            },
                         )
                       : Icon(
                           Icons.watch_rounded,
