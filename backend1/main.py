@@ -49,9 +49,7 @@ import crud
 # 建立資料表
 # =========================
 
-models.Base.metadata.create_all(
-    bind=engine
-)
+
 
 # =========================
 # FastAPI
@@ -262,8 +260,8 @@ def login(user: UserLogin):
 
         .first()
     )
-# =========================
-# 帳號不存在
+     # =========================
+     # # 帳號不存在
 # =========================
     if not db_user:
     
@@ -276,6 +274,10 @@ def login(user: UserLogin):
                 detail="帳號或密碼錯誤"
             )
     print("DB hash:", db_user.hashed_password)
+
+    # =========================
+    # 帳號不存在
+    # =========================
 
 
     # =========================
@@ -675,3 +677,4 @@ def get_history(
         }
         for r in records
     ]
+models.Base.metadata.create_all(bind=engine)
