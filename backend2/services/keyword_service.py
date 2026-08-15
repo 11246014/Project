@@ -568,6 +568,17 @@ def extract_keyword(user_message):
                     data["budget_min"] = data["budget_max"]
                     data["budget_max"] = 0
                     
+            # 使用者只提供單一預算數字，例如「5000元」
+            # 沒有「以上／至少／最低」，
+            # 視為最高預算。
+            elif (
+                data.get("budget_min", 0) > 0
+                and data.get("budget_max", 0) > 0
+                and data.get("budget_min") == data.get("budget_max")
+            ):
+                data["budget_max"] = data["budget_min"]
+                data["budget_min"] = 0
+                    
         print("\n========== Parsed ==========")
         print(data)
 

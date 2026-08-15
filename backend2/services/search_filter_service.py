@@ -1,3 +1,4 @@
+#search_filter_service.py
 from services.ranking.helper import (
     _price,
 )
@@ -436,6 +437,13 @@ def hard_filter_candidates(
             continue
 
         # ==================================================
+        # Usage
+        # ==================================================
+
+        # Usage 不在 Hard Filter 淘汰
+        # 交給 Ranking 判斷符合程度
+
+        # ==================================================
         # Budget
         # ==================================================
 
@@ -527,10 +535,38 @@ def hard_filter_candidates(
 
     if filtered:
 
-        return (
-            filtered,
-            budget_fallback
-        )
+        # --------------------------------------------------
+        # 如果使用者有指定用途
+        # 優先保留符合用途的商品
+        # --------------------------------------------------
+
+        if getattr(need, "usage", None):
+
+            usage_filtered = [
+                product
+                for product in filtered
+                if match_usage(product, need)
+            ]
+
+            # 有符合用途 + 預算內商品
+            if usage_filtered:
+
+                return (
+                    usage_filtered,
+                    budget_fallback
+                )
+
+            # 沒有符合用途的預算內商品
+            # 不直接 return
+            # 讓後面的 Budget Fallback 尋找
+            # 「符合用途但超出預算」的商品
+
+        else:
+
+            return (
+                filtered,
+                budget_fallback
+            )
 
     # ==================================================
     # No Budget Condition
@@ -564,6 +600,11 @@ def hard_filter_candidates(
         )
 
         and match_negative(
+            product,
+            need
+        )
+
+        and match_usage(
             product,
             need
         )
