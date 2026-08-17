@@ -472,6 +472,8 @@ def extract_keyword(user_message):
 
         if device in DEVICE_KEYWORDS:
 
+            print(f"[Device Shortcut] matched: {device}")
+
             return _keyword_result(
                 keyword=DEVICE_KEYWORDS[device]
             )
