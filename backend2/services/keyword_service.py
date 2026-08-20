@@ -147,6 +147,7 @@ def _keyword_result(
     features=None,
     os=None,
     style=None,
+    negative_style=None,
     battery=None,
     occupation=None,
     age_group=None,
@@ -165,6 +166,7 @@ def _keyword_result(
         "features": _as_list(features),
         "os": _none_if_empty(os),
         "style": _none_if_empty(style),
+        "negative_style": _none_if_empty(negative_style),
         "battery": _none_if_empty(battery),
         "occupation": _none_if_empty(occupation),
         "age_group": _none_if_empty(age_group),
@@ -229,6 +231,7 @@ def _validate_keyword_result(data):
         "features": [],
         "os": "",
         "style": "",
+        "negative_style": "",
         "battery": "",
         "occupation": "",
         "age_group": "",
@@ -254,6 +257,7 @@ def _validate_keyword_result(data):
         "usage",
         "os",
         "style",
+        "negative_style",
         "battery",
         "occupation",
         "age_group",
@@ -309,6 +313,7 @@ def normalize_keyword_result(data, user_message):
         "usage",
         "os",
         "style",
+        "negative_style",
         "battery",
         "occupation",
         "age_group",
@@ -643,6 +648,10 @@ def extract_keyword(user_message):
 
                 style=data.get(
                     "style"
+                ),
+
+                negative_style=data.get(
+                    "negative_style"
                 ),
 
                 battery=data.get(

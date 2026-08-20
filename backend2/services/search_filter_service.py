@@ -207,17 +207,15 @@ def match_os(product, need):
 # ==================================================
 
 def match_negative(product, need):
-    """
-    排除不符合使用者風格需求的商品。
 
-    目前只處理系統已定義的
-    NEGATIVE_STYLE_KEYWORDS。
-    """
+    negative_style = getattr(
+        need.preferences,
+        "negative_style",
+        None
+    )
 
-    style = need.preferences.style
-
-    # 沒有指定風格
-    if not style:
+    # 沒有指定負面風格
+    if not negative_style:
         return True
 
     title = product.get(
@@ -237,7 +235,7 @@ def match_negative(product, need):
 
     bad_keywords = (
         NEGATIVE_STYLE_KEYWORDS.get(
-            style,
+            negative_style,
             []
         )
     )
@@ -245,7 +243,6 @@ def match_negative(product, need):
     for keyword in bad_keywords:
 
         if keyword.lower() in text:
-
             return False
 
     return True
