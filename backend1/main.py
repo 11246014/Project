@@ -137,17 +137,17 @@ class ProductCreate(BaseModel):
 
     price: int
 
-    description: str = ""
+    description:  Optional[str] = ""
 
-    platform: str = ""
+    platform:  Optional[str] = ""
 
-    image: str = ""
+    image:  Optional[str] = ""
 
-    rating: int = 0
+    rating:  Optional[int] = 0
 
-    reason: str = ""
+    reason:  Optional[str] = ""
 
-    link: str=""
+    link:  Optional[str]=""
     class Config:
         from_attributes = True
 
