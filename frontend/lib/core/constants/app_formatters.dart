@@ -70,4 +70,12 @@ class AppFormatters {
     final encoded = Uri.encodeComponent(originalUrl);
     return '${ApiConfig.aiBaseUrl}/image-proxy?url=$encoded';
   }
+
+  /// 圖片請求要帶的 header
+  /// 背景：Image.network() 不會經過 DioClient，
+  /// 所以需要單獨帶上這個 header，讓 ngrok 略過瀏覽器警告攔截頁，
+  /// 否則 Web 版透過 image-proxy 抓圖時會收到 ngrok 的 HTML 警告頁而不是真正的圖片。
+  static const Map<String, String> imageHeaders = {
+    'ngrok-skip-browser-warning': 'true',
+  };
 }

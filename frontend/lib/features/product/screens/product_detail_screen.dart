@@ -179,6 +179,7 @@ class ProductDetailScreen extends ConsumerWidget {
           child: image.isNotEmpty
               ? Image.network(
                   AppFormatters.proxyImageUrl(image),
+                  headers: AppFormatters.imageHeaders,
                   fit: BoxFit.contain, // 改用 contain，圖片不裁切、置中顯示
                   errorBuilder: (context, error, stackTrace) => Icon(
                     Icons.watch_rounded,

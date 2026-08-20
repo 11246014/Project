@@ -252,6 +252,16 @@ class _HomeTabState extends State<_HomeTab> {
               ),
               textAlign: TextAlign.center,
             ),
+
+            if (_errorMessage.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage,
+                style: AppTextStyles.caption.copyWith(color: AppColors.error),
+                textAlign: TextAlign.center,
+              ),
+            ],
+
             const SizedBox(height: 24),
             // 重新載入按鈕
             GestureDetector(
@@ -479,6 +489,7 @@ class _ProductCard extends ConsumerWidget {
               child: (product['image'] != null && product['image'].toString().isNotEmpty)
                   ? Image.network(
                       AppFormatters.proxyImageUrl(product['image'].toString()),
+                      headers: AppFormatters.imageHeaders,
                       fit: BoxFit.cover,
                       // 圖片載入中的動畫提示
                       loadingBuilder: (context, child, loadingProgress) {
