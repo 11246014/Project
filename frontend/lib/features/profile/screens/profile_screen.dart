@@ -556,6 +556,7 @@ Future<void> _loadHistory() async {
                           item['image'].toString().isNotEmpty)
                       ? Image.network(
                           AppFormatters.proxyImageUrl(item['image'].toString()),
+                          headers: AppFormatters.imageHeaders,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               const Icon(Icons.watch_rounded,
