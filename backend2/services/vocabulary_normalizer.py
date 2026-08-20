@@ -1,5 +1,8 @@
-#vocabulary_normalizer.py
+# vocabulary_normalizer.py
+
+
 def _clean(value):
+
     if value is None:
         return None
 
@@ -12,6 +15,7 @@ def _clean(value):
 
 
 def _lower(value):
+
     text = _clean(value)
 
     if text is None:
@@ -21,6 +25,7 @@ def _lower(value):
 
 
 def normalize_list(values, normalizer):
+
     if values is None or values == "":
         return []
 
@@ -30,6 +35,7 @@ def normalize_list(values, normalizer):
     normalized = []
 
     for value in values:
+
         item = normalizer(value)
 
         if item and item not in normalized:
@@ -39,28 +45,33 @@ def normalize_list(values, normalizer):
 
 
 def normalize_device_type(value):
+
     text = _lower(value)
 
     if text is None:
         return None
 
     mapping = {
+
         "smartwatch": "smartwatch",
         "smart_watch": "smartwatch",
         "watch": "smartwatch",
-        "\u667a\u6167\u624b\u9336": "smartwatch",
-        "\u624b\u9336": "smartwatch",
+        "智慧手錶": "smartwatch",
+        "手錶": "smartwatch",
+
         "smart band": "smart_band",
         "smart_band": "smart_band",
         "band": "smart_band",
-        "\u667a\u6167\u624b\u74b0": "smart_band",
-        "\u624b\u74b0": "smart_band",
+        "智慧手環": "smart_band",
+        "手環": "smart_band",
+
         "smart ring": "smart_ring",
         "smart_ring": "smart_ring",
         "ring": "smart_ring",
-        "\u667a\u6167\u6212\u6307": "smart_ring",
-        "\u6212\u6307": "smart_ring",
-        "\u85cd\u7259\u8033\u6a5f": "earbuds",
+        "智慧戒指": "smart_ring",
+        "戒指": "smart_ring",
+
+        "藍牙耳機": "earbuds",
         "earbuds": "earbuds",
     }
 
@@ -68,98 +79,128 @@ def normalize_device_type(value):
 
 
 def normalize_usage(value):
+
     text = _lower(value)
 
     if text is None:
         return None
 
     mapping = {
+
+        # Running
         "running": "running",
         "run": "running",
-        "\u8dd1\u6b65": "running",
+        "跑步": "running",
+
+        # Sport
+        "運動": "運動",
+        "運動（跑步 / 健身 / 戶外）": "運動",
+        "運動（跑步/健身/戶外）": "運動",
+
+        # Hiking / Outdoor
         "hiking": "hiking",
         "outdoor": "hiking",
-        "\u767b\u5c71": "hiking",
-        "\u6236\u5916": "hiking",
-        "\u6236\u5916 / \u767b\u5c71": "hiking",
+        "登山": "hiking",
+        "戶外": "hiking",
+        "戶外 / 登山": "hiking",
+
+        # Health
         "health": "health_monitoring",
         "health_monitoring": "health_monitoring",
-        "\u5065\u5eb7": "health_monitoring",
-        "\u5065\u5eb7\u76e3\u6e2c": "health_monitoring",
+        "健康": "health_monitoring",
+        "健康監測": "health_monitoring",
+
+        # Sleep
         "sleep": "sleep",
         "sleep_monitoring": "sleep",
         "sleep_tracking": "sleep",
-        "\u7761\u7720": "sleep",
-        "\u7761\u7720\u76e3\u6e2c": "sleep",
+        "睡眠": "sleep",
+        "睡眠監測": "sleep",
     }
 
     return mapping.get(text, value)
 
 
 def normalize_feature(value):
+
     text = _lower(value)
 
     if text is None:
         return None
 
     mapping = {
+
         "gps": "gps",
+
         "heart_rate": "heart_rate",
         "heart rate": "heart_rate",
-        "\u5fc3\u7387": "heart_rate",
+        "心率": "heart_rate",
+
         "blood_oxygen": "blood_oxygen",
         "spo2": "blood_oxygen",
-        "\u8840\u6c27": "blood_oxygen",
+        "血氧": "blood_oxygen",
+
         "ecg": "ecg",
-        "\u5fc3\u96fb\u5716": "ecg",
+        "心電圖": "ecg",
+
         "sleep": "sleep_tracking",
         "sleep_tracking": "sleep_tracking",
-        "\u7761\u7720": "sleep_tracking",
-        "\u7761\u7720\u76e3\u6e2c": "sleep_tracking",
+        "睡眠": "sleep_tracking",
+        "睡眠監測": "sleep_tracking",
+
         "waterproof": "water_resistance",
         "water_resistance": "water_resistance",
-        "\u9632\u6c34": "water_resistance",
+        "防水": "water_resistance",
     }
 
     return mapping.get(text, value)
 
 
 def normalize_os(value):
+
     text = _lower(value)
 
     if text is None:
         return None
 
     mapping = {
+
         "ios": "iOS",
         "iphone": "iOS",
+
         "android": "Android",
+
         "cross": "Cross",
-        "\u4e0d\u9650": "Cross",
+        "不限": "Cross",
     }
 
     return mapping.get(text, value)
 
 
 def normalize_style(value):
+
     text = _lower(value)
 
     if text is None:
         return None
 
     mapping = {
+
         "sport": "sport",
-        "\u904b\u52d5": "sport",
+        "運動": "sport",
+
         "fashion": "fashion",
-        "\u6642\u5c1a": "fashion",
+        "時尚": "fashion",
+
         "business": "business",
-        "\u5546\u52d9": "business",
+        "商務": "business",
     }
 
     return mapping.get(text, value)
 
 
 def normalize_battery(value):
+
     text = _lower(value)
 
     if text is None:
@@ -167,79 +208,98 @@ def normalize_battery(value):
 
     if text in (
         "high",
-        "\u9577\u7e8c\u822a",
-        "\u7e8c\u822a",
-        "\u7e8c\u822a\u4e45",
-        "5 \u5230 7 \u5929\u4ee5\u4e0a",
+        "長續航",
+        "續航",
+        "續航久",
+        "5 到 7 天以上",
     ):
         return "high"
 
-    if text in ("medium", "2 \u5230 3 \u5929"):
+    if text in (
+        "medium",
+        "2 到 3 天",
+    ):
         return "medium"
 
-    if text in ("low",):
+    if text in (
+        "low",
+    ):
         return "low"
 
     return value
 
 
 def normalize_priority(value):
+
     text = _lower(value)
 
     if text is None:
         return None
 
     mapping = {
+
         "battery_life": "battery_life",
-        "\u7e8c\u822a": "battery_life",
-        "\u9577\u7e8c\u822a": "battery_life",
+        "續航": "battery_life",
+        "長續航": "battery_life",
+
         "location_accuracy": "location_accuracy",
-        "\u5b9a\u4f4d\u7cbe\u6e96": "location_accuracy",
+        "定位精準": "location_accuracy",
         "gps": "location_accuracy",
+
         "value": "value",
         "cp": "value",
-        "cp\u503c": "value",
+        "cp值": "value",
+
         "durability": "durability",
-        "\u8010\u7528": "durability",
+        "耐用": "durability",
+
         "ease_of_use": "ease_of_use",
-        "\u64cd\u4f5c\u7c21\u55ae": "ease_of_use",
+        "操作簡單": "ease_of_use",
     }
 
     return mapping.get(text, value)
 
 
 def normalize_occupation(value):
+
     text = _lower(value)
 
     if text is None:
         return None
 
     mapping = {
+
         "student": "student",
-        "\u5b78\u751f": "student",
+        "學生": "student",
+
         "office_worker": "office_worker",
-        "\u4e0a\u73ed\u65cf": "office_worker",
+        "上班族": "office_worker",
+
         "athlete": "athlete",
-        "\u904b\u52d5\u54e1": "athlete",
+        "運動員": "athlete",
     }
 
     return mapping.get(text, value)
 
 
 def normalize_age_group(value):
+
     text = _lower(value)
 
     if text is None:
         return None
 
     mapping = {
+
         "senior": "senior",
-        "\u9577\u8005": "senior",
-        "\u9577\u8f29": "senior",
+        "長者": "senior",
+        "長輩": "senior",
+
         "adult": "adult",
-        "\u6210\u4eba": "adult",
+        "成人": "adult",
+
         "child": "child",
-        "\u5152\u7ae5": "child",
+        "兒童": "child",
     }
 
     return mapping.get(text, value)

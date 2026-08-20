@@ -1,3 +1,5 @@
+# recommendation_pipeline.py
+
 from services.product_formatter import (
     format_product,
 )
@@ -21,6 +23,11 @@ from services.product_link_service import (
 from services.search_query_builder import (
     USAGE_MAPPING,
 )
+
+from services.backend1_client import (
+    save_product,
+)
+
 
 # ==================================================
 # Pipeline Config
@@ -60,7 +67,8 @@ def recommend_from_need(
     3. Ranking
     4. Top Products
     5. Resolve Product Links
-    6. Product Format
+    6. Save Products to Backend1
+    7. Product Format
     """
 
     if DEBUG_PIPELINE:
@@ -116,6 +124,7 @@ def recommend_from_need(
             for part in query_parts
             if part and str(part).strip()
         )
+
     # =========================
     # Search
     # =========================
@@ -187,7 +196,7 @@ def recommend_from_need(
         print(
             f"[Top Products] {len(top_products)}"
         )
-        
+
     # =========================
     # Resolve Product Links
     # =========================
@@ -218,6 +227,10 @@ def recommend_from_need(
 
         if link:
 
+            # =========================
+            # Save Real E-commerce Link
+            # =========================
+
             product["link"] = link
 
             if DEBUG_PIPELINE:
@@ -234,6 +247,23 @@ def recommend_from_need(
                     link,
                 )
 
+            # =========================
+            # Save Product to Backend1
+            # =========================
+
+            if DEBUG_PIPELINE:
+                print(
+                    "[Product DB] Saving:",
+                    product.get(
+                        "title",
+                        "",
+                    )
+                )
+
+            save_product(
+                product
+            )
+
         elif DEBUG_PIPELINE:
 
             print(
@@ -243,6 +273,7 @@ def recommend_from_need(
                     "",
                 )
             )
+
     # =========================
     # Format
     # =========================

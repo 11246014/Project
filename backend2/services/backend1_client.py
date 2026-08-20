@@ -1,3 +1,5 @@
+# backend1_client.py
+
 import requests
 
 BASE_URL = "https://champion-sandpit-rash.ngrok-free.dev"
@@ -7,7 +9,7 @@ BASE_URL = "https://champion-sandpit-rash.ngrok-free.dev"
 # 儲存商品
 # =========================
 
-async def save_product(product):
+def save_product(product):
 
     try:
 
@@ -47,7 +49,12 @@ async def save_product(product):
 
             "reason": product.get(
                 "reason",
-                    ""
+                ""
+            ),
+
+            "link": product.get(
+                "link",
+                ""
             )
         }
 

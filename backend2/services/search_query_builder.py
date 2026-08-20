@@ -67,6 +67,7 @@ def build_search_query(keyword_result, user_message=""):
     brand = keyword_result.get("brand")
     product_type = keyword_result.get("product_type")
     usage = keyword_result.get("usage")
+    keyword = keyword_result.get("keyword")
 
     # ==========================================
     # Brand
@@ -109,6 +110,13 @@ def build_search_query(keyword_result, user_message=""):
         for q in query_parts
         if q and q.strip()
     ]
+
+    # ==========================================
+    # Keyword Fallback
+    # ==========================================
+
+    if not query_parts and keyword:
+        query_parts.append(keyword)
 
     search_query = " ".join(query_parts)
 

@@ -1,4 +1,5 @@
 # services/search_strategy.py
+
 import asyncio
 
 from services.db_search_service import (
@@ -41,7 +42,6 @@ def build_search_strategy(need):
     # --------------------------------------------------
 
     if need.preferences.brand:
-
         strategy["search_terms"].append(
             need.preferences.brand
         )
@@ -55,13 +55,11 @@ def build_search_strategy(need):
     os_name = need.preferences.os
 
     if os_name == "iOS":
-
         strategy["search_terms"].append(
             "Apple Watch"
         )
 
     elif os_name == "Android":
-
         strategy["search_terms"].append(
             "Samsung"
         )
@@ -79,11 +77,9 @@ def _run_async(coro):
     """
 
     try:
-
         asyncio.get_running_loop()
 
     except RuntimeError:
-
         return asyncio.run(
             coro
         )
@@ -109,7 +105,6 @@ def normalize_product_title(product):
     )
 
     if not title:
-
         return ""
 
     title = title.strip().lower()
@@ -161,7 +156,6 @@ def deduplicate_products(products):
     unique_products = {}
 
     for product in products:
-
         title = normalize_product_title(
             product
         )
@@ -169,37 +163,24 @@ def deduplicate_products(products):
         if not title:
             continue
 
-        current_score = (
-            get_product_completeness(
-                product
-            )
+        current_score = get_product_completeness(
+            product
         )
 
-        existing_product = (
-            unique_products.get(
-                title
-            )
+        existing_product = unique_products.get(
+            title
         )
 
         if existing_product is None:
-
-            unique_products[
-                title
-            ] = product
-
+            unique_products[title] = product
             continue
 
-        existing_score = (
-            get_product_completeness(
-                existing_product
-            )
+        existing_score = get_product_completeness(
+            existing_product
         )
 
         if current_score > existing_score:
-
-            unique_products[
-                title
-            ] = product
+            unique_products[title] = product
 
     return list(
         unique_products.values()
@@ -253,7 +234,6 @@ def build_feature_search_queries(need):
     # --------------------------------------------------
 
     for feature in features:
-
         feature = str(
             feature
         ).strip()
@@ -265,14 +245,12 @@ def build_feature_search_queries(need):
 
         # Brand
         if brand:
-
             query_parts.append(
                 brand
             )
 
         # Device Type
         elif device_type:
-
             query_parts.append(
                 device_type
             )
@@ -302,7 +280,6 @@ def build_feature_search_queries(need):
         )
 
         if query not in queries:
-
             queries.append(
                 query
             )
@@ -314,9 +291,7 @@ def build_feature_search_queries(need):
 # Search Helpers
 # ==================================================
 
-def search_db(
-    search_query,
-):
+def search_db(search_query):
     """
     DB Search。
 
@@ -325,7 +300,6 @@ def search_db(
     """
 
     try:
-
         products = _run_async(
             search_db_products(
                 search_query
@@ -333,18 +307,14 @@ def search_db(
         )
 
         if products:
-
             if DEBUG_SEARCH:
-
                 print(
                     f"[DB Search] "
                     f"{len(products)}"
                 )
 
         else:
-
             if DEBUG_SEARCH:
-
                 print(
                     "[DB Search] No Result"
                 )
@@ -352,7 +322,6 @@ def search_db(
         return products or []
 
     except Exception as e:
-
         print(
             f"[DB Search Error] "
             f"{e}"
@@ -373,25 +342,20 @@ def search_web(
     """
 
     try:
-
         products = web_search_products(
             search_query,
             region=region,
         )
 
         if products:
-
             if DEBUG_SEARCH:
-
                 print(
                     f"[{region.upper()} Search] "
                     f"{len(products)}"
                 )
 
         else:
-
             if DEBUG_SEARCH:
-
                 print(
                     f"[{region.upper()} Search] "
                     f"No Result"
@@ -400,7 +364,6 @@ def search_web(
         return products or []
 
     except Exception as e:
-
         print(
             f"[{region.upper()} Search Error] "
             f"{e}"
@@ -457,7 +420,6 @@ def retrieve_candidates(
     # ==================================================
 
     if DEBUG_SEARCH:
-
         print(
             "\n========== Primary Search =========="
         )
@@ -476,7 +438,6 @@ def retrieve_candidates(
     )
 
     if db_products:
-
         all_products.extend(
             db_products
         )
@@ -491,7 +452,6 @@ def retrieve_candidates(
     )
 
     if tw_products:
-
         all_products.extend(
             tw_products
         )
@@ -500,14 +460,11 @@ def retrieve_candidates(
     # Primary Result
     # --------------------------------------------------
 
-    all_products = (
-        deduplicate_products(
-            all_products
-        )
+    all_products = deduplicate_products(
+        all_products
     )
 
     if DEBUG_SEARCH:
-
         print(
             "[Primary Search Results]",
             len(all_products),
@@ -519,15 +476,11 @@ def retrieve_candidates(
     # ==================================================
 
     if not all_products:
-
-        feature_queries = (
-            build_feature_search_queries(
-                need
-            )
+        feature_queries = build_feature_search_queries(
+            need
         )
 
         if DEBUG_SEARCH:
-
             print(
                 "\n========== Feature Search =========="
             )
@@ -537,40 +490,28 @@ def retrieve_candidates(
                 feature_queries,
             )
 
-        for feature_query in (
-            feature_queries
-        ):
-
+        for feature_query in feature_queries:
             if DEBUG_SEARCH:
-
                 print(
                     "[Feature Query]",
-                    repr(
-                        feature_query
-                    ),
+                    repr(feature_query),
                 )
 
-            tw_feature_products = (
-                search_web(
-                    feature_query,
-                    "tw",
-                )
+            tw_feature_products = search_web(
+                feature_query,
+                "tw",
             )
 
             if tw_feature_products:
-
                 all_products.extend(
                     tw_feature_products
                 )
 
-        all_products = (
-            deduplicate_products(
-                all_products
-            )
+        all_products = deduplicate_products(
+            all_products
         )
 
         if DEBUG_SEARCH:
-
             print(
                 "[Feature Search Results]",
                 len(all_products),
@@ -582,9 +523,7 @@ def retrieve_candidates(
     # ==================================================
 
     if not all_products:
-
         if DEBUG_SEARCH:
-
             print(
                 "\n========== Global Search =========="
             )
@@ -600,19 +539,15 @@ def retrieve_candidates(
         )
 
         if global_products:
-
             all_products.extend(
                 global_products
             )
 
-        all_products = (
-            deduplicate_products(
-                all_products
-            )
+        all_products = deduplicate_products(
+            all_products
         )
 
         if DEBUG_SEARCH:
-
             print(
                 "[Global Primary Results]",
                 len(all_products),
@@ -624,53 +559,37 @@ def retrieve_candidates(
     # ==================================================
 
     if not all_products:
-
-        feature_queries = (
-            build_feature_search_queries(
-                need
-            )
+        feature_queries = build_feature_search_queries(
+            need
         )
 
         if DEBUG_SEARCH:
-
             print(
                 "\n========== Global Feature Search =========="
             )
 
-        for feature_query in (
-            feature_queries
-        ):
-
+        for feature_query in feature_queries:
             if DEBUG_SEARCH:
-
                 print(
                     "[Global Feature Query]",
-                    repr(
-                        feature_query
-                    ),
+                    repr(feature_query),
                 )
 
-            global_feature_products = (
-                search_web(
-                    feature_query,
-                    "global",
-                )
+            global_feature_products = search_web(
+                feature_query,
+                "global",
             )
 
             if global_feature_products:
-
                 all_products.extend(
                     global_feature_products
                 )
 
-        all_products = (
-            deduplicate_products(
-                all_products
-            )
+        all_products = deduplicate_products(
+            all_products
         )
 
         if DEBUG_SEARCH:
-
             print(
                 "[Global Feature Results]",
                 len(all_products),
@@ -681,7 +600,6 @@ def retrieve_candidates(
     # ==================================================
 
     if DEBUG_SEARCH:
-
         print(
             "\n========== Search Final =========="
         )

@@ -1,3 +1,4 @@
+#web_search_service.py
 import os
 
 import requests
@@ -16,7 +17,7 @@ load_dotenv()
 
 SEARCH_CACHE = {}
 
-DEBUG_SEARCH = False
+DEBUG_SEARCH = True
 
 SEARCH_TIMEOUT = 30
 

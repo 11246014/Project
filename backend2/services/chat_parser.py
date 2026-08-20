@@ -116,6 +116,10 @@ def parse_chat_message(message):
                 keyword_result.get("style")
             ),
 
+            negative_style=_none_if_empty(
+                keyword_result.get("negative_style")
+            ),
+
             battery=normalize_battery(
                 keyword_result.get("battery")
             )

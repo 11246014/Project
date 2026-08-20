@@ -195,18 +195,21 @@ def calculate_product_score(
             usage,
             [usage],
         )
+
+        usage_matched = any(
+            keyword.lower() in text
+            for keyword in keywords
+        )
+
         if DEBUG_RANKING:
             print(
                 f"[Usage Debug] "
                 f"usage={usage} | "
                 f"keywords={keywords} | "
-                f"matched={any(keyword.lower() in text for keyword in keywords)}"
+                f"matched={usage_matched}"
             )
 
-        if any(
-            keyword.lower() in text
-            for keyword in keywords
-        ):
+        if usage_matched:
 
             requirement_score += weights["usage"]
 
@@ -224,6 +227,13 @@ def calculate_product_score(
             ):
                 reason_parts.append(reason)
 
+        else:
+
+            adjustment_score -= weights["usage"]
+
+            debug_score.append(
+                f"Usage({usage}) MISMATCH -{weights['usage']}"
+            )
     # ==================================================
     # Required Feature
     # ==================================================
@@ -471,17 +481,18 @@ def calculate_product_score(
             ) / budget_max
 
             budget_penalty = min(
-                weights["budget"],
+                weights["budget"] * 2,
                 round(
                     over_ratio
                     * weights["budget"]
+                    * 2
                 )
             )
 
             requirement_score -= budget_penalty
 
             debug_score.append(
-                f"Budget Over +{-budget_penalty}"
+                f"Budget Over -{budget_penalty}"
             )
             
     # ==================================================

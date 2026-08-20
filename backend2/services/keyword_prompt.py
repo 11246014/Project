@@ -17,6 +17,7 @@ def build_keyword_prompt(user_message):
     "features":[],
     "os":"",
     "style":"",
+    "negative_style":"",
     "battery":"",
     "occupation":"",
     "age_group":"",
@@ -189,6 +190,77 @@ style：
 - 時尚
 - 運動
 
+negative_style：
+
+只有當使用者明確表示「不要、避免、不喜歡、不想要」某種風格時才填寫。
+
+可接受的風格：
+
+- 商務
+- 時尚
+- 運動
+
+例如：
+
+使用者：
+不要太運動風
+
+輸出：
+
+style：
+""
+
+negative_style：
+"運動"
+
+例如：
+
+使用者：
+我想要時尚一點，但不要太運動風
+
+輸出：
+
+style：
+"時尚"
+
+negative_style：
+"運動"
+
+例如：
+
+使用者：
+我想要時尚一點的智慧手錶
+
+輸出：
+
+style：
+"時尚"
+
+negative_style：
+""
+
+例如：
+
+使用者：
+推薦一支跑步智慧手錶
+
+輸出：
+
+style：
+""
+
+negative_style：
+""
+
+注意：
+
+「跑步」、「運動」等使用情境本身屬於 usage，
+不要因為使用者提到跑步或運動，
+就自行設定 negative_style。
+
+只有使用者明確表示不喜歡、不要或避免某種風格時，
+才設定 negative_style。
+
 budget_min：
 最低預算
 
@@ -299,4 +371,18 @@ usage 必須回傳「運動」。
 必須回傳 ""。
 
 19. 不得根據商品種類、品牌、OS、價格或常識補充 usage。
+
+20. 若使用者沒有明確表示不喜歡某種風格，
+negative_style 必須回傳 ""。
+
+21. 不得根據 usage、brand、product_type 或常識推測 negative_style。
+
+22. 「喜歡某種風格」只能填入 style，
+「不喜歡某種風格」只能填入 negative_style。
+
+23. 若使用者同時表示喜歡與不喜歡不同風格，
+style 與 negative_style 分別保留。
+
+24. negative_style 只能表示使用者明確想避免的商品風格，
+不得把使用者不喜歡的功能、品牌或用途放入 negative_style。
 """

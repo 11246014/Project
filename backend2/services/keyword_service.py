@@ -147,6 +147,7 @@ def _keyword_result(
     features=None,
     os=None,
     style=None,
+    negative_style=None,
     battery=None,
     occupation=None,
     age_group=None,
@@ -165,6 +166,7 @@ def _keyword_result(
         "features": _as_list(features),
         "os": _none_if_empty(os),
         "style": _none_if_empty(style),
+        "negative_style": _none_if_empty(negative_style),
         "battery": _none_if_empty(battery),
         "occupation": _none_if_empty(occupation),
         "age_group": _none_if_empty(age_group),
@@ -229,6 +231,7 @@ def _validate_keyword_result(data):
         "features": [],
         "os": "",
         "style": "",
+        "negative_style": "",
         "battery": "",
         "occupation": "",
         "age_group": "",
@@ -254,6 +257,7 @@ def _validate_keyword_result(data):
         "usage",
         "os",
         "style",
+        "negative_style",
         "battery",
         "occupation",
         "age_group",
@@ -309,6 +313,7 @@ def normalize_keyword_result(data, user_message):
         "usage",
         "os",
         "style",
+        "negative_style",
         "battery",
         "occupation",
         "age_group",
@@ -472,6 +477,8 @@ def extract_keyword(user_message):
 
         if device in DEVICE_KEYWORDS:
 
+            print(f"[Device Shortcut] matched: {device}")
+
             return _keyword_result(
                 keyword=DEVICE_KEYWORDS[device]
             )
@@ -568,6 +575,17 @@ def extract_keyword(user_message):
                     data["budget_min"] = data["budget_max"]
                     data["budget_max"] = 0
                     
+            # 使用者只提供單一預算數字，例如「5000元」
+            # 沒有「以上／至少／最低」，
+            # 視為最高預算。
+            elif (
+                data.get("budget_min", 0) > 0
+                and data.get("budget_max", 0) > 0
+                and data.get("budget_min") == data.get("budget_max")
+            ):
+                data["budget_max"] = data["budget_min"]
+                data["budget_min"] = 0
+                    
         print("\n========== Parsed ==========")
         print(data)
 
@@ -630,6 +648,10 @@ def extract_keyword(user_message):
 
                 style=data.get(
                     "style"
+                ),
+
+                negative_style=data.get(
+                    "negative_style"
                 ),
 
                 battery=data.get(
