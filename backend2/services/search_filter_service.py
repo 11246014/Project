@@ -354,6 +354,50 @@ def hard_filter_candidates(
     則啟用 Budget Fallback。
     """
 
+    # ==================================================
+    # Filter Need Debug
+    # ==================================================
+
+    if DEBUG_SEARCH_FILTER:
+
+        print(
+            "\n========== Filter Need Debug =========="
+        )
+
+        print(
+            "device_type =",
+            need.device_type
+        )
+
+        print(
+            "usage =",
+            need.usage
+        )
+
+        print(
+            "features =",
+            need.features
+        )
+
+        print(
+            "os =",
+            need.preferences.os
+        )
+
+        print(
+            "budget_min =",
+            need.budget.min
+        )
+
+        print(
+            "budget_max =",
+            need.budget.max
+        )
+
+        print(
+            "========================================"
+        )
+
     filtered = []
 
     budget_fallback = False
@@ -382,7 +426,8 @@ def hard_filter_candidates(
 
             print(
                 f"[Checking] "
-                f"{product.get('title')}"
+                f"{product.get('title')} "
+                f"| source={product.get('source')}"
             )
 
         # ==================================================
@@ -538,38 +583,10 @@ def hard_filter_candidates(
 
     if filtered:
 
-        # --------------------------------------------------
-        # 如果使用者有指定用途
-        # 優先保留符合用途的商品
-        # --------------------------------------------------
-
-        if getattr(need, "usage", None):
-
-            usage_filtered = [
-                product
-                for product in filtered
-                if match_usage(product, need)
-            ]
-
-            # 有符合用途 + 預算內商品
-            if usage_filtered:
-
-                return (
-                    usage_filtered,
-                    budget_fallback
-                )
-
-            # 沒有符合用途的預算內商品
-            # 不直接 return
-            # 讓後面的 Budget Fallback 尋找
-            # 「符合用途但超出預算」的商品
-
-        else:
-
-            return (
-                filtered,
-                budget_fallback
-            )
+        return (
+            filtered,
+            budget_fallback
+        )
 
     # ==================================================
     # No Budget Condition

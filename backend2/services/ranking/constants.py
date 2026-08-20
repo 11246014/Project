@@ -36,11 +36,16 @@ USAGE_QUERY_TERMS = {
 
 FEATURE_QUERY_TERMS = {
     "gps": "GPS",
+
     "heart_rate": "心率",
+    "心率監測": "心率",
+
     "blood_oxygen": "血氧",
     "ecg": "ECG",
+
     "sleep_tracking": "睡眠",
     "睡眠監測": "睡眠",
+
     "water_resistance": "防水",
 }
 
