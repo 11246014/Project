@@ -25,7 +25,6 @@ class Preferences(BaseModel):
     os: Optional[str] = None
     brand: Optional[str] = None
     style: Optional[str] = None
-    negative_style: Optional[str] = None
     battery: Optional[str] = None
 
 

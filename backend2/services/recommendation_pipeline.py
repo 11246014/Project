@@ -149,12 +149,6 @@ def recommend_from_need(
             need,
         )
     )
-
-    if DEBUG_PIPELINE:
-        print(
-            f"[After Filter] {len(filtered)}"
-        )
-
     # =========================
     # Ranking
     # =========================

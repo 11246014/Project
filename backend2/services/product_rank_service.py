@@ -52,6 +52,10 @@ def rank_products(
 
         product["raw_score"] = result["raw_score"]
 
+        product["required_feature_status"] = result[
+            "required_feature_status"
+        ]
+
         product["match"] = calculate_match_score(
             result["raw_score"]
         )

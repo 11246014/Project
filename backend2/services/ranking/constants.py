@@ -115,7 +115,6 @@ DEVICE_KEYWORDS = {
 # ==================================================
 
 USAGE_KEYWORDS = {
-
     "running": [
         "跑步",
         "跑錶",
@@ -154,8 +153,17 @@ USAGE_KEYWORDS = {
         "心率",
         "血氧",
     ],
-}
 
+    # 新增
+    "日常生活（看時間 / 通知）": [
+        "看時間",
+        "通知",
+        "訊息",
+        "提醒",
+        "notification",
+        "smart notification",
+    ],
+}
 USAGE_REASON = {
     "running": "適合跑步訓練",
     "hiking": "適合登山健行",
@@ -246,7 +254,7 @@ CORE_FACTOR_KEYWORDS = {
     ],
 }
 
-PRIORITY_EVIDENCE_TERMS = {
+PRIORITY_TERMS = {
 
     "battery_life": [
         "長續航",

@@ -12,31 +12,6 @@ DEBUG_SEARCH_FILTER = True
 
 
 # ==================================================
-# Negative Style Keywords
-# ==================================================
-
-NEGATIVE_STYLE_KEYWORDS = {
-
-    "business": [
-        "兒童",
-        "卡通",
-        "玩具",
-    ],
-
-    "fashion": [
-        "軍規",
-        "粗獷",
-    ],
-
-    "運動": [
-        "運動錶",
-        "運動手錶",
-        "運動智慧手錶",
-        "運動手環",
-    ],
-}
-
-# ==================================================
 # OS Compatibility Keywords
 # ==================================================
 
@@ -209,51 +184,6 @@ def match_os(product, need):
 
 
 # ==================================================
-# Negative Style Filter
-# ==================================================
-
-def match_negative(product, need):
-
-    negative_style = getattr(
-        need.preferences,
-        "negative_style",
-        None
-    )
-
-    # 沒有指定負面風格
-    if not negative_style:
-        return True
-
-    title = product.get(
-        "title",
-        ""
-    ).lower()
-
-    desc = product.get(
-        "desc",
-        ""
-    ).lower()
-
-    text = (
-        f"{title} "
-        f"{desc}"
-    )
-
-    bad_keywords = (
-        NEGATIVE_STYLE_KEYWORDS.get(
-            negative_style,
-            []
-        )
-    )
-
-    for keyword in bad_keywords:
-
-        if keyword.lower() in text:
-            return False
-
-    return True
-
-# ==================================================
 # Usage Filter
 # ==================================================
 
@@ -343,12 +273,10 @@ def hard_filter_candidates(
 
     1. Device Type
     2. OS
-    3. Negative Style
-    4. Budget
+    3. Budget
 
     Feature 不在這裡做 Hard Filter。
-    Feature 由 Ranking 的 Feature Evidence
-    統一處理。
+    交給 Ranking 做需求匹配。
 
     如果所有商品都因預算被排除，
     則啟用 Budget Fallback。
@@ -461,24 +389,6 @@ def hard_filter_candidates(
 
                 print(
                     f"[OS Filter] "
-                    f"{product.get('title')}"
-                )
-
-            continue
-
-        # ==================================================
-        # Negative Style
-        # ==================================================
-
-        if not match_negative(
-            product,
-            need
-        ):
-
-            if DEBUG_SEARCH_FILTER:
-
-                print(
-                    f"[Negative Filter] "
                     f"{product.get('title')}"
                 )
 
@@ -615,11 +525,6 @@ def hard_filter_candidates(
         )
 
         and match_os(
-            product,
-            need
-        )
-
-        and match_negative(
             product,
             need
         )
