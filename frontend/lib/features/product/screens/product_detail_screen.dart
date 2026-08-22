@@ -6,6 +6,7 @@ import '../../../core/constants/app_formatters.dart';
 import '../../../core/providers/cart_provider.dart';
 import '../../../core/utils/launch_helper.dart';
 import '../../../shared/widgets/custom_button.dart';
+import '../../../shared/widgets/sponsored_badge.dart';
 
 /// 商品詳情頁
 ///
@@ -80,6 +81,11 @@ class ProductDetailScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
 
+                    // 合作廠商推薦標籤：放在來源平台標籤之上，維持獨立一行
+                    if (product['is_sponsored'] == true) ...[
+                      const SponsoredBadge(),
+                      const SizedBox(height: 8),
+                    ],
                     if (platform.isNotEmpty) _buildSourceBadge(context, platform),
                     const SizedBox(height: 16),
 

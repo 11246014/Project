@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/providers/cart_provider.dart';
 import '../../../services/user_service.dart';
+import '../../../shared/widgets/sponsored_badge.dart';
 
 /// 訊息角色
 enum MessageRole { user, ai }
@@ -406,9 +407,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 合作廠商推薦標籤：後端 is_sponsored 為 true 時才顯示
+                if (product['is_sponsored'] == true) ...[
+                  const SponsoredBadge(),
+                  const SizedBox(height: 4),
+                ],
+                // 商品名稱
                 Text(
                   product['name'],
-                  
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textMain(context),
                     fontWeight: FontWeight.w600,

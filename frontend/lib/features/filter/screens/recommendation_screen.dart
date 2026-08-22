@@ -10,6 +10,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/cart_provider.dart';
 import '../../../services/user_service.dart';
 
+import '../../../shared/widgets/sponsored_badge.dart';
+
 //  StatefulWidget，讓頁面自己打 API
 class RecommendationScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> result;
@@ -408,6 +410,12 @@ class _RecommendationScreenState extends ConsumerState<RecommendationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 合作廠商推薦標籤：後端 is_sponsored 為 true 時才顯示
+                    // 放在名稱正上方，不影響下面既有的排版
+                    if (product['is_sponsored'] == true) ...[
+                      const SponsoredBadge(),
+                      const SizedBox(height: 4),
+                    ],
                     Text(
                       product['name'].toString(),
                       style: AppTextStyles.bodyLarge.copyWith(
