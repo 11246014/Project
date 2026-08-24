@@ -113,6 +113,12 @@ def style_fig(fig: go.Figure, height: int = 320) -> go.Figure:
     )
     fig.update_xaxes(showgrid=False, color=TEXT_SUB, linecolor=BORDER)
     fig.update_yaxes(showgrid=True, gridcolor=BORDER, color=TEXT_SUB, zeroline=False)
+    
+    # 預設 hover 提示裡的「=」換成「：」
+    for trace in fig.data:
+        if trace.hovertemplate:
+            trace.hovertemplate = trace.hovertemplate.replace("=", "：")
+    
     return fig
 
 
@@ -192,7 +198,7 @@ with st.sidebar:
     )
 
     st.markdown("**時間範圍**")
-    st.caption("資料庫本身會持續累積，不會因為選了某個區間就被清空，這裡只是決定「這次要看哪一段時間」。")
+    st.caption("選擇時間範圍")
     date_range = st.date_input(
         "選擇日期區間", value=(data_min_date, data_max_date),
         min_value=data_min_date, max_value=data_max_date,
@@ -286,8 +292,8 @@ top_device = device_counter.most_common(1)[0][0] if device_counter else "—"
 kpi_cols = st.columns(4)
 kpi_card(kpi_cols[0], "篩選後事件數", f"{len(filtered_df)}", f"共 {len(events_df)} 筆資料中")
 kpi_card(kpi_cols[1], "熱門使用情境", top_usage.split("（")[0], f"{usage_counter[top_usage]} 次提及")
-kpi_card(kpi_cols[2], "熱門合作平台", top_platform, f"{platform_counter[top_platform]} 次曝光")
-kpi_card(kpi_cols[3], "合作品牌曝光佔比", f"{sponsored_ratio:.1f}%", "推薦結果第1名品牌中")
+kpi_card(kpi_cols[2], "熱門來源平台", top_platform, f"{platform_counter[top_platform]} 次曝光")
+kpi_card(kpi_cols[3], "最關注的功能需求", top_feature, f"{feature_counter[top_feature]} 次提及")
 
 st.write("")
 
@@ -320,7 +326,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # Tab 1：需求與預算
 # ------------------------------------------------------------
 with tab1:
-    section_title("使用情境分布（問卷第1題，可複選）")
+    section_title("使用情境分布")
     df_usage = counter_to_df(usage_counter, "使用情境")
     fig_usage = px.bar(df_usage, x="次數", y="使用情境", orientation="h", text="次數")
     fig_usage.update_traces(marker_color=BLUE, textposition="outside")
@@ -383,7 +389,7 @@ with tab2:
     with col3:
         st.markdown('<div class="chart-card">', unsafe_allow_html=True)
         st.markdown("**使用情境定位**")
-        st.caption("問卷第9題（個人使用 / 家庭共用 / 送禮，選填）")
+        st.caption("個人使用 / 家庭共用 / 送禮")
         if usage_scope_counter:
             df_scope = counter_to_df(usage_scope_counter, "情境")
             fig = px.pie(df_scope, names="情境", values="次數", hole=0.55)
@@ -426,7 +432,7 @@ with tab3:
     st.plotly_chart(style_fig(fig_brand, height=320), use_container_width=True)
 
     st.write("")
-    section_title("合作平台曝光次數")
+    section_title("來源平台曝光次數")
     df_platform = counter_to_df(platform_counter, "平台")
     fig_platform = px.bar(df_platform, x="平台", y="次數", text="次數")
     fig_platform.update_traces(marker_color=BLUE_LIGHT, textposition="outside")
