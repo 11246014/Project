@@ -31,8 +31,9 @@ import plotly.graph_objects as go
 import pandas as pd
 from collections import Counter
 from datetime import datetime, timedelta
+import requests
 
-from mock_data import MOCK_EVENTS, SPONSORED_BRANDS
+from mock_data import MOCK_EVENTS, SPONSORED_BRANDS, BUDGET_OPTIONS
 
 # ============================================================
 # 頁面基本設定
@@ -174,8 +175,40 @@ def count_multi_value_column(df: pd.DataFrame, column: str, sep: str = ",") -> C
 # 之後後端1把 /analytics/events 接上後，只要把這行換成呼叫 API，
 # 下面所有統計、篩選、圖表程式碼都不用改。
 # ============================================================
-events_df = pd.DataFrame(MOCK_EVENTS)
+# 開關：後端1的 /analytics/events 還沒好之前先用 True
+USE_MOCK_DATA = True
+API_BASE = "https://champion-sandpit-rash.ngrok-free.dev"  # 後端1的 ngrok 網址
+
+if USE_MOCK_DATA:
+    events_df = pd.DataFrame(MOCK_EVENTS)
+else:
+    events_df = pd.DataFrame(
+        requests.get(
+            f"{API_BASE}/analytics/events",
+            headers={"ngrok-skip-browser-warning": "true"},
+        ).json()
+    )
+
 events_df["created_at"] = pd.to_datetime(events_df["created_at"])
+
+# budget_min/budget_max 換算成跟問卷一致的級距文字，
+# 沿用原本 "budget_bucket" 欄位名稱，下面圖表程式碼不用再改
+events_df["budget_bucket"] = pd.cut(
+    events_df[["budget_min", "budget_max"]].mean(axis=1),
+    bins=[-1, 5000, 15000, 30000, float("inf")],
+    labels=BUDGET_OPTIONS,
+)
+
+# 特別處理「跳過預算題」的情況（min=0 且 max=999999），
+# 不能被 pd.cut 誤判成「30,000以上」，要獨立標成「未填寫」
+skipped_budget = (events_df["budget_min"] == 0) & (events_df["budget_max"] == 999999)
+events_df["budget_bucket"] = events_df["budget_bucket"].astype(str)
+events_df.loc[skipped_budget, "budget_bucket"] = ""
+
+# 所有可能跳過的單選欄位，一次補空字串，避免變成假分類 "nan"
+skippable_columns = ["os", "device_type", "usage_scope"]
+for col in skippable_columns:
+    events_df[col] = events_df[col].fillna("")
 
 data_min_date = events_df["created_at"].min().date()
 data_max_date = events_df["created_at"].max().date()
@@ -264,8 +297,8 @@ budget_counter = count_single_value_column(filtered_df, "budget_bucket")
 os_counter = count_single_value_column(filtered_df, "os")
 age_counter = count_single_value_column(filtered_df, "age_range")
 usage_scope_counter = count_single_value_column(filtered_df, "usage_scope", drop_empty=True)
-brand_counter = count_single_value_column(filtered_df, "top_brand")
-platform_counter = count_single_value_column(filtered_df, "top_platform")
+brand_counter = count_multi_value_column(filtered_df, "top_brands")
+platform_counter = count_multi_value_column(filtered_df, "top_platforms")
 source_counter = count_single_value_column(filtered_df, "source")
 
 df_trend = (
@@ -303,7 +336,7 @@ st.write("")
 insight_text = f"""
 在目前篩選範圍（{start_date} ～ {end_date}，來源：{ "、".join(selected_sources) }）中，
 使用者最主要的使用情境是 <b>{top_usage}</b>，最關注的功能需求是 <b>{top_feature}</b>，
-裝置偏好以 <b>{top_device}</b> 為主；推薦結果第1名中，合作品牌
+裝置偏好以 <b>{top_device}</b> 為主；推薦結果前3名中，合作品牌
 （{ "、".join(sponsored_set) }）合計佔 <b>{sponsored_ratio:.1f}%</b>，
 <b>{top_brand}</b> 是曝光次數最高的品牌，來源平台以 <b>{top_platform}</b> 曝光最多。
 """
@@ -419,7 +452,7 @@ with tab2:
 with tab3:
     st.caption("🥇 標示為「合作品牌」的長條會用金色特別標示，方便對照加權效果")
 
-    section_title("品牌關注度（推薦結果第1名的品牌次數）")
+    section_title("品牌關注度（推薦結果前3名的品牌次數）")
     df_brand = counter_to_df(brand_counter, "品牌")
     df_brand["是否合作"] = df_brand["品牌"].apply(
         lambda b: "合作品牌" if b in sponsored_set else "一般品牌"

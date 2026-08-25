@@ -52,14 +52,22 @@ BUDGET_OPTIONS = [
     "NT$30,000以上",
 ]
 
+# 每個預算選項對應的實際數字區間，跟後端 budget_min/budget_max 一致
+BUDGET_RANGES = {
+    "NT$1,000–5,000": (1000, 5000),
+    "NT$5,000–15,000": (5000, 15000),
+    "NT$15,000–30,000": (15000, 30000),
+    "NT$30,000以上": (30000, 60000),
+}
+
 # 第5題：作業系統（單選）
-OS_OPTIONS = ["iOS", "Android", "跨平台（皆可）"]
+OS_OPTIONS = ["iOS", "Android", "跨平台（皆可）", None]
 
 # 第6題：裝置類型（單選）
-DEVICE_OPTIONS = ["手錶", "手環", "戒指", "其他"]
+DEVICE_OPTIONS = ["手錶", "手環", "戒指", "其他", None]
 
 # 第9題：使用情境定位（選填，可能為空）
-USAGE_SCOPE_OPTIONS = ["個人使用", "家庭共用", "要送禮", ""]
+USAGE_SCOPE_OPTIONS = ["個人使用", "家庭共用", "要送禮", None]
 
 # 年齡層（對齊個人資訊欄位）
 AGE_RANGE_OPTIONS = ["18歲以下", "19–25歲", "26–35歲", "36–45歲", "46–55歲", "56歲以上"]
@@ -111,23 +119,29 @@ def generate_mock_events(n: int = 180, days: int = 30, seed: int = 42) -> list[d
         )
         feature_picks = list(dict.fromkeys(feature_picks))
 
+         # 預算：多加一個 None 選項代表「跳過這題」，對應 min=0,max=999999
+        budget_choice = _weighted_choice(
+            BUDGET_OPTIONS + [None], weights=[15, 40, 28, 9, 8]
+        )[0]
+        if budget_choice is None:
+            budget_min, budget_max = 0, 999999
+        else:
+            budget_min, budget_max = BUDGET_RANGES[budget_choice]
+
         events.append({
             "created_at": created_at.strftime("%Y-%m-%d"),
             "source": _weighted_choice(SOURCE_OPTIONS, weights=[63, 37])[0],
             "usage": ",".join(usage_picks),
             "features": ",".join(feature_picks),
-            "device_type": _weighted_choice(DEVICE_OPTIONS, weights=[55, 35, 8, 2])[0],
-            "budget_bucket": _weighted_choice(BUDGET_OPTIONS, weights=[16, 44, 30, 10])[0],
-            "os": _weighted_choice(OS_OPTIONS, weights=[46, 48, 6])[0],
+            "device_type": _weighted_choice(DEVICE_OPTIONS, weights=[52, 33, 8, 2, 5])[0],
+            "budget_min": budget_min,
+            "budget_max": budget_max,
+            "os": _weighted_choice(OS_OPTIONS, weights=[44, 46, 5, 5])[0],
             "age_range": _weighted_choice(AGE_RANGE_OPTIONS, weights=[3, 32, 40, 16, 6, 3])[0],
             "usage_scope": _weighted_choice(USAGE_SCOPE_OPTIONS, weights=[55, 15, 10, 20])[0],
-            # 合作品牌權重稍微提高，模擬加權後曝光變多的效果
-            "top_brand": _weighted_choice(
-                BRAND_OPTIONS, weights=[26, 24, 20, 18, 12]
-            )[0],
-            "top_platform": _weighted_choice(
-                PLATFORM_OPTIONS, weights=[37, 26, 23, 14]
-            )[0],
+            # 合作品牌權重稍微提高，模擬加權後曝光變多的效果；每次事件推薦前3名品牌/平台
+            "top_brands": ",".join(_weighted_choice(BRAND_OPTIONS, weights=[26, 24, 20, 18, 12], k=3)),
+            "top_platforms": ",".join(_weighted_choice(PLATFORM_OPTIONS, weights=[37, 26, 23, 14], k=3)),
         })
 
     return events
