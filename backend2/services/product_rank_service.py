@@ -14,6 +14,9 @@ from services.ranking.score_engine import (
     calculate_product_score,
 )
 
+from services.backend1_client import (
+    get_sponsors,
+)
 
 # ==================================================
 # Match Score
@@ -99,11 +102,42 @@ def rank_products(
         # ==================================================
         # Sponsor Boost
         # ==================================================
-        # 目前尚未接 Backend1 Sponsor API
-        # 因此 boost rate 暫時為 0。
-        # ==================================================
+
+        sponsors = get_sponsors()
 
         sponsor_boost_rate = 0
+        is_sponsored = False
+
+        product_brand = str(
+            product.get(
+                "brand",
+                ""
+            )
+        ).strip().lower()
+
+        for sponsor in sponsors:
+
+            sponsor_brand = str(
+                sponsor.get(
+                    "brand_name",
+                    ""
+                )
+            ).strip().lower()
+
+            if product_brand == sponsor_brand:
+
+                sponsor_boost_rate = float(
+                    sponsor.get(
+                        "boost_rate",
+                        0
+                    )
+                )
+
+                is_sponsored = (
+                    sponsor_boost_rate > 0
+                )
+
+                break
 
         final_score = calculate_final_score(
             base_score,
@@ -112,7 +146,7 @@ def rank_products(
 
         product["final_score"] = final_score
 
-        product["is_sponsored"] = False
+        product["is_sponsored"] = is_sponsored
 
         # ==================================================
         # 舊前端欄位
@@ -196,7 +230,7 @@ def rank_products(
         ranked.sort(
             key=lambda item: (
                 item.get(
-                    "raw_score",
+                    "final_score",
                     0
                 ),
                 -price_distance(item),
@@ -213,7 +247,7 @@ def rank_products(
         ranked.sort(
             key=lambda item: (
                 item.get(
-                    "raw_score",
+                    "final_score",
                     0
                 ),
                 item.get(

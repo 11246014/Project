@@ -107,24 +107,30 @@ def score_preferences(
     """
 
     score = 0
-
     text = _text(product)
 
+    # Battery / 長續航
     if (
         need.preferences
         and need.preferences.battery
         and "battery_life" not in _list(need.priorities)
     ):
+        battery_terms = PRIORITY_TERMS["battery_life"]
 
-        battery_terms = PRIORITY_TERMS[
-            "battery_life"
-        ]
-
-        if any(
+        battery_matched = any(
             term.lower() in text
             for term in battery_terms
-        ):
+        )
 
+        if DEBUG_RANKING:
+            print(
+                f"[Battery Debug] "
+                f"need={need.preferences.battery} | "
+                f"terms={battery_terms} | "
+                f"matched={battery_matched}"
+            )
+
+        if battery_matched:
             score += 10
 
     return score
@@ -365,13 +371,6 @@ def calculate_product_score(
 
             required_feature_failed = True
 
-            adjustment_score -= (
-                weight * 2
-            )
-
-            debug_score.append(
-                f"Feature({feature_name}) FAILED -{weight * 2}"
-            )
             
     # ==================================================
     # Priority
