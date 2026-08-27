@@ -7,7 +7,6 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.future import select
-
 from sqlalchemy.orm import Session,declarative_base, sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from models import PromptTemplateCreate
@@ -25,7 +24,15 @@ from sqlalchemy import (
     Text,
     ForeignKey,
     DateTime,
+    Boolean,
+    Float,
+    JSON,
     func,
+)
+from schemas import (
+    SponsorListResponse,
+    RecommendationEventCreate,
+    AnalyticsSummaryResponse,
 )
 from passlib.context import CryptContext
 
@@ -169,6 +176,86 @@ class History(Base):
     platform = Column(String(255))
     created_at = Column(DateTime, server_default=func.now())
 
+
+# 合作廠商
+class SponsoredBrand(Base):
+
+    __tablename__ = "sponsored_brands"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    brand_name = Column(
+        String(255),
+        nullable=False,
+        index=True
+    )
+
+    platform = Column(
+        String(255),
+        nullable=False,
+        index=True
+    )
+
+    sponsor_level = Column(
+        String(50),
+        nullable=False,
+        default="standard"
+    )
+
+    boost_rate = Column(
+        Float,
+        nullable=False,
+        default=0.0
+    )
+
+    is_active = Column(
+        Boolean,
+        nullable=False,
+        default=True
+    )
+
+    created_at = Column(
+        DateTime,
+        server_default=func.now()
+    )
+
+    updated_at = Column(
+        DateTime,
+        server_default=func.now(),
+        onupdate=func.now()
+    )
+
+# 推薦事件模型
+
+class RecommendationEvent(Base):
+
+    __tablename__ = "recommendation_events"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    timestamp = Column(
+        DateTime,
+        server_default=func.now(),
+        nullable=False
+    )
+
+    user_need = Column(
+        JSON,
+        nullable=False
+    )
+
+    recommend_results = Column(
+        JSON,
+        nullable=False
+    )
 # =========================
 # 註冊 API
 # =========================
@@ -605,6 +692,243 @@ def get_me(
         "occupation": user.occupation,
         "usage_scope": user.usage_scope,
         "current_device": user.current_device
+    }
+# =========================
+# Sponsor API
+# =========================
+
+@app.get(
+    "/sponsors",
+    response_model=SponsorListResponse
+)
+def get_sponsors(
+    db: Session = Depends(get_db)
+):
+
+    sponsors = crud.get_active_sponsors(db)
+
+    return {
+        "sponsors": sponsors
+    }
+# =========================
+# Analytics Event API
+# =========================
+
+@app.post("/analytics/events")
+def create_analytics_event(
+    event: RecommendationEventCreate,
+    db: Session = Depends(get_db)
+):
+
+    record = crud.create_recommendation_event(
+        db,
+        event
+    )
+
+    return {
+        "success": True,
+        "event_id": record.id
+    }
+# =========================
+# Analytics Summary API
+# =========================
+
+@app.get(
+    "/analytics/summary",
+    response_model=AnalyticsSummaryResponse
+)
+def get_analytics_summary(
+    db: Session = Depends(get_db)
+):
+
+    events = crud.get_recommendation_events(db)
+
+    total_recommendations = len(events)
+
+    brand_counts = {}
+    product_counts = {}
+
+    total_match_score = 0
+    match_score_count = 0
+
+    sponsored_count = 0
+    total_products = 0
+
+    for event in events:
+
+        results = event.recommend_results or []
+
+        for product in results:
+
+            # =========================
+            # Brand
+            # =========================
+
+            brand = product.get(
+                "brand",
+                ""
+            )
+
+            if brand:
+
+                brand_counts[brand] = (
+                    brand_counts.get(
+                        brand,
+                        0
+                    ) + 1
+                )
+
+            # =========================
+            # Product
+            # =========================
+
+            name = product.get(
+                "name",
+                ""
+            )
+
+            if name:
+
+                product_counts[name] = (
+                    product_counts.get(
+                        name,
+                        0
+                    ) + 1
+                )
+
+            # =========================
+            # Match Score
+            # =========================
+
+            match = product.get(
+                "base_score"
+            )
+
+            if match is None:
+
+                match = product.get(
+                    "match"
+                )
+
+            if match is not None:
+
+                try:
+
+                    total_match_score += float(
+                        match
+                    )
+
+                    match_score_count += 1
+
+                except (
+                    TypeError,
+                    ValueError
+                ):
+                    pass
+
+            # =========================
+            # Sponsored
+            # =========================
+
+            total_products += 1
+
+            if product.get(
+                "is_sponsored",
+                False
+            ):
+
+                sponsored_count += 1
+
+    # =========================
+    # Popular Brands
+    # =========================
+
+    popular_brands = [
+
+        {
+            "brand": brand,
+            "count": count
+        }
+
+        for brand, count
+        in sorted(
+            brand_counts.items(),
+            key=lambda item: item[1],
+            reverse=True
+        )[:10]
+    ]
+
+    # =========================
+    # Popular Products
+    # =========================
+
+    popular_products = [
+
+        {
+            "name": name,
+            "count": count
+        }
+
+        for name, count
+        in sorted(
+            product_counts.items(),
+            key=lambda item: item[1],
+            reverse=True
+        )[:10]
+    ]
+
+    # =========================
+    # Average Match Score
+    # =========================
+
+    if match_score_count > 0:
+
+        average_match_score = (
+            total_match_score
+            / match_score_count
+        )
+
+    else:
+
+        average_match_score = 0.0
+
+    # =========================
+    # Sponsored Exposure
+    # =========================
+
+    if total_products > 0:
+
+        sponsored_exposure_rate = (
+            sponsored_count
+            / total_products
+        )
+
+    else:
+
+        sponsored_exposure_rate = 0.0
+
+    return {
+
+        "total_recommendations":
+            total_recommendations,
+
+        "popular_brands":
+            popular_brands,
+
+        "popular_products":
+            popular_products,
+
+        "average_match_score":
+            round(
+                average_match_score,
+                2
+            ),
+
+        "sponsored_exposure_rate":
+            round(
+                sponsored_exposure_rate,
+                4
+            ),
     }
 #歷史紀錄 Schema
 
