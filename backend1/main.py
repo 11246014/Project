@@ -837,4 +837,21 @@ def get_analytics_events(db: Session = Depends(get_db)):
     for e in events
 
         ]
+# =========================
+# Sponsor API
+# =========================
+
+@app.get(
+    "/sponsors",
+    response_model=SponsorListResponse
+)
+def get_sponsors(
+    db: Session = Depends(get_db)
+):
+
+    sponsors = crud.get_active_sponsors(db)
+
+    return {
+        "sponsors": sponsors
+    }
 models.Base.metadata.create_all(bind=engine)
