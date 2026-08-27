@@ -702,6 +702,44 @@ def get_me(
         "usage_scope": user.usage_scope,
         "current_device": user.current_device
 }
+# =========================
+# Sponsor CRUD
+# =========================
+
+def get_active_sponsors(db: Session):
+
+    return (
+        db.query(models.SponsoredBrand)
+        .filter(
+            models.SponsoredBrand.is_active == True
+        )
+        .all()
+    )
+
+
+# =========================
+# Analytics CRUD
+# =========================
+
+def create_recommendation_event(db: Session, event_data):
+    new_event = models.RecommendationEvent(**event_data.model_dump())
+    db.add(new_event)
+    db.commit()
+    db.refresh(new_event)
+    return new_event
+
+
+def get_recommendation_events(db: Session):
+
+    return (
+        db.query(
+            models.RecommendationEvent
+        )
+        .order_by(
+            models.RecommendationEvent.timestamp.desc()
+        )
+        .all()
+    )
 
 #歷史紀錄 Schema
 
@@ -713,6 +751,7 @@ class HistoryItem(BaseModel):
     tags: List[str] = []
     rating: float = 0
     platform: str = ""
+
 
 
 # =========================
