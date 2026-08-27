@@ -14,7 +14,7 @@ from services.ranking.constants import (
     FEATURE_KEYWORDS,
     FEATURE_QUERY_TERMS,
     FEATURE_REASON,
-    PRIORITY_EVIDENCE_TERMS,
+    PRIORITY_TERMS,
     USAGE_KEYWORDS,
     USAGE_REASON,
 )
@@ -107,24 +107,30 @@ def score_preferences(
     """
 
     score = 0
-
     text = _text(product)
 
+    # Battery / 長續航
     if (
         need.preferences
         and need.preferences.battery
         and "battery_life" not in _list(need.priorities)
     ):
+        battery_terms = PRIORITY_TERMS["battery_life"]
 
-        battery_terms = PRIORITY_EVIDENCE_TERMS[
-            "battery_life"
-        ]
-
-        if any(
+        battery_matched = any(
             term.lower() in text
             for term in battery_terms
-        ):
+        )
 
+        if DEBUG_RANKING:
+            print(
+                f"[Battery Debug] "
+                f"need={need.preferences.battery} | "
+                f"terms={battery_terms} | "
+                f"matched={battery_matched}"
+            )
+
+        if battery_matched:
             score += 10
 
     return score
@@ -229,10 +235,8 @@ def calculate_product_score(
 
         else:
 
-            adjustment_score -= weights["usage"]
-
             debug_score.append(
-                f"Usage({usage}) MISMATCH -{weights['usage']}"
+                f"Usage({usage}) UNKNOWN"
             )
     # ==================================================
     # Required Feature
@@ -257,7 +261,7 @@ def calculate_product_score(
         )
 
         # --------------------------------------------------
-        # Feature Evidence
+        # Feature Match
         # --------------------------------------------------
 
         feature_text_match = any(
@@ -279,27 +283,23 @@ def calculate_product_score(
             metadata_value = product.get("gps")
 
         # --------------------------------------------------
-        # Evidence Status
+        # Feature Match Status
         #
-        # ok      = 有明確證據
-        # unknown = 沒有足夠證據
+        # ok      = 商品資料有命中
+        # unknown = 目前商品資料不足，無法判定
         # failed  = 明確不符合
         # --------------------------------------------------
 
         if metadata_value is True:
-            evidence = True
             feature_status = "ok"
 
         elif feature_list_match or feature_text_match:
-            evidence = True
             feature_status = "ok"
 
         elif metadata_value is False:
-            evidence = False
             feature_status = "failed"
 
         else:
-            evidence = None
             feature_status = "unknown"
 
         if DEBUG_RANKING:
@@ -311,7 +311,7 @@ def calculate_product_score(
                 f"feature_list={features} | "
                 f"text_match={feature_text_match} | "
                 f"list_match={feature_list_match} | "
-                f"evidence={evidence}"
+                f"status={feature_status}"
             )
 
             print(
@@ -353,10 +353,8 @@ def calculate_product_score(
 
             required_feature_unknown = True
 
-            adjustment_score -= weight
-
             debug_score.append(
-                f"Feature({feature_name}) UNKNOWN -{weight}"
+                f"Feature({feature_name}) UNKNOWN +0"
             )
 
         elif feature_status == "failed":
@@ -370,6 +368,9 @@ def calculate_product_score(
             debug_score.append(
                 f"Feature({feature_name}) FAILED -{weight * 2}"
             )
+
+            required_feature_failed = True
+
             
     # ==================================================
     # Priority
@@ -377,7 +378,7 @@ def calculate_product_score(
 
     for priority in _list(need.priorities):
 
-        evidence_terms = PRIORITY_EVIDENCE_TERMS.get(
+        evidence_terms = PRIORITY_TERMS.get(
             priority,
             [priority],
         )
@@ -657,4 +658,5 @@ def calculate_product_score(
         "raw_score": score,
         "score": score,
         "reason": reason,
+        "required_feature_status": required_feature_status,
     }

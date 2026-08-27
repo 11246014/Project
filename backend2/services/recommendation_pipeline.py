@@ -25,6 +25,7 @@ from services.search_query_builder import (
 )
 
 from services.backend1_client import (
+    log_recommendation_event,
     save_product,
 )
 
@@ -149,12 +150,6 @@ def recommend_from_need(
             need,
         )
     )
-
-    if DEBUG_PIPELINE:
-        print(
-            f"[After Filter] {len(filtered)}"
-        )
-
     # =========================
     # Ranking
     # =========================
@@ -280,6 +275,17 @@ def recommend_from_need(
 
     formatted_products = format_products(
         top_products,
+    )
+
+    # =========================
+    # Log Recommendation Event
+    # =========================
+    # 推薦流程完成後，將匿名化需求快照與最終推薦結果
+    # 送給 Backend1，寫入 recommendation_events。
+    # 統計紀錄失敗不應影響推薦結果本身。
+    log_recommendation_event(
+        need,
+        formatted_products,
     )
 
     if DEBUG_PIPELINE:

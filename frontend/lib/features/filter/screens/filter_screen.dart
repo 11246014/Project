@@ -312,6 +312,7 @@ class _FilterScreenState extends ConsumerState<FilterScreen> {
       AppRoutes.recommendation,
       extra: {'filters': filters, 'loading': true},
     );
+    
   }
 
   @override

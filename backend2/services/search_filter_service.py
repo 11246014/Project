@@ -12,31 +12,6 @@ DEBUG_SEARCH_FILTER = True
 
 
 # ==================================================
-# Negative Style Keywords
-# ==================================================
-
-NEGATIVE_STYLE_KEYWORDS = {
-
-    "business": [
-        "兒童",
-        "卡通",
-        "玩具",
-    ],
-
-    "fashion": [
-        "軍規",
-        "粗獷",
-    ],
-
-    "運動": [
-        "運動錶",
-        "運動手錶",
-        "運動智慧手錶",
-        "運動手環",
-    ],
-}
-
-# ==================================================
 # OS Compatibility Keywords
 # ==================================================
 
@@ -209,51 +184,6 @@ def match_os(product, need):
 
 
 # ==================================================
-# Negative Style Filter
-# ==================================================
-
-def match_negative(product, need):
-
-    negative_style = getattr(
-        need.preferences,
-        "negative_style",
-        None
-    )
-
-    # 沒有指定負面風格
-    if not negative_style:
-        return True
-
-    title = product.get(
-        "title",
-        ""
-    ).lower()
-
-    desc = product.get(
-        "desc",
-        ""
-    ).lower()
-
-    text = (
-        f"{title} "
-        f"{desc}"
-    )
-
-    bad_keywords = (
-        NEGATIVE_STYLE_KEYWORDS.get(
-            negative_style,
-            []
-        )
-    )
-
-    for keyword in bad_keywords:
-
-        if keyword.lower() in text:
-            return False
-
-    return True
-
-# ==================================================
 # Usage Filter
 # ==================================================
 
@@ -343,16 +273,58 @@ def hard_filter_candidates(
 
     1. Device Type
     2. OS
-    3. Negative Style
-    4. Budget
+    3. Budget
 
     Feature 不在這裡做 Hard Filter。
-    Feature 由 Ranking 的 Feature Evidence
-    統一處理。
+    交給 Ranking 做需求匹配。
 
     如果所有商品都因預算被排除，
     則啟用 Budget Fallback。
     """
+
+    # ==================================================
+    # Filter Need Debug
+    # ==================================================
+
+    if DEBUG_SEARCH_FILTER:
+
+        print(
+            "\n========== Filter Need Debug =========="
+        )
+
+        print(
+            "device_type =",
+            need.device_type
+        )
+
+        print(
+            "usage =",
+            need.usage
+        )
+
+        print(
+            "features =",
+            need.features
+        )
+
+        print(
+            "os =",
+            need.preferences.os
+        )
+
+        print(
+            "budget_min =",
+            need.budget.min
+        )
+
+        print(
+            "budget_max =",
+            need.budget.max
+        )
+
+        print(
+            "========================================"
+        )
 
     filtered = []
 
@@ -382,7 +354,8 @@ def hard_filter_candidates(
 
             print(
                 f"[Checking] "
-                f"{product.get('title')}"
+                f"{product.get('title')} "
+                f"| source={product.get('source')}"
             )
 
         # ==================================================
@@ -416,24 +389,6 @@ def hard_filter_candidates(
 
                 print(
                     f"[OS Filter] "
-                    f"{product.get('title')}"
-                )
-
-            continue
-
-        # ==================================================
-        # Negative Style
-        # ==================================================
-
-        if not match_negative(
-            product,
-            need
-        ):
-
-            if DEBUG_SEARCH_FILTER:
-
-                print(
-                    f"[Negative Filter] "
                     f"{product.get('title')}"
                 )
 
@@ -538,38 +493,10 @@ def hard_filter_candidates(
 
     if filtered:
 
-        # --------------------------------------------------
-        # 如果使用者有指定用途
-        # 優先保留符合用途的商品
-        # --------------------------------------------------
-
-        if getattr(need, "usage", None):
-
-            usage_filtered = [
-                product
-                for product in filtered
-                if match_usage(product, need)
-            ]
-
-            # 有符合用途 + 預算內商品
-            if usage_filtered:
-
-                return (
-                    usage_filtered,
-                    budget_fallback
-                )
-
-            # 沒有符合用途的預算內商品
-            # 不直接 return
-            # 讓後面的 Budget Fallback 尋找
-            # 「符合用途但超出預算」的商品
-
-        else:
-
-            return (
-                filtered,
-                budget_fallback
-            )
+        return (
+            filtered,
+            budget_fallback
+        )
 
     # ==================================================
     # No Budget Condition
@@ -598,11 +525,6 @@ def hard_filter_candidates(
         )
 
         and match_os(
-            product,
-            need
-        )
-
-        and match_negative(
             product,
             need
         )

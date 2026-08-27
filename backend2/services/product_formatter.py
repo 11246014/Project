@@ -91,6 +91,21 @@ def format_product(product):
             0
         ),
 
+        "base_score": product.get(
+            "base_score",
+            product.get("match", 0)
+        ),
+
+        "final_score": product.get(
+            "final_score",
+            product.get("base_score", product.get("match", 0))
+        ),
+
+        "is_sponsored": product.get(
+            "is_sponsored",
+            False
+        ),
+
         "reason": product.get(
             "reason",
             ""

@@ -112,6 +112,7 @@ def _build_user_need_context(user_need):
         user_need.budget
         and user_need.budget.max
         and user_need.budget.max > 0
+        and user_need.budget.max < 999999
     ):
         lines.append(
             f"預算：約 "
@@ -798,6 +799,7 @@ def generate_summary(
         budget_fallback
         and user_need.budget
         and user_need.budget.max
+        and user_need.budget.max < 999999
     ):
         budget_notice = (
             f"未找到符合 {user_need.budget.max} 元以下預算的商品，"
