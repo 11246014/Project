@@ -226,24 +226,47 @@ async def get_db_products():
 # =========================
 
 def get_sponsors():
+    """
+    取得 Backend1 的合作廠商資料。
+
+    Backend1 /sponsors 回傳格式：
+    {
+        "sponsors": [...]
+    }
+
+    這裡只回傳 sponsors list，
+    讓後面的 Ranking 可以直接：
+        for sponsor in sponsors:
+    """
 
     try:
 
         response = requests.get(
-
             f"{BASE_URL}/sponsors",
-
             timeout=10
         )
 
+        response.raise_for_status()
+
         data = response.json()
 
-        return data
+        return data.get(
+            "sponsors",
+            []
+        )
 
-    except Exception as e:
+    except requests.RequestException as e:
 
         print(
-            f"[Sponsor Search Error] {e}"
+            f"[Backend1 Sponsor Error] {e}"
+        )
+
+        return []
+
+    except ValueError as e:
+
+        print(
+            f"[Backend1 Sponsor JSON Error] {e}"
         )
 
         return []
