@@ -71,17 +71,12 @@ def create_recommendation_event(
     if event_data.timestamp is not None:
         event_kwargs["timestamp"] = event_data.timestamp
 
-    new_event = models.RecommendationEvent(
-        **event_kwargs
-    )
+        new_event = models.RecommendationEvent(**event_data.model_dump())
+        db.add(new_event)
+        db.commit()
+        db.refresh(new_event)
+        return new_event
 
-    db.add(new_event)
-
-    db.commit()
-
-    db.refresh(new_event)
-
-    return new_event
 
 
 def get_recommendation_events(db: Session):
@@ -94,4 +89,10 @@ def get_recommendation_events(db: Session):
             models.RecommendationEvent.timestamp.desc()
         )
         .all()
+    )
+def get_all_recommendation_events(db: Session):
+    return (
+    db.query(models.RecommendationEvent)
+    .order_by(models.RecommendationEvent.created_at.desc())
+    .all()
     )

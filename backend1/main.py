@@ -232,30 +232,39 @@ class SponsoredBrand(Base):
 # 推薦事件模型
 
 class RecommendationEvent(Base):
-
     __tablename__ = "recommendation_events"
+    id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime, server_default=func.now())
+    source = Column(String(20))
+    age_range = Column(String(50), nullable=True)
+    occupation = Column(String(100), nullable=True)
+    usage_scope = Column(String(50), nullable=True)
+    device_type = Column(String(50), nullable=True)
+    usage = Column(String(255), nullable=True) # 逗號分隔
+    features = Column(String(255), nullable=True) # 逗號分隔
+    os = Column(String(50), nullable=True)
+    brand_preference = Column(String(100), nullable=True)
+    budget_min = Column(Integer, nullable=True)
+    budget_max = Column(Integer, nullable=True)
+    top_brands = Column(String(255), nullable=True) # 逗號分隔
+    top_platforms = Column(String(255), nullable=True) # 逗號分隔
+    product_count = Column(Integer, default=0)
 
-    id = Column(
-        Integer,
-        primary_key=True,
-        index=True
-    )
-
-    timestamp = Column(
-        DateTime,
-        server_default=func.now(),
-        nullable=False
-    )
-
-    user_need = Column(
-        JSON,
-        nullable=False
-    )
-
-    recommend_results = Column(
-        JSON,
-        nullable=False
-    )
+class RecommendationEventCreate(BaseModel):
+    source: str
+    age_range: Optional[str] = None
+    occupation: Optional[str] = None
+    usage_scope: Optional[str] = None
+    device_type: Optional[str] = None
+    usage: Optional[str] = None
+    features: Optional[str] = None
+    os: Optional[str] = None
+    brand_preference: Optional[str] = None
+    budget_min: Optional[int] = None
+    budget_max: Optional[int] = None
+    top_brands: Optional[str] = None
+    top_platforms: Optional[str] = None
+    product_count: int = 0
 # =========================
 # 註冊 API
 # =========================
@@ -692,244 +701,8 @@ def get_me(
         "occupation": user.occupation,
         "usage_scope": user.usage_scope,
         "current_device": user.current_device
-    }
-# =========================
-# Sponsor API
-# =========================
+}
 
-@app.get(
-    "/sponsors",
-    response_model=SponsorListResponse
-)
-def get_sponsors(
-    db: Session = Depends(get_db)
-):
-
-    sponsors = crud.get_active_sponsors(db)
-
-    return {
-        "sponsors": sponsors
-    }
-# =========================
-# Analytics Event API
-# =========================
-
-@app.post("/analytics/events")
-def create_analytics_event(
-    event: RecommendationEventCreate,
-    db: Session = Depends(get_db)
-):
-
-    record = crud.create_recommendation_event(
-        db,
-        event
-    )
-
-    return {
-        "success": True,
-        "event_id": record.id
-    }
-# =========================
-# Analytics Summary API
-# =========================
-
-@app.get(
-    "/analytics/summary",
-    response_model=AnalyticsSummaryResponse
-)
-def get_analytics_summary(
-    db: Session = Depends(get_db)
-):
-
-    events = crud.get_recommendation_events(db)
-
-    total_recommendations = len(events)
-
-    brand_counts = {}
-    product_counts = {}
-
-    total_match_score = 0
-    match_score_count = 0
-
-    sponsored_count = 0
-    total_products = 0
-
-    for event in events:
-
-        results = event.recommend_results or []
-
-        for product in results:
-
-            # =========================
-            # Brand
-            # =========================
-
-            brand = product.get(
-                "brand",
-                ""
-            )
-
-            if brand:
-
-                brand_counts[brand] = (
-                    brand_counts.get(
-                        brand,
-                        0
-                    ) + 1
-                )
-
-            # =========================
-            # Product
-            # =========================
-
-            name = product.get(
-                "name",
-                ""
-            )
-
-            if name:
-
-                product_counts[name] = (
-                    product_counts.get(
-                        name,
-                        0
-                    ) + 1
-                )
-
-            # =========================
-            # Match Score
-            # =========================
-
-            match = product.get(
-                "base_score"
-            )
-
-            if match is None:
-
-                match = product.get(
-                    "match"
-                )
-
-            if match is not None:
-
-                try:
-
-                    total_match_score += float(
-                        match
-                    )
-
-                    match_score_count += 1
-
-                except (
-                    TypeError,
-                    ValueError
-                ):
-                    pass
-
-            # =========================
-            # Sponsored
-            # =========================
-
-            total_products += 1
-
-            if product.get(
-                "is_sponsored",
-                False
-            ):
-
-                sponsored_count += 1
-
-    # =========================
-    # Popular Brands
-    # =========================
-
-    popular_brands = [
-
-        {
-            "brand": brand,
-            "count": count
-        }
-
-        for brand, count
-        in sorted(
-            brand_counts.items(),
-            key=lambda item: item[1],
-            reverse=True
-        )[:10]
-    ]
-
-    # =========================
-    # Popular Products
-    # =========================
-
-    popular_products = [
-
-        {
-            "name": name,
-            "count": count
-        }
-
-        for name, count
-        in sorted(
-            product_counts.items(),
-            key=lambda item: item[1],
-            reverse=True
-        )[:10]
-    ]
-
-    # =========================
-    # Average Match Score
-    # =========================
-
-    if match_score_count > 0:
-
-        average_match_score = (
-            total_match_score
-            / match_score_count
-        )
-
-    else:
-
-        average_match_score = 0.0
-
-    # =========================
-    # Sponsored Exposure
-    # =========================
-
-    if total_products > 0:
-
-        sponsored_exposure_rate = (
-            sponsored_count
-            / total_products
-        )
-
-    else:
-
-        sponsored_exposure_rate = 0.0
-
-    return {
-
-        "total_recommendations":
-            total_recommendations,
-
-        "popular_brands":
-            popular_brands,
-
-        "popular_products":
-            popular_products,
-
-        "average_match_score":
-            round(
-                average_match_score,
-                2
-            ),
-
-        "sponsored_exposure_rate":
-            round(
-                sponsored_exposure_rate,
-                4
-            ),
-    }
 #歷史紀錄 Schema
 
 
@@ -1000,5 +773,28 @@ def get_history(
             "viewedAt": r.created_at.strftime("%m/%d %H:%M") if r.created_at else "",
         }
         for r in records
+    ]
+@app.get("/analytics/events")
+def get_analytics_events(db: Session = Depends(get_db)):
+    events = crud.get_all_recommendation_events(db)
+    return [
+    {
+    "created_at": e.created_at.strftime("%Y-%m-%d") if e.created_at else None,
+    "source": e.source,
+    "age_range": e.age_range,
+    "occupation": e.occupation,
+    "usage_scope": e.usage_scope,
+    "device_type": e.device_type,
+    "usage": e.usage,
+    "features": e.features,
+    "os": e.os,
+    "brand_preference": e.brand_preference,
+    "budget_min": e.budget_min,
+    "budget_max": e.budget_max,
+    "top_brands": e.top_brands,
+    "top_platforms": e.top_platforms,
+    "product_count": e.product_count,
+    }
+    for e in events
     ]
 models.Base.metadata.create_all(bind=engine)
