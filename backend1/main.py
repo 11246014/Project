@@ -796,5 +796,6 @@ def get_analytics_events(db: Session = Depends(get_db)):
     "product_count": e.product_count,
     }
     for e in events
-    ]
+
+        ]
 models.Base.metadata.create_all(bind=engine)
