@@ -573,33 +573,6 @@ def detect_brand(title):
 
     return "Other"
 
-# =========================
-# Recommendation Reason
-# =========================
-
-def generate_reason(
-    keyword,
-    rating
-):
-
-    if rating >= 4.5:
-
-        return (
-            f"高評價商品，"
-            f"適合有「{keyword}」需求的使用者"
-        )
-
-    if rating >= 4.0:
-
-        return (
-            f"熱門選擇，"
-            f"符合「{keyword}」使用情境"
-        )
-
-    return (
-        f"符合「{keyword}」需求"
-    )
-
 
 # =========================
 # Feature Extraction
