@@ -200,6 +200,39 @@ else:
         st.error("後端回應的不是 JSON 格式，以下是實際收到的內容：")
         st.code(response.text[:1000])
         st.stop()
+        
+# ============================================================
+# 合作品牌名單：跟事件資料用同一個 USE_MOCK_DATA 開關，行為保持一致
+# ------------------------------------------------------------
+# 原本 SPONSORED_BRANDS 是從 mock_data.py import 進來的寫死清單，
+# 不管 USE_MOCK_DATA 開關為何都不會變。這裡改成：
+# 真實模式下即時打後端1的 /sponsors，資料庫刪掉/新增合作品牌時，
+# 畫面上的金色標示跟贊助曝光佔比會馬上反映，不用重開 dashboard。
+# ============================================================
+if not USE_MOCK_DATA:
+    try:
+        sponsors_response = requests.get(
+            f"{API_BASE}/sponsors",
+            headers={"ngrok-skip-browser-warning": "true"},
+            timeout=10,
+        )
+        sponsors_response.raise_for_status()
+        SPONSORED_BRANDS = [
+            s["brand_name"]
+            for s in sponsors_response.json().get("sponsors", [])
+        ]
+    except Exception:
+        # 抓不到的話，退回 mock_data.py 裡寫死的清單，至少畫面不會壞掉
+        st.warning("無法取得最新合作品牌名單，暫時顯示預設清單")
+        
+# 資料表目前完全沒有任何事件時，不要讓後面的程式碼直接 KeyError
+if events_df.empty:
+    st.markdown(
+        '<div class="empty-state">📭　資料庫目前還沒有任何推薦事件紀錄，'
+        '請確認資料庫 /analytics/events 是否已收到 POST 請求（可能是後端2尚未成功寫入）</div>',
+        unsafe_allow_html=True,
+    )
+    st.stop()
 
 events_df["created_at"] = pd.to_datetime(events_df["created_at"])
 
