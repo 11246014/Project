@@ -165,21 +165,7 @@ class UserProfileUpdate(BaseModel):
     current_device: str=""
 
 
-class RecommendationEventCreate(BaseModel):
-    source: str
-    age_range: Optional[str] = None
-    occupation: Optional[str] = None
-    usage_scope: Optional[str] = None
-    device_type: Optional[str] = None
-    usage: Optional[str] = None
-    features: Optional[str] = None
-    os: Optional[str] = None
-    brand_preference: Optional[str] = None
-    budget_min: Optional[int] = None
-    budget_max: Optional[int] = None
-    top_brands: Optional[str] = None
-    top_platforms: Optional[str] = None
-    product_count: int = 0
+
 # =========================
 # 註冊 API
 # =========================
@@ -769,4 +755,11 @@ def get_sponsors(
     return {
         "sponsors": sponsors
     }
+@app.post("/analytics/events")
+def create_analytics_event(
+ event: RecommendationEventCreate,
+ db: Session = Depends(get_db),
+):
+ crud.create_recommendation_event(db, event)
+ return {"message": "已記錄推薦事件"}
 models.Base.metadata.create_all(bind=engine)

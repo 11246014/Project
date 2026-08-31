@@ -58,27 +58,6 @@ def get_active_sponsors(db: Session):
 # Analytics CRUD
 # =========================
 
-def create_recommendation_event(
-    db: Session,
-    event_data,
-):
-
-    event_kwargs = {
-        "user_need": event_data.user_need,
-        "recommend_results": event_data.recommend_results,
-    }
-
-    if event_data.timestamp is not None:
-        event_kwargs["timestamp"] = event_data.timestamp
-
-        new_event = models.RecommendationEvent(**event_data.model_dump())
-        db.add(new_event)
-        db.commit()
-        db.refresh(new_event)
-        return new_event
-
-
-
 def get_recommendation_events(db: Session):
 
     return (
@@ -96,3 +75,16 @@ def get_all_recommendation_events(db: Session):
     .order_by(models.RecommendationEvent.created_at.desc())
     .all()
     )
+def create_recommendation_event(
+    db: Session,
+    event_data
+):
+    new_event = models.RecommendationEvent(
+        **event_data.model_dump()
+    )
+
+    db.add(new_event)
+    db.commit()
+    db.refresh(new_event)
+
+    return new_event

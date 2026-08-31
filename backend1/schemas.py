@@ -41,18 +41,21 @@ class SponsorListResponse(BaseModel):
     sponsors: List[SponsorResponse]
 
 
-# =========================
-# Analytics Event Schema
-# =========================
-
 class RecommendationEventCreate(BaseModel):
-
-    timestamp: Optional[datetime] = None
-
-    user_need: Dict[str, Any]
-
-    recommend_results: List[Dict[str, Any]]
-
+    source: str
+    age_range: Optional[str] = None
+    occupation: Optional[str] = None
+    usage_scope: Optional[str] = None
+    device_type: Optional[str] = None
+    usage: Optional[str] = None
+    features: Optional[str] = None
+    os: Optional[str] = None
+    brand_preference: Optional[str] = None
+    budget_min: Optional[int] = None
+    budget_max: Optional[int] = None
+    top_brands: Optional[str] = None
+    top_platforms: Optional[str] = None
+    product_count: int = 0
 
 # =========================
 # Analytics Summary Schema
