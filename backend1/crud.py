@@ -75,3 +75,16 @@ def get_all_recommendation_events(db: Session):
     .order_by(models.RecommendationEvent.created_at.desc())
     .all()
     )
+def create_recommendation_event(
+    db: Session,
+    event_data
+):
+    new_event = models.RecommendationEvent(
+        **event_data.model_dump()
+    )
+
+    db.add(new_event)
+    db.commit()
+    db.refresh(new_event)
+
+    return new_event
