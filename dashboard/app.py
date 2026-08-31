@@ -176,18 +176,30 @@ def count_multi_value_column(df: pd.DataFrame, column: str, sep: str = ",") -> C
 # 下面所有統計、篩選、圖表程式碼都不用改。
 # ============================================================
 # 開關：後端1的 /analytics/events 還沒好之前先用 True
-USE_MOCK_DATA = True
+USE_MOCK_DATA = False
 API_BASE = "https://champion-sandpit-rash.ngrok-free.dev"  # 後端1的 ngrok 網址
 
 if USE_MOCK_DATA:
     events_df = pd.DataFrame(MOCK_EVENTS)
 else:
-    events_df = pd.DataFrame(
-        requests.get(
-            f"{API_BASE}/analytics/events",
-            headers={"ngrok-skip-browser-warning": "true"},
-        ).json()
+    response = requests.get(
+        f"{API_BASE}/analytics/events",
+        headers={"ngrok-skip-browser-warning": "true"},
+        timeout=10,
     )
+
+    # 先檢查 HTTP 狀態碼跟實際回傳內容，不要直接 .json()
+    if response.status_code != 200:
+        st.error(f"後端回應狀態碼異常：{response.status_code}")
+        st.code(response.text[:1000])  # 印出前1000字，看實際回了什麼
+        st.stop()
+
+    try:
+        events_df = pd.DataFrame(response.json())
+    except ValueError:
+        st.error("後端回應的不是 JSON 格式，以下是實際收到的內容：")
+        st.code(response.text[:1000])
+        st.stop()
 
 events_df["created_at"] = pd.to_datetime(events_df["created_at"])
 
