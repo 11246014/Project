@@ -945,11 +945,6 @@ def clean_product(
             rating * 10
         ),
 
-        "reason": generate_reason(
-            keyword,
-            rating
-        ),
-
         "brand": detect_brand(
             clean_name
         ),
