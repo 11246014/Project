@@ -407,6 +407,10 @@ def normalize_keyword_result(data, user_message):
                         feature
                     )
 
+                # 睡眠同時屬於「使用情境」與「功能需求」
+                if item not in new_usage:
+                    new_usage.append(item)
+
             else:
 
                 if item not in new_usage:
@@ -547,10 +551,7 @@ def extract_keyword(user_message):
                 user_message
             ):
 
-                if (
-                    data.get("budget_min", 0) > 0
-                    and data.get("budget_max", 0) == 0
-                ):
+                if data.get("budget_min", 0) > 0:
 
                     data["budget_max"] = data["budget_min"]
                     data["budget_min"] = 0

@@ -1,4 +1,5 @@
-#recommendation_service.py
+# recommendation_service.py
+
 import time
 
 from services.ai_service import ask_ai
@@ -18,7 +19,146 @@ from services.summary_service import (
 user_history = []
 
 
-def recommend_products(user_message, persona=None):
+# =========================
+# Need Completeness Check
+# =========================
+
+def is_need_complete(user_need):
+    """
+    判斷目前使用者需求是否足夠開始商品推薦。
+
+    目前採用簡單規則：
+
+    1. 必須知道商品類型
+    2. 至少要有一項實際需求：
+       - 用途
+       - 功能
+       - 預算
+
+    需求不足時，不進入 Search / Ranking。
+    """
+
+    if not user_need:
+        return False
+
+    # =========================
+    # Product Type
+    # =========================
+
+    has_device_type = bool(
+        user_need.device_type
+    )
+
+    # =========================
+    # Usage
+    # =========================
+
+    has_usage = bool(
+        user_need.usage
+    )
+
+    # =========================
+    # Features
+    # =========================
+
+    has_features = bool(
+        user_need.features
+    )
+
+    # =========================
+    # Budget
+    # =========================
+
+    has_budget = (
+        user_need.budget.min is not None
+        or
+        user_need.budget.max is not None
+    )
+
+    # =========================
+    # Final Check
+    # =========================
+
+    return (
+        has_device_type
+        and
+        has_usage
+        and
+        has_features
+        and
+        has_budget
+    )
+
+# =========================
+# Follow-up Question
+# =========================
+
+def generate_follow_up(user_need):
+    """
+    根據目前缺少的需求，
+    依照固定優先順序詢問下一個問題。
+    """
+
+    # =========================
+    # 1. 用途
+    # =========================
+
+    if not user_need.usage:
+
+        return (
+            "想先了解一下，你主要會把這支智慧手錶拿來做什麼呢？"
+            "例如運動、睡眠監測，還是日常看時間和通知？"
+        )
+
+    # =========================
+    # 2. 功能
+    # =========================
+
+    if not user_need.features:
+
+        return (
+            "了解～那你有沒有特別想要的功能呢？"
+            "例如心率監測、睡眠追蹤、GPS 或血氧監測？"
+        )
+
+    # =========================
+    # 3. 預算
+    # =========================
+
+    if (
+        user_need.budget.min is None
+        and
+        user_need.budget.max is None
+    ):
+
+        return (
+            "了解～那你的預算大概落在哪個範圍呢？"
+        )
+
+    # =========================
+    # 4. 其他偏好
+    # =========================
+
+    if not user_need.preferences.os:
+
+        return (
+            "另外，你平常使用 iPhone 還是 Android 手機呢？"
+        )
+
+    # =========================
+    # 5. 已經足夠
+    # =========================
+
+    return None
+
+# =========================
+# Main Recommendation
+# =========================
+
+def recommend_products(
+    user_message,
+    persona=None
+):
 
     total_start = time.time()
 
@@ -31,7 +171,8 @@ def recommend_products(user_message, persona=None):
         # =========================
 
         intent = detect_intent(
-            user_message
+            user_message,
+            in_recommendation=bool(user_history)
         )
 
         print(
@@ -44,13 +185,27 @@ def recommend_products(user_message, persona=None):
 
         if intent == "chat":
 
+            chat_prompt = f"""
+請使用繁體中文回答使用者。
+
+使用者：
+{user_message}
+
+要求：
+
+1. 使用自然、親切的繁體中文。
+2. 不要使用簡體中文。
+3. 不需要推薦商品，除非使用者明確提出商品需求。
+4. 回答要像自然聊天，不要像制式客服。
+"""
+
             reply = ask_ai(
-                user_message
+                chat_prompt
             )
 
             return {
 
-                "summary": reply,
+                "summary": reply.strip(),
 
                 "products": [],
 
@@ -71,11 +226,17 @@ def recommend_products(user_message, persona=None):
             user_history
         )
 
-        print("\n========== Conversation ==========")
+        print(
+            "\n========== Conversation =========="
+        )
 
-        print(conversation)
+        print(
+            conversation
+        )
 
-        print("==================================\n")
+        print(
+            "==================================\n"
+        )
 
         # =========================
         # Chat Parser
@@ -88,32 +249,120 @@ def recommend_products(user_message, persona=None):
         )
 
         user_need = recommendation_request.need
-        
+
         # =========================
-        # 結構化 Persona 覆蓋
-        # 前端已將年齡層／職業／目前裝置結構化傳入，
-        # 若有值則優先採用，不依賴 AI 從文字重新猜測，
-        # 避免猜錯或漏抓。usage_scope 對話推薦不需要，故不覆蓋。
+        # Structured Persona Override
+        # =========================
+        #
+        # 前端已將：
+        # - 年齡層
+        # - 職業
+        # - 目前裝置
+        #
+        # 結構化傳入。
+        #
+        # 若有值則優先採用。
         # =========================
 
         if persona:
+
             if persona.get("age_range"):
-                user_need.persona.age_range = persona["age_range"]
+
+                user_need.persona.age_range = (
+                    persona["age_range"]
+                )
 
             if persona.get("occupation"):
-                user_need.persona.occupation = persona["occupation"]
+
+                user_need.persona.occupation = (
+                    persona["occupation"]
+                )
 
             if persona.get("current_device"):
-                user_need.persona.current_device = persona["current_device"]
+
+                user_need.persona.current_device = (
+                    persona["current_device"]
+                )
 
         print(
-            f"[Persona Merged] {user_need.persona}"
+            f"[Persona Merged] "
+            f"{user_need.persona}"
         )
 
         print(
             f"[Keyword Time] "
             f"{time.time() - keyword_start:.2f}s"
         )
+
+        # =========================
+        # Need Completeness Check
+        # =========================
+
+        print(
+            "\n========== Need Check =========="
+        )
+
+        print(
+            f"Device Type: "
+            f"{user_need.device_type}"
+        )
+
+        print(
+            f"Usage: "
+            f"{user_need.usage}"
+        )
+
+        print(
+            f"Features: "
+            f"{user_need.features}"
+        )
+
+        print(
+            f"Budget: "
+            f"{user_need.budget}"
+        )
+
+        need_complete = is_need_complete(
+            user_need
+        )
+
+        print(
+            f"[Need Complete] "
+            f"{need_complete}"
+        )
+
+        print(
+            "================================\n"
+        )
+
+        # =========================
+        # Need Not Complete
+        # =========================
+
+        if not need_complete:
+
+            print(
+                "[Recommendation] "
+                "Need incomplete -> Follow-up"
+            )
+
+            follow_up = generate_follow_up(
+                user_need
+            )
+
+            print(
+                f"[Follow-up] "
+                f"{follow_up}"
+            )
+
+            return {
+
+                "summary": follow_up,
+
+                "products": [],
+
+                "user_need": user_need.to_dict(),
+            }
 
         # =========================
         # Recommendation Pipeline
@@ -125,33 +374,45 @@ def recommend_products(user_message, persona=None):
             user_need
         )
 
-        formatted_products = result["products"]
+        formatted_products = (
+            result["products"]
+        )
 
-        budget_fallback = result["budget_fallback"]
+        budget_fallback = (
+            result["budget_fallback"]
+        )
 
-        search_query = result["search_query"]
+        search_query = (
+            result["search_query"]
+        )
 
         print(
             f"[Pipeline Time] "
             f"{time.time() - pipeline_start:.2f}s"
         )
 
-        print("\n====== Recommend Start ======")
-
         print(
-            f"User: {user_message}"
+            "\n====== Recommend Start ======"
         )
 
         print(
-            f"Search Query: {search_query}"
+            f"User: "
+            f"{user_message}"
         )
 
         print(
-            f"Budget Fallback: {budget_fallback}"
+            f"Search Query: "
+            f"{search_query}"
         )
 
         print(
-            f"Products: {len(formatted_products)}"
+            f"Budget Fallback: "
+            f"{budget_fallback}"
+        )
+
+        print(
+            f"Products: "
+            f"{len(formatted_products)}"
         )
 
         # =========================
@@ -171,6 +432,7 @@ def recommend_products(user_message, persona=None):
 
                 "user_need": user_need.to_dict(),
             }
+
         # =========================
         # Summary
         # =========================
@@ -188,7 +450,9 @@ def recommend_products(user_message, persona=None):
             f"{time.time() - summary_start:.2f}s"
         )
 
-        print("====== Recommend End ======\n")
+        print(
+            "====== Recommend End ======\n"
+        )
 
         print(
             f"[Total Time] "
@@ -213,7 +477,8 @@ def recommend_products(user_message, persona=None):
         import traceback
 
         print(
-            f"[Recommendation Error] {e}"
+            f"[Recommendation Error] "
+            f"{e}"
         )
 
         traceback.print_exc()
