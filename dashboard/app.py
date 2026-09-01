@@ -481,7 +481,7 @@ with tab2:
     section_title("年齡層分布")
     df_age = counter_to_df(age_counter, "年齡層")
     # 依年齡層邏輯順序排列，而不是依次數排序，閱讀起來更直覺
-    age_order = ["18歲以下", "19–25歲", "26–35歲", "36–45歲", "46–55歲", "56歲以上"]
+    age_order = ["18 歲以下", "19–25 歲", "26–35 歲", "36–45 歲", "46–55 歲", "56 歲以上"]
     df_age["年齡層"] = pd.Categorical(df_age["年齡層"], categories=age_order, ordered=True)
     df_age = df_age.sort_values("年齡層")
     fig_age = px.bar(df_age, x="年齡層", y="次數", text="次數")
@@ -525,8 +525,14 @@ with tab3:
 # ------------------------------------------------------------
 with tab4:
     section_title(f"每日查詢趨勢（{start_date} ～ {end_date}）")
-    fig_trend = px.area(df_trend, x="date", y="count")
-    fig_trend.update_traces(line_color=BLUE, fillcolor="rgba(59,130,246,0.15)")
+    # 把日期轉成純文字字串，並強制用類別軸（category）而非連續時間軸（date），
+    # 避免資料只落在單一天時，Plotly 自動把刻度細分到毫秒等級；
+    # 之後累積多天資料後，X 軸也只會顯示乾淨的日期字串，不會有時間細節
+    df_trend_display = df_trend.copy()
+    df_trend_display["date"] = df_trend_display["date"].astype(str)
+    fig_trend = px.bar(df_trend_display, x="date", y="count", text="count")
+    fig_trend.update_traces(marker_color=BLUE, textposition="outside")
+    fig_trend.update_xaxes(type="category")
     fig_trend.update_layout(xaxis_title="", yaxis_title="事件數")
     st.plotly_chart(style_fig(fig_trend, height=320), use_container_width=True)
 

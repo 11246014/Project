@@ -70,7 +70,7 @@ DEVICE_OPTIONS = ["手錶", "手環", "戒指", "其他", None]
 USAGE_SCOPE_OPTIONS = ["個人使用", "家庭共用", "要送禮", None]
 
 # 年齡層（對齊個人資訊欄位）
-AGE_RANGE_OPTIONS = ["18歲以下", "19–25歲", "26–35歲", "36–45歲", "46–55歲", "56歲以上"]
+AGE_RANGE_OPTIONS = ["18 歲以下", "19–25 歲", "26–35 歲", "36–45 歲", "46–55 歲", "56 歲以上"]
 
 # 推薦結果中，第1名商品的品牌／平台（用來驗證合作加權效果）
 BRAND_OPTIONS = ["Garmin", "Apple", "Amazfit", "Xiaomi", "Samsung"]
