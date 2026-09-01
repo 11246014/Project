@@ -251,7 +251,7 @@ events_df["budget_bucket"] = events_df["budget_bucket"].astype(str)
 events_df.loc[skipped_budget, "budget_bucket"] = ""
 
 # 所有可能跳過的單選欄位，一次補空字串，避免變成假分類 "nan"
-skippable_columns = ["os", "device_type", "usage_scope"]
+skippable_columns = ["os", "device_type", "usage_scope", "age_range"]
 for col in skippable_columns:
     events_df[col] = events_df[col].fillna("")
 
