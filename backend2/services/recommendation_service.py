@@ -79,25 +79,75 @@ def is_need_complete(user_need):
     # Final Check
     # =========================
 
+    has_actual_requirement = (
+        has_usage
+        or
+        has_features
+        or
+        has_budget
+    )
+
     return (
         has_device_type
         and
-        has_usage
-        and
-        has_features
-        and
-        has_budget
+        has_actual_requirement
+    )
+
+def wants_recommendation_guidance(user_message):
+    """
+    判斷使用者是否表示自己不確定需求，
+    並希望系統協助決定。
+    """
+
+    text = user_message.lower()
+
+    guidance_keywords = [
+        "不知道",
+        "不確定",
+        "沒想法",
+        "你推薦",
+        "你幫我選",
+        "幫我挑",
+        "你覺得哪種",
+        "都可以",
+    ]
+
+    return any(
+        keyword in text
+        for keyword in guidance_keywords
     )
 
 # =========================
 # Follow-up Question
 # =========================
 
-def generate_follow_up(user_need):
-    """
-    根據目前缺少的需求，
-    依照固定優先順序詢問下一個問題。
-    """
+def generate_follow_up(
+    user_need,
+    user_message=None
+):
+
+    # =========================
+    # 0. 使用者希望系統協助決定
+    # =========================
+
+    if (
+        user_message
+        and
+        wants_recommendation_guidance(
+            user_message
+        )
+    ):
+
+        if (
+            user_need.budget.min is None
+            and
+            user_need.budget.max is None
+        ):
+
+            return (
+                "可以～那我可以依照一般使用需求幫你挑。"
+                "先確認一下，你大概希望控制在多少預算內呢？"
+            )
 
     # =========================
     # 1. 用途
@@ -107,9 +157,8 @@ def generate_follow_up(user_need):
 
         return (
             "想先了解一下，你主要會把這支智慧手錶拿來做什麼呢？"
-            "例如運動、睡眠監測，還是日常看時間和通知？"
+            "例如運動、睡眠監測，還是日常使用？"
         )
-
     # =========================
     # 2. 功能
     # =========================
