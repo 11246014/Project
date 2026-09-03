@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_text_styles.dart';
+import '../../../core/providers/cart_provider.dart'; // 新增：登入後同步購物車
 import '../../../shared/widgets/custom_button.dart';
 import '../widgets/auth_text_field.dart';
 import '../../../services/auth_service.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -31,7 +33,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   /// 登入處理邏輯
-  /// W2 串接 API 時只需替換此函式內容
   Future<void> _handleLogin() async {
     // 先執行表單驗證，未通過則直接返回
     if (!_formKey.currentState!.validate()) return;
@@ -39,13 +40,16 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO W2：替換為真實 API 呼叫
-      // 例如：await AuthService.login(email, password);
       final token = await AuthService.login(
         _emailController.text,
         _passwordController.text,
       );
       await const FlutterSecureStorage().write(key: 'token', value: token);
+
+      // 新增：登入成功後，把雲端購物車同步到本地
+      // 這裡刻意 await，確保進首頁前資料已經同步完成，避免畫面短暫閃爍舊資料
+      await ref.read(cartProvider.notifier).loadFromServer();
+
       // 登入成功，跳轉首頁
       if (mounted) context.go(AppRoutes.home);
     } catch (e) {
@@ -160,50 +164,52 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// 頂部品牌 Logo + 標題
   Widget _buildHeader() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // App 品牌 Logo
-      Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.borderColor(context),
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // App 品牌 Logo
+        Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.borderColor(context),
+              width: 1.5,
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: Image.asset(
-            'assets/images/LOGO.png',
-            width: 64,
-            height: 64,
-            fit: BoxFit.contain,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.asset(
+              'assets/images/LOGO.png',
+              width: 64,
+              height: 64,
+              fit: BoxFit.contain,
+            ),
           ),
         ),
-      ),
-      const SizedBox(height: 24),
-      Text('歡迎回來', style: AppTextStyles.displayLarge.copyWith(color: AppColors.textMain(context))),
-      const SizedBox(height: 8),
-      Text(
-        '登入以探索智慧穿戴裝置推薦',
-        style: AppTextStyles.bodyLarge.copyWith(
-  color: AppColors.textMain(context),
-),
-      ),
-    ],
-  );
-}
+        const SizedBox(height: 24),
+        Text('歡迎回來',
+            style: AppTextStyles.displayLarge
+                .copyWith(color: AppColors.textMain(context))),
+        const SizedBox(height: 8),
+        Text(
+          '登入以探索智慧穿戴裝置推薦',
+          style: AppTextStyles.bodyLarge.copyWith(
+            color: AppColors.textMain(context),
+          ),
+        ),
+      ],
+    );
+  }
 
   /// 中間分隔線（或）
   Widget _buildDivider() {
