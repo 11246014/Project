@@ -24,16 +24,31 @@ from services.backend1_client import (
 
 def calculate_match_score(raw_score):
     """
-    將 Raw Score 映射成前端顯示的 Match (%)
+    將 Raw Score 轉成前端展示用 Match (%)
+
+    原則：
+    - 保留原本分數差距
+    - 低於 60 時平滑拉高
+    - 60 ~ 100 基本保留
+    - 超過 100 時壓回 100 以下
     """
 
-    score = round(raw_score)
+    score = float(raw_score)
+
+    # 低於 60：往 60 拉近，但保留差距
+    if score < 60:
+        score = 60 + (score * 0.22)
+
+    # 超過 100：壓縮到 100 以下
+    elif score > 100:
+        score = 100 - ((score - 100) * 0.5)
+
+    score = round(score)
 
     return max(
-        0,
-        min(score, 100)
+        60,
+        min(score, 99)
     )
-
 
 # ==================================================
 # Final Score
@@ -257,6 +272,36 @@ def rank_products(
             ),
             reverse=True,
         )
+    # ==================================================
+    # Match Score Display
+    # ==================================================
+    # 真正的 Ranking 已經完成，
+    # 這裡只調整前端顯示用的 match，
+    # 不影響 final_score 與實際排名。
+
+    previous_raw_score = None
+    tie_offset = 0
+
+    for product in ranked:
+
+        current_raw_score = product.get(
+            "raw_score",
+            0
+        )
+
+        if current_raw_score == previous_raw_score:
+            tie_offset += 1
+        else:
+            tie_offset = 0
+
+        display_score = max(
+            60,
+            product.get("base_score", 60) - tie_offset
+        )
+
+        product["match"] = display_score
+
+        previous_raw_score = current_raw_score
 
     # ==================================================
     # Return

@@ -26,6 +26,11 @@ TITLE_REMOVE_PATTERNS = [
     r"免運",
     r"聖誕禮物",
     r"交換禮物",
+
+    # 購物平台促銷 / 地區資訊
+    r"Mastercard\s*再減\$?\d+",
+    r"香港行貨",
+    r"香港貨",
 ]
 
 FEATURE_KEYWORDS = {
