@@ -167,6 +167,104 @@ def count_multi_value_column(df: pd.DataFrame, column: str, sep: str = ",") -> C
                 counter[item] += 1
     return counter
 
+# ============================================================
+# 使用情境 / 裝置類型 標籤正規化（顯示層）
+# ------------------------------------------------------------
+# 問卷（FilterScreen）送出的是完整選項字串，但 AI 聊天室那邊
+# 經過 backend2 的 normalize_usage() 正規化後，會變成不同粒度
+# 的詞（running / sleep / 運動...），導致「使用情境分布」把
+# 同一種情境拆成好幾條 bar。這裡統一對應回問卷的 5 個分類。
+# 不修改後端2的邏輯，避免影響 AI 比對/評分。
+# ============================================================
+USAGE_LABEL_MAP = {
+    # 運動（跑步 / 健身 / 戶外）
+    "運動": "運動（跑步 / 健身 / 戶外）",
+    "運動（跑步／健身／戶外）": "運動（跑步 / 健身 / 戶外）",
+    "running": "運動（跑步 / 健身 / 戶外）",
+    "run": "運動（跑步 / 健身 / 戶外）",
+    "跑步": "運動（跑步 / 健身 / 戶外）",
+    "健身": "運動（跑步 / 健身 / 戶外）",
+    "hiking": "運動（跑步 / 健身 / 戶外）",
+    "outdoor": "運動（跑步 / 健身 / 戶外）",
+    "登山": "運動（跑步 / 健身 / 戶外）",
+    "戶外": "運動（跑步 / 健身 / 戶外）",
+
+    # 日常生活（看時間 / 通知）
+    "日常": "日常生活（看時間 / 通知）",
+    "日常生活": "日常生活（看時間 / 通知）",
+    "看時間": "日常生活（看時間 / 通知）",
+    "通知": "日常生活（看時間 / 通知）",
+
+    # 工作 / 商務（訊息 / 行事曆）
+    "商務": "工作 / 商務（訊息 / 行事曆）",
+    "工作": "工作 / 商務（訊息 / 行事曆）",
+    "訊息": "工作 / 商務（訊息 / 行事曆）",
+    "行事曆": "工作 / 商務（訊息 / 行事曆）",
+    "business": "工作 / 商務（訊息 / 行事曆）",
+    "office": "工作 / 商務（訊息 / 行事曆）",
+
+    # 健康管理（心率 / 睡眠）
+    "health": "健康管理（心率 / 睡眠）",
+    "health_monitoring": "健康管理（心率 / 睡眠）",
+    "健康": "健康管理（心率 / 睡眠）",
+    "健康監測": "健康管理（心率 / 睡眠）",
+    "sleep": "健康管理（心率 / 睡眠）",
+    "sleep_monitoring": "健康管理（心率 / 睡眠）",
+    "sleep_tracking": "健康管理（心率 / 睡眠）",
+    "睡眠": "健康管理（心率 / 睡眠）",
+    "睡眠監測": "健康管理（心率 / 睡眠）",
+    "心率": "健康管理（心率 / 睡眠）",
+
+    # 穿搭 / 外型
+    "穿搭": "穿搭 / 外型",
+    "外型": "穿搭 / 外型",
+    "style": "穿搭 / 外型",
+    "fashion": "穿搭 / 外型",
+}
+
+
+def normalize_usage_label(raw: str) -> str:
+    """把單一使用情境字串對應回問卷的 5 個標準分類；查不到就維持原字串
+    （這樣未來若出現新詞彙，圖表上還是看得到，方便回來補字典，
+    而不是被吃掉查不出問題）"""
+    if not raw:
+        return raw
+    stripped = raw.strip()
+    return USAGE_LABEL_MAP.get(stripped) or USAGE_LABEL_MAP.get(stripped.lower(), stripped)
+
+
+def normalize_usage_column(value: str) -> str:
+    """usage 欄位是逗號分隔的多選字串，要逐一正規化後再組回去，
+    並去除正規化後可能出現的重複（例如原始資料同時有「運動」跟「跑步」）"""
+    if not value or not isinstance(value, str):
+        return value
+    items = [normalize_usage_label(v) for v in value.split(",") if v.strip()]
+    return ",".join(dict.fromkeys(items))  # dict.fromkeys 去重且保留順序
+
+
+DEVICE_LABEL_MAP = {
+    "smartwatch": "手錶",
+    "smart_watch": "手錶",
+    "手錶": "手錶",
+
+    "smart_band": "手環",
+    "smart band": "手環",
+    "手環": "手環",
+
+    "smart_ring": "戒指",
+    "smart ring": "戒指",
+    "戒指": "戒指",
+}
+
+
+def normalize_device_label(raw: str) -> str:
+    """把 device_type 的英文 enum（後端2 normalize_device_type 的輸出）
+    對應回問卷的 4 個中文分類；查不到就一律歸類到「其他」
+    （對應問卷第6題的第4個選項，也涵蓋 earbuds 等未來可能新增的裝置類型）"""
+    if not raw:
+        return raw
+    return DEVICE_LABEL_MAP.get(raw.strip().lower(), "其他")
+
 
 # ============================================================
 # 資料來源
@@ -254,6 +352,11 @@ events_df.loc[skipped_budget, "budget_bucket"] = ""
 skippable_columns = ["os", "device_type", "usage_scope", "age_range"]
 for col in skippable_columns:
     events_df[col] = events_df[col].fillna("")
+
+# 使用情境 / 裝置類型 正規化，統一對應回問卷的分類文字，
+# 這樣不管資料是問卷送的還是 AI 聊天室送的，圖表都會歸到同一類
+events_df["usage"] = events_df["usage"].apply(normalize_usage_column)
+events_df["device_type"] = events_df["device_type"].apply(normalize_device_label)
 
 data_min_date = events_df["created_at"].min().date()
 data_max_date = events_df["created_at"].max().date()
