@@ -72,3 +72,17 @@ class AnalyticsSummaryResponse(BaseModel):
     average_match_score: float
 
     sponsored_exposure_rate: float
+#購物⾞ Schema
+class CartItemIn(BaseModel):
+
+    name:str
+    price: int = 0
+    image: str = ""
+    tags: List[str] = []
+    link: str = ""
+    platform: str = ""
+    qty: int = 1
+class CartItemUpdate(BaseModel):
+    platform: str
+    name:str
+    qty: int

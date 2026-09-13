@@ -33,6 +33,8 @@ from schemas import (
     SponsorListResponse,
     RecommendationEventCreate,
     AnalyticsSummaryResponse,
+    CartItemIn,
+    CartItemUpdate,
 )
 from passlib.context import CryptContext
 
@@ -738,6 +740,142 @@ def get_analytics_events(db: Session = Depends(get_db)):
     for e in events
 
         ]
+# =========================
+# 購物車 API
+# =========================
+
+@app.post("/cart/{email}")
+def add_cart_item(
+    email: str,
+    item: CartItemIn,
+    db: Session = Depends(get_db)
+):
+    existing = (
+        db.query(models.CartItem)
+        .filter(models.CartItem.user_email == email)
+        .filter(models.CartItem.platform == item.platform)
+        .filter(models.CartItem.name == item.name)
+        .first()
+    )
+
+    if existing:
+        # 已存在同商品，數量累加
+        existing.qty += item.qty
+    else:
+        record = models.CartItem(
+            user_email=email,
+            name=item.name,
+            price=item.price,
+            image=item.image,
+            tags=",".join(item.tags),
+            link=item.link,
+            platform=item.platform,
+            qty=item.qty,
+        )
+
+        db.add(record)
+
+    db.commit()
+
+    return {
+        "message": "已加入購物車"
+    }
+
+
+@app.get("/cart/{email}")
+def get_cart(
+    email: str,
+    db: Session = Depends(get_db)
+):
+    records = (
+        db.query(models.CartItem)
+        .filter(models.CartItem.user_email == email)
+        .all()
+    )
+
+    return [
+        {
+            "name": r.name,
+            "price": r.price,
+            "image": r.image,
+            "tags": r.tags.split(",") if r.tags else [],
+            "link": r.link,
+            "platform": r.platform,
+            "qty": r.qty,
+        }
+        for r in records
+    ]
+
+
+@app.put("/cart/{email}/item")
+def update_cart_item(
+    email: str,
+    item: CartItemUpdate,
+    db: Session = Depends(get_db)
+):
+    record = (
+        db.query(models.CartItem)
+        .filter(models.CartItem.user_email == email)
+        .filter(models.CartItem.platform == item.platform)
+        .filter(models.CartItem.name == item.name)
+        .first()
+    )
+
+    if not record:
+        return {
+            "message": "找不到該商品"
+        }
+
+    if item.qty <= 0:
+        db.delete(record)
+    else:
+        record.qty = item.qty
+
+    db.commit()
+
+    return {
+        "message": "已更新數量"
+    }
+
+
+@app.delete("/cart/{email}/item")
+def delete_cart_item(
+    email: str,
+    platform: str,
+    name: str,
+    db: Session = Depends(get_db)
+):
+    (
+        db.query(models.CartItem)
+        .filter(models.CartItem.user_email == email)
+        .filter(models.CartItem.platform == platform)
+        .filter(models.CartItem.name == name)
+        .delete()
+    )
+
+    db.commit()
+
+    return {
+        "message": "已刪除商品"
+    }
+
+
+@app.delete("/cart/{email}")
+def clear_cart(
+    email: str,
+    db: Session = Depends(get_db)
+):
+    (
+        db.query(models.CartItem)
+        .filter(models.CartItem.user_email == email)
+        .delete()
+    )
+
+    db.commit()
+
+    return {
+        "message": "已清空購物車"
+    }
 # =========================
 # Sponsor API
 # =========================

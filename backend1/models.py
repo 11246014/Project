@@ -8,6 +8,7 @@ from sqlalchemy import (
     Boolean,
     Float,
     JSON,
+    UniqueConstraint,
     func,
 )
 from database import Base
@@ -124,6 +125,24 @@ class History(Base):
     created_at = Column(DateTime, server_default=func.now())
 # 推薦事件模型
 
+class   CartItem(Base):
+    __tablename__ = "cart_items"
+    id = Column(Integer,primary_key=True,index=True)
+    user_email = Column(String(255),index=True)
+    name = Column(String(255))
+    price = Column(Integer,default=0)
+    image = Column(Text)
+    tags = Column(Text) 
+    link = Column(Text)
+    platform = Column(String(255))
+    qty = Column(Integer,default=1)
+    created_at = Column(DateTime,server_default=func.now())
+    updated_at = Column(DateTime,server_default=func.now(),onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("user_email","platform","name",name="uniq_cart_user_platform_name"),
+)
+
 class RecommendationEvent(Base):
     __tablename__ = "recommendation_events"
     id = Column(Integer, primary_key=True, index=True)
@@ -142,3 +161,28 @@ class RecommendationEvent(Base):
     top_brands = Column(String(255), nullable=True) # 逗號分隔
     top_platforms = Column(String(255), nullable=True) # 逗號分隔
     product_count = Column(Integer, default=0)
+
+class ProductReview(Base):
+    __tablename__ = "product_reviews"
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), index=True)
+    rating = Column(Integer, nullable=False)          # 1不滿意 2普通 3滿意
+    content = Column(Text, nullable=True, default="")
+    sentiment = Column(String(20), nullable=True)      # positive/neutral/negative
+    pros = Column(Text, nullable=True)                 # 逗號分隔
+    cons = Column(Text, nullable=True)
+    process_status = Column(String(20), default="pending")
+    is_seed = Column(Boolean, default=False)
+    is_anonymous = Column(Boolean, default=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+class ProductReviewSummary(Base):
+ 
+    __tablename__ = "product_review_summary"
+    product_id = Column(Integer, ForeignKey("products.id"), primary_key=True)
+    review_count = Column(Integer, default=0)
+    positive_ratio = Column(Float, default=0.0)
+    top_pros = Column(Text, nullable=True)
+    top_cons = Column(Text, nullable=True)
+    summary_text = Column(Text, nullable=True)
+    last_updated = Column(DateTime, server_default=func.now(), onupdate=func.now())
