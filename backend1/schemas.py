@@ -86,3 +86,20 @@ class CartItemUpdate(BaseModel):
     platform: str
     name:str
     qty: int
+
+class ReviewCreate(BaseModel):
+    product_id: int
+    rating: int
+    content: Optional[str] = ""
+    is_seed: bool = False  
+class ReviewProcessUpdate(BaseModel):
+    sentiment: Optional[str] = None
+    pros: Optional[str] = None
+    cons: Optional[str] = None
+    process_status: str = "done"
+class ReviewSummaryUpsert(BaseModel):
+    review_count: int
+    positive_ratio: float
+    top_pros: Optional[str] = None
+    top_cons: Optional[str] = None
+    summary_text: Optional[str] = None
