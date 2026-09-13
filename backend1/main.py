@@ -3,7 +3,8 @@ from fastapi import (
     Depends,
     HTTPException,
     status,
-    Query
+    Query,
+     BackgroundTasks
 )
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.future import select
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session,declarative_base, sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from models import PromptTemplateCreate
 
+import requests
 
 
 from pydantic import (
@@ -35,6 +37,9 @@ from schemas import (
     AnalyticsSummaryResponse,
     CartItemIn,
     CartItemUpdate,
+    ReviewCreate,
+    ReviewProcessUpdate,
+    ReviewSummaryUpsert
 )
 from passlib.context import CryptContext
 
@@ -901,3 +906,49 @@ def create_analytics_event(
  crud.create_recommendation_event(db, event)
  return {"message": "已記錄推薦事件"}
 models.Base.metadata.create_all(bind=engine)
+
+#社群功能
+
+@app.post("/reviews")
+def create_review_api(review: ReviewCreate, background_tasks: BackgroundTasks, db: 
+Session = Depends(get_db)):
+    new_review = crud.create_review(db, review)
+    background_tasks.add_task(notify_backend2_process_review, new_review.id, 
+new_review.content)
+    return {"message": "心得已建立", "review_id": new_review.id}
+def notify_backend2_process_review(review_id: int, content: str):
+    try:
+        requests.post(f"{BACKEND2_URL}/internal/process_review/{review_id}",
+                      json={"content": content}, timeout=5)
+    except Exception as e:
+        print(f"[Notify Backend2 Error] {e}")  
+
+@app.get("/reviews")
+def list_reviews(limit: int = 50, offset: int = 0, db: Session = Depends(get_db)):
+    """給社群動態牆用：取得所有商品的心得列表（分頁）"""
+    return {"reviews": crud.get_reviews(db, limit, offset)}
+
+@app.get("/products/{product_id}/reviews")
+def list_product_reviews(product_id: int, db: Session = Depends(get_db)):
+    """給商品詳情頁「查看全部心得」用：取得單一商品的所有心得"""
+    return {"reviews": crud.get_reviews_by_product(db, product_id)}
+
+@app.get("/products/{product_id}/review_summary")
+def get_product_review_summary(product_id: int, db: Session = Depends(get_db)):
+    return crud.get_review_summary(db, product_id)
+
+@app.get("/review_summaries")
+def list_all_review_summaries(db: Session = Depends(get_db)):
+    return {"summaries": crud.get_all_review_summaries(db)}
+
+@app.patch("/reviews/{review_id}")
+def update_review_api(review_id: int, update: ReviewProcessUpdate, db: Session = 
+Depends(get_db)):
+    """後端 2 抽取完 sentiment/pros/cons 後呼叫這支寫回"""
+    return crud.update_review_processing(db, review_id, update)
+
+@app.post("/products/{product_id}/review_summary")
+def upsert_review_summary_api(product_id: int, data: ReviewSummaryUpsert, db: 
+Session = Depends(get_db)):
+    """後端 2 批次彙整完 top_pros/top_cons/summary_text 後呼叫這支寫回"""
+    return crud.upsert_review_summary(db, product_id, data)
