@@ -167,6 +167,104 @@ def count_multi_value_column(df: pd.DataFrame, column: str, sep: str = ",") -> C
                 counter[item] += 1
     return counter
 
+# ============================================================
+# 使用情境 / 裝置類型 標籤正規化（顯示層）
+# ------------------------------------------------------------
+# 問卷（FilterScreen）送出的是完整選項字串，但 AI 聊天室那邊
+# 經過 backend2 的 normalize_usage() 正規化後，會變成不同粒度
+# 的詞（running / sleep / 運動...），導致「使用情境分布」把
+# 同一種情境拆成好幾條 bar。這裡統一對應回問卷的 5 個分類。
+# 不修改後端2的邏輯，避免影響 AI 比對/評分。
+# ============================================================
+USAGE_LABEL_MAP = {
+    # 運動（跑步 / 健身 / 戶外）
+    "運動": "運動（跑步 / 健身 / 戶外）",
+    "運動（跑步／健身／戶外）": "運動（跑步 / 健身 / 戶外）",
+    "running": "運動（跑步 / 健身 / 戶外）",
+    "run": "運動（跑步 / 健身 / 戶外）",
+    "跑步": "運動（跑步 / 健身 / 戶外）",
+    "健身": "運動（跑步 / 健身 / 戶外）",
+    "hiking": "運動（跑步 / 健身 / 戶外）",
+    "outdoor": "運動（跑步 / 健身 / 戶外）",
+    "登山": "運動（跑步 / 健身 / 戶外）",
+    "戶外": "運動（跑步 / 健身 / 戶外）",
+
+    # 日常生活（看時間 / 通知）
+    "日常": "日常生活（看時間 / 通知）",
+    "日常生活": "日常生活（看時間 / 通知）",
+    "看時間": "日常生活（看時間 / 通知）",
+    "通知": "日常生活（看時間 / 通知）",
+
+    # 工作 / 商務（訊息 / 行事曆）
+    "商務": "工作 / 商務（訊息 / 行事曆）",
+    "工作": "工作 / 商務（訊息 / 行事曆）",
+    "訊息": "工作 / 商務（訊息 / 行事曆）",
+    "行事曆": "工作 / 商務（訊息 / 行事曆）",
+    "business": "工作 / 商務（訊息 / 行事曆）",
+    "office": "工作 / 商務（訊息 / 行事曆）",
+
+    # 健康管理（心率 / 睡眠）
+    "health": "健康管理（心率 / 睡眠）",
+    "health_monitoring": "健康管理（心率 / 睡眠）",
+    "健康": "健康管理（心率 / 睡眠）",
+    "健康監測": "健康管理（心率 / 睡眠）",
+    "sleep": "健康管理（心率 / 睡眠）",
+    "sleep_monitoring": "健康管理（心率 / 睡眠）",
+    "sleep_tracking": "健康管理（心率 / 睡眠）",
+    "睡眠": "健康管理（心率 / 睡眠）",
+    "睡眠監測": "健康管理（心率 / 睡眠）",
+    "心率": "健康管理（心率 / 睡眠）",
+
+    # 穿搭 / 外型
+    "穿搭": "穿搭 / 外型",
+    "外型": "穿搭 / 外型",
+    "style": "穿搭 / 外型",
+    "fashion": "穿搭 / 外型",
+}
+
+
+def normalize_usage_label(raw: str) -> str:
+    """把單一使用情境字串對應回問卷的 5 個標準分類；查不到就維持原字串
+    （這樣未來若出現新詞彙，圖表上還是看得到，方便回來補字典，
+    而不是被吃掉查不出問題）"""
+    if not raw:
+        return raw
+    stripped = raw.strip()
+    return USAGE_LABEL_MAP.get(stripped) or USAGE_LABEL_MAP.get(stripped.lower(), stripped)
+
+
+def normalize_usage_column(value: str) -> str:
+    """usage 欄位是逗號分隔的多選字串，要逐一正規化後再組回去，
+    並去除正規化後可能出現的重複（例如原始資料同時有「運動」跟「跑步」）"""
+    if not value or not isinstance(value, str):
+        return value
+    items = [normalize_usage_label(v) for v in value.split(",") if v.strip()]
+    return ",".join(dict.fromkeys(items))  # dict.fromkeys 去重且保留順序
+
+
+DEVICE_LABEL_MAP = {
+    "smartwatch": "手錶",
+    "smart_watch": "手錶",
+    "手錶": "手錶",
+
+    "smart_band": "手環",
+    "smart band": "手環",
+    "手環": "手環",
+
+    "smart_ring": "戒指",
+    "smart ring": "戒指",
+    "戒指": "戒指",
+}
+
+
+def normalize_device_label(raw: str) -> str:
+    """把 device_type 的英文 enum（後端2 normalize_device_type 的輸出）
+    對應回問卷的 4 個中文分類；查不到就一律歸類到「其他」
+    （對應問卷第6題的第4個選項，也涵蓋 earbuds 等未來可能新增的裝置類型）"""
+    if not raw:
+        return raw
+    return DEVICE_LABEL_MAP.get(raw.strip().lower(), "其他")
+
 
 # ============================================================
 # 資料來源
@@ -200,6 +298,39 @@ else:
         st.error("後端回應的不是 JSON 格式，以下是實際收到的內容：")
         st.code(response.text[:1000])
         st.stop()
+        
+# ============================================================
+# 合作品牌名單：跟事件資料用同一個 USE_MOCK_DATA 開關，行為保持一致
+# ------------------------------------------------------------
+# 原本 SPONSORED_BRANDS 是從 mock_data.py import 進來的寫死清單，
+# 不管 USE_MOCK_DATA 開關為何都不會變。這裡改成：
+# 真實模式下即時打後端1的 /sponsors，資料庫刪掉/新增合作品牌時，
+# 畫面上的金色標示跟贊助曝光佔比會馬上反映，不用重開 dashboard。
+# ============================================================
+if not USE_MOCK_DATA:
+    try:
+        sponsors_response = requests.get(
+            f"{API_BASE}/sponsors",
+            headers={"ngrok-skip-browser-warning": "true"},
+            timeout=10,
+        )
+        sponsors_response.raise_for_status()
+        SPONSORED_BRANDS = [
+            s["brand_name"]
+            for s in sponsors_response.json().get("sponsors", [])
+        ]
+    except Exception:
+        # 抓不到的話，退回 mock_data.py 裡寫死的清單，至少畫面不會壞掉
+        st.warning("無法取得最新合作品牌名單，暫時顯示預設清單")
+        
+# 資料表目前完全沒有任何事件時，不要讓後面的程式碼直接 KeyError
+if events_df.empty:
+    st.markdown(
+        '<div class="empty-state">📭　資料庫目前還沒有任何推薦事件紀錄，'
+        '請確認資料庫 /analytics/events 是否已收到 POST 請求（可能是後端2尚未成功寫入）</div>',
+        unsafe_allow_html=True,
+    )
+    st.stop()
 
 events_df["created_at"] = pd.to_datetime(events_df["created_at"])
 
@@ -218,9 +349,14 @@ events_df["budget_bucket"] = events_df["budget_bucket"].astype(str)
 events_df.loc[skipped_budget, "budget_bucket"] = ""
 
 # 所有可能跳過的單選欄位，一次補空字串，避免變成假分類 "nan"
-skippable_columns = ["os", "device_type", "usage_scope"]
+skippable_columns = ["os", "device_type", "usage_scope", "age_range"]
 for col in skippable_columns:
     events_df[col] = events_df[col].fillna("")
+
+# 使用情境 / 裝置類型 正規化，統一對應回問卷的分類文字，
+# 這樣不管資料是問卷送的還是 AI 聊天室送的，圖表都會歸到同一類
+events_df["usage"] = events_df["usage"].apply(normalize_usage_column)
+events_df["device_type"] = events_df["device_type"].apply(normalize_device_label)
 
 data_min_date = events_df["created_at"].min().date()
 data_max_date = events_df["created_at"].max().date()
@@ -448,7 +584,7 @@ with tab2:
     section_title("年齡層分布")
     df_age = counter_to_df(age_counter, "年齡層")
     # 依年齡層邏輯順序排列，而不是依次數排序，閱讀起來更直覺
-    age_order = ["18歲以下", "19–25歲", "26–35歲", "36–45歲", "46–55歲", "56歲以上"]
+    age_order = ["18 歲以下", "19–25 歲", "26–35 歲", "36–45 歲", "46–55 歲", "56 歲以上"]
     df_age["年齡層"] = pd.Categorical(df_age["年齡層"], categories=age_order, ordered=True)
     df_age = df_age.sort_values("年齡層")
     fig_age = px.bar(df_age, x="年齡層", y="次數", text="次數")
@@ -492,8 +628,14 @@ with tab3:
 # ------------------------------------------------------------
 with tab4:
     section_title(f"每日查詢趨勢（{start_date} ～ {end_date}）")
-    fig_trend = px.area(df_trend, x="date", y="count")
-    fig_trend.update_traces(line_color=BLUE, fillcolor="rgba(59,130,246,0.15)")
+    # 把日期轉成純文字字串，並強制用類別軸（category）而非連續時間軸（date），
+    # 避免資料只落在單一天時，Plotly 自動把刻度細分到毫秒等級；
+    # 之後累積多天資料後，X 軸也只會顯示乾淨的日期字串，不會有時間細節
+    df_trend_display = df_trend.copy()
+    df_trend_display["date"] = df_trend_display["date"].astype(str)
+    fig_trend = px.bar(df_trend_display, x="date", y="count", text="count")
+    fig_trend.update_traces(marker_color=BLUE, textposition="outside")
+    fig_trend.update_xaxes(type="category")
     fig_trend.update_layout(xaxis_title="", yaxis_title="事件數")
     st.plotly_chart(style_fig(fig_trend, height=320), use_container_width=True)
 

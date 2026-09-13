@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/cart_service.dart'; // 新增：雲端購物車同步
 
 /// 購物車商品資料模型
 ///
@@ -32,7 +33,6 @@ class CartItem {
   String get key => '$platform-$name';
 
   /// 序列化成可存進 SharedPreferences 的 Map
-  /// price 可能是 int 或 String，統一轉成字串存，讀回來時再交給呼叫端自行判斷/格式化
   Map<String, dynamic> toMap() => {
         'name': name,
         'price': price,
@@ -43,17 +43,18 @@ class CartItem {
         'qty': qty,
       };
 
-  /// 從本地儲存的 Map 還原成 CartItem
+  /// 從本地儲存（或雲端 API）的 Map 還原成 CartItem
   factory CartItem.fromMap(Map<String, dynamic> map) {
     return CartItem(
       name: map['name']?.toString() ?? '未知商品',
-      // price 存回來可能是 int 也可能被 json 轉成 num，這裡保留原始型別彈性
       price: map['price'] ?? 0,
       image: map['image']?.toString() ?? '',
       tags: List<String>.from(map['tags'] ?? []),
       link: map['link']?.toString() ?? '',
       platform: map['platform']?.toString() ?? '',
-      qty: (map['qty'] is int) ? map['qty'] as int : int.tryParse('${map['qty']}') ?? 1,
+      qty: (map['qty'] is int)
+          ? map['qty'] as int
+          : int.tryParse('${map['qty']}') ?? 1,
     );
   }
 }
@@ -62,12 +63,13 @@ class CartItem {
 /// 繼承 StateNotifier<List<CartItem>>，整個購物車就是一個商品清單
 ///
 /// 持久化說明：
-/// 每次購物車內容變動（新增／改數量／刪除／清空），都會把當前清單
-/// 序列化成 JSON 字串寫入 SharedPreferences；App 啟動時會嘗試讀回。
-/// 這樣重開 App 或重新整理網頁後，購物車內容才不會消失。
+/// 本地 SharedPreferences 只是「離線快取」，讓 App 啟動時能立刻顯示
+/// 上次的購物車內容，不用等 API 回來才有畫面。
+/// 真正的資料權威來源是後端 MySQL：每次加入/修改/刪除都會
+/// 本地立即更新（讓 UI 有即時反應）+ 背景打 API 同步雲端。
 class CartNotifier extends StateNotifier<List<CartItem>> {
   CartNotifier() : super([]) {
-    // Notifier 建立時立刻嘗試從本地儲存還原購物車
+    // Notifier 建立時先從本地快取還原，讓畫面立刻有資料可顯示
     _loadFromStorage();
   }
 
@@ -93,7 +95,6 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
   }
 
   /// 把目前的購物車 state 寫入 SharedPreferences
-  /// 每次 state 變動都呼叫這個，確保資料即時落地，不用等使用者手動存檔
   Future<void> _saveToStorage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -107,6 +108,7 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
   /// 加入購物車
   /// [product] 是從商品卡片 / 詳情頁傳入的完整 Map（後端回傳的商品格式）
   /// 若購物車中已有相同商品（同 key），數量 +1；否則新增一筆，數量預設 1
+  /// 本地立即更新 + 背景同步到雲端（不 await，避免加入購物車的操作感覺卡頓）
   void addItem(Map<String, dynamic> product) {
     final newItem = CartItem(
       name: product['name']?.toString() ?? '未知商品',
@@ -130,6 +132,18 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     }
 
     _saveToStorage();
+
+    // 背景同步到雲端資料庫；CartService 內部已 try-catch，
+    // 就算 ngrok 網址過期或暫時斷線，也不會讓加入購物車的操作報錯
+    CartService.addItem(
+      name: newItem.name,
+      price: newItem.price,
+      image: newItem.image,
+      tags: newItem.tags,
+      link: newItem.link,
+      platform: newItem.platform,
+      qty: 1,
+    );
   }
 
   /// 更新數量，delta 為正表示加、負表示減
@@ -140,6 +154,9 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     if (index < 0) return;
 
     final newQty = updated[index].qty + delta;
+    final platform = updated[index].platform;
+    final name = updated[index].name;
+
     if (newQty <= 0) {
       updated.removeAt(index);
     } else {
@@ -148,16 +165,52 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     state = updated;
 
     _saveToStorage();
+
+    // 同步「絕對數量」到雲端；newQty <= 0 時由後端負責刪除該列
+    CartService.updateQty(platform: platform, name: name, qty: newQty);
   }
 
   /// 移除單一商品
   void removeItem(String key) {
+    // 先取出要刪除的項目資訊，才能同步告訴後端刪哪一筆
+    final target = state.where((item) => item.key == key).toList();
+
     state = state.where((item) => item.key != key).toList();
     _saveToStorage();
+
+    if (target.isNotEmpty) {
+      CartService.removeItem(
+        platform: target.first.platform,
+        name: target.first.name,
+      );
+    }
   }
 
-  /// 清空購物車
+  /// 清空購物車（本地 + 雲端）
   void clear() {
+    state = [];
+    _saveToStorage();
+    CartService.clearCart();
+  }
+
+  /// 登入成功後呼叫：直接用雲端資料覆蓋本地購物車
+  ///
+  /// 因為系統沒有訪客模式，登入前不會有需要合併的本地購物車資料，
+  /// 所以這裡不做合併運算，單純把雲端最新結果同步下來即可，
+  /// 確保換裝置登入同一帳號時看到的是同一份購物車。
+  Future<void> loadFromServer() async {
+    try {
+      final cloudItems = await CartService.getCart();
+      state = cloudItems.map((m) => CartItem.fromMap(m)).toList();
+      await _saveToStorage();
+    } catch (e) {
+      debugPrint('讀取雲端購物車失敗，暫時顯示本地快取：$e');
+    }
+  }
+
+  /// 登出時呼叫：只清空「本地快取」，不會呼叫後端刪除雲端資料
+  /// 避免同一裝置換帳號登入時，看到前一位使用者的購物車內容
+  void clearLocalOnLogout() {
     state = [];
     _saveToStorage();
   }

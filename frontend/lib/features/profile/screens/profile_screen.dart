@@ -356,6 +356,7 @@ Future<void> _loadHistory() async {
                         Navigator.pop(context);
                         await const FlutterSecureStorage().deleteAll();
                         ref.read(userProfileProvider.notifier).reset();
+                        ref.read(cartProvider.notifier).clearLocalOnLogout(); // 新增
                         if (mounted) context.go(AppRoutes.login);
                       },
                       child: Text('登出',
@@ -724,6 +725,7 @@ Future<void> _loadHistory() async {
         child: item.image.isNotEmpty
             ? Image.network(
                 AppFormatters.proxyImageUrl(item.image),
+                headers: AppFormatters.imageHeaders,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => const Icon(
                     Icons.watch_rounded,

@@ -371,6 +371,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: (product['image'] != null && product['image'].toString().isNotEmpty)
                   ? Image.network(
                       AppFormatters.proxyImageUrl(product['image'].toString()),
+                      headers: AppFormatters.imageHeaders, // ngrok 跳過警告頁 header
                       fit: BoxFit.cover,
                       // 新增 loadingBuilder
                       loadingBuilder: (context, child, loadingProgress) {
