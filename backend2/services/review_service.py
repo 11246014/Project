@@ -1,7 +1,12 @@
+#review_service.py
 import json
 from collections import Counter
 
-from services.ai_service import ask_ai
+from services.ai_service import (
+    ask_ai,
+    ask_ai_structured,
+)
+
 from services.backend1_client import (
     get_reviews_by_product,
     update_review,
@@ -12,6 +17,32 @@ from services.ranking.constants import REVIEW_KEYWORD_OPTIONS
 
 BATCH_THRESHOLD = 5
 
+REVIEW_KEYWORD_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "pros": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": REVIEW_KEYWORD_OPTIONS["pros"],
+            },
+            "uniqueItems": True,
+        },
+        "cons": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "enum": REVIEW_KEYWORD_OPTIONS["cons"],
+            },
+            "uniqueItems": True,
+        },
+    },
+    "required": [
+        "pros",
+        "cons",
+    ],
+    "additionalProperties": False,
+}
 
 def extract_review_keywords(content: str) -> dict:
     """
@@ -65,21 +96,16 @@ def extract_review_keywords(content: str) -> dict:
 """
 
     try:
-        result = ask_ai(prompt)
+        result = ask_ai_structured(
+            prompt,
+            schema=REVIEW_KEYWORD_SCHEMA,
+        )
 
         if not result:
             return {
                 "pros": [],
                 "cons": [],
             }
-
-        # 嘗試處理 AI 可能包住的 Markdown code block
-        result = result.strip()
-
-        if result.startswith("```"):
-            result = result.replace("```json", "", 1)
-            result = result.replace("```", "", 1)
-            result = result.strip()
 
         data = json.loads(result)
 

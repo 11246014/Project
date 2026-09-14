@@ -1,3 +1,4 @@
+#gemini_service.py
 import os
 
 import google.generativeai as genai
@@ -30,6 +31,30 @@ def ask_gemini(
 
     response = model.generate_content(
         prompt
+    )
+
+    return (
+        response.text
+        if response.text
+        else ""
+    )
+
+def ask_gemini_structured(
+    prompt,
+    schema,
+    model_name=None,
+):
+    model = genai.GenerativeModel(
+        model_name or GEMINI_MODEL
+    )
+
+    response = model.generate_content(
+        prompt,
+        generation_config=genai.GenerationConfig(
+            temperature=0,
+            response_mime_type="application/json",
+            response_schema=schema,
+        ),
     )
 
     return (

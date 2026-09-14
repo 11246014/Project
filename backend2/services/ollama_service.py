@@ -44,3 +44,32 @@ def ask_ollama(
         "response",
         ""
     )
+
+def ask_ollama_structured(
+    prompt,
+    schema,
+    model_name=None,
+    timeout=120,
+):
+    model = model_name or OLLAMA_MODEL
+
+    response = requests.post(
+        OLLAMA_URL,
+        json={
+            "model": model,
+            "prompt": prompt,
+            "stream": False,
+            "format": schema,
+            "options": {
+                "temperature": 0,
+            },
+        },
+        timeout=timeout,
+    )
+
+    response.raise_for_status()
+
+    return response.json().get(
+        "response",
+        ""
+    )
