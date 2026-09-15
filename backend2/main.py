@@ -5,6 +5,7 @@ from fastapi.responses import Response
 
 from routers.ai_router import router as ai_router
 from routers.filter_router import router as filter_router
+from routers.review_router import router as review_router
 
 app = FastAPI()
 
@@ -12,6 +13,7 @@ app = FastAPI()
 
 app.include_router(ai_router)
 app.include_router(filter_router)
+app.include_router(review_router)
 
 # ===== CORS =====
 

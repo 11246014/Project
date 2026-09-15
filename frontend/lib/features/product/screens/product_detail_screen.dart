@@ -8,6 +8,11 @@ import '../../../core/utils/launch_helper.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/sponsored_badge.dart';
 
+import '../../../core/providers/review_provider.dart';
+import '../../../core/constants/app_routes.dart';
+import 'package:go_router/go_router.dart';
+import '../../community/widgets/review_submit_sheet.dart';  
+
 /// 商品詳情頁
 ///
 /// 資料來源說明：
@@ -104,6 +109,11 @@ class ProductDetailScreen extends ConsumerWidget {
                     if (desc.isNotEmpty) ...[
                       const SizedBox(height: 20),
                       _buildDescription(context, desc),
+                    ],
+
+                    if (product['id'] != null) ...[
+                      const SizedBox(height: 20),
+                      _buildCommunitySection(context, ref, product['id'] as int),
                     ],
 
                     const SizedBox(height: 28),
@@ -329,6 +339,105 @@ class ProductDetailScreen extends ConsumerWidget {
     return Text(
       '商品資訊來自第三方電商平台，實際售價與庫存請以外部頁面為準',
       style: AppTextStyles.caption.copyWith(color: AppColors.textHint),
+    );
+  }
+
+  Widget _buildCommunitySection(BuildContext context, WidgetRef ref, int productId) {
+    final summaryAsync = ref.watch(reviewSummaryProvider(productId));
+
+    return summaryAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      error: (e, _) => const SizedBox(),  // 查詢失敗就整塊不顯示
+      data: (summary) {
+        final reviewCount = summary?['review_count'] ?? 0;
+
+        if (summary == null || reviewCount == 0) {
+          return _buildEmptyCommunityCard(context, productId);
+        }
+
+        final positiveRatio = (summary['positive_ratio'] ?? 0.0) as num;
+        final summaryText = summary['summary_text']?.toString();
+        final topPros = (summary['top_pros']?.toString() ?? '')
+            .split(',').where((s) => s.trim().isNotEmpty).toList();
+        final topCons = (summary['top_cons']?.toString() ?? '')
+            .split(',').where((s) => s.trim().isNotEmpty).toList();
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.cardVariant(context),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text('社群評價', style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600, color: AppColors.textMain(context))),
+                  const Spacer(),
+                  Text('$reviewCount 則心得', style: AppTextStyles.caption
+                      .copyWith(color: AppColors.textHint)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text('好評率 ${(positiveRatio * 100).toStringAsFixed(0)}%',
+                  style: AppTextStyles.bodyLarge.copyWith(
+                      color: AppColors.primary, fontWeight: FontWeight.w700)),
+              if (summaryText != null && summaryText.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(summaryText, style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.textSub(context))),
+              ],
+              if (topPros.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text('優點：${topPros.join(' ')}', style: AppTextStyles.caption),
+              ],
+              if (topCons.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text('缺點：${topCons.join(' ')}', style: AppTextStyles.caption),
+              ],
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => _openReviewSubmitSheet(context, productId: productId),
+                child: const Text('我要留言心得'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyCommunityCard(BuildContext context, int productId) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardVariant(context),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text('目前尚無社群心得，成為第一個分享的人吧',
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSub(context))),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () => _openReviewSubmitSheet(context, productId: productId),
+            child: const Text('我要留言心得'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openReviewSubmitSheet(BuildContext context, {required int productId}) {
+    openReviewSubmitSheet(
+      context,
+      productId: productId,
+      productName: product['name']?.toString(),
     );
   }
 }

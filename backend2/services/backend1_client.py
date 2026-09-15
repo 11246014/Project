@@ -222,6 +222,246 @@ async def get_db_products():
 
 
 # =========================
+# 查詢產品評論
+# =========================
+
+def get_reviews_by_product(product_id):
+    """
+    取得指定商品的所有評論。
+
+    Backend1 API：
+        GET /products/{product_id}/reviews
+
+    回傳：
+        list
+    """
+
+    try:
+
+        response = requests.get(
+            f"{BASE_URL}/products/{product_id}/reviews",
+            timeout=10
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        # 如果 API 直接回傳 list
+        if isinstance(data, list):
+            return data
+
+        # 如果 API 回傳 {"reviews": [...]}
+        if isinstance(data, dict):
+            return data.get(
+                "reviews",
+                []
+            )
+
+        return []
+
+    except requests.RequestException as e:
+
+        print(
+            f"[Backend1 Reviews Error] {e}"
+        )
+
+        return []
+
+    except ValueError as e:
+
+        print(
+            f"[Backend1 Reviews JSON Error] {e}"
+        )
+
+        return []
+
+
+# =========================
+# 查詢所有商品評論摘要
+# =========================
+
+def get_all_review_summaries():
+    """
+    取得 Backend1 所有商品的評論摘要。
+
+    Backend2 Ranking 會在一次推薦流程開始時呼叫，
+    不在每個商品的迴圈裡重複呼叫。
+
+    回傳格式：
+        {
+            product_id: summary,
+            ...
+        }
+    """
+
+    try:
+
+        response = requests.get(
+            f"{BASE_URL}/review-summaries",
+            timeout=10
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        # Backend1 若直接回傳：
+        # {
+        #     "123": {...},
+        #     "456": {...}
+        # }
+        if isinstance(data, dict):
+
+            # 如果 API 使用 summaries 包裝
+            if "summaries" in data:
+                summaries = data.get(
+                    "summaries",
+                    []
+                )
+
+                if isinstance(summaries, list):
+
+                    return {
+                        str(item.get("product_id")): item
+                        for item in summaries
+                        if isinstance(item, dict)
+                        and item.get("product_id") is not None
+                    }
+
+                if isinstance(summaries, dict):
+                    return summaries
+
+            return data
+
+        # 若 API 回傳 list：
+        # [
+        #     {"product_id": 1, ...},
+        #     {"product_id": 2, ...}
+        # ]
+        if isinstance(data, list):
+
+            return {
+                str(item.get("product_id")): item
+                for item in data
+                if isinstance(item, dict)
+                and item.get("product_id") is not None
+            }
+
+        return {}
+
+    except requests.RequestException as e:
+
+        print(
+            f"[Backend1 Review Summary Error] {e}"
+        )
+
+        return {}
+
+    except ValueError as e:
+
+        print(
+            f"[Backend1 Review Summary JSON Error] {e}"
+        )
+
+        return {}
+
+
+# =========================
+# 更新單則評論
+# =========================
+
+def update_review(review_id, data: dict):
+    """
+    更新指定評論的 AI 分析結果。
+
+    例如：
+        {
+            "pros": ["續航佳", "配戴舒適"],
+            "cons": ["價格偏高"]
+        }
+
+    回傳：
+        Backend1 API 回傳資料
+    """
+
+    try:
+
+        response = requests.patch(
+            f"{BASE_URL}/reviews/{review_id}",
+            json=data,
+            timeout=10
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+
+    except requests.RequestException as e:
+
+        print(
+            f"[Backend1 Review Update Error] {e}"
+        )
+
+        return None
+
+    except ValueError as e:
+
+        print(
+            f"[Backend1 Review Update JSON Error] {e}"
+        )
+
+        return None
+
+
+# =========================
+# 新增 / 更新商品評論摘要
+# =========================
+
+def upsert_review_summary(product_id, data: dict):
+    """
+    新增或更新指定商品的評論摘要。
+
+    例如：
+        {
+            "top_pros": ["續航佳", "配戴舒適"],
+            "top_cons": ["價格偏高"],
+            "summary_text": "多數使用者認為續航與配戴舒適度表現不錯..."
+        }
+
+    回傳：
+        Backend1 API 回傳資料
+    """
+
+    try:
+
+        response = requests.put(
+            f"{BASE_URL}/review-summaries/{product_id}",
+            json=data,
+            timeout=10
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+
+    except requests.RequestException as e:
+
+        print(
+            f"[Backend1 Review Summary Update Error] {e}"
+        )
+
+        return None
+
+    except ValueError as e:
+
+        print(
+            f"[Backend1 Review Summary Update JSON Error] {e}"
+        )
+
+        return None
+    
+# =========================
 # 查詢合作廠商
 # =========================
 

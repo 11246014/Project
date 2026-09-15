@@ -16,6 +16,7 @@ from services.ranking.score_engine import (
 
 from services.backend1_client import (
     get_sponsors,
+    get_all_review_summaries,
 )
 
 # ==================================================
@@ -85,6 +86,16 @@ def rank_products(
 
     ranked = []
 
+    # ==================================================
+    # Community Review Summary
+    # ==================================================
+    # 一次取得所有商品的評論摘要，
+    # 避免在每個商品的 Ranking 迴圈中重複呼叫 Backend1。
+    # ==================================================
+
+    review_summary_map = get_all_review_summaries()
+
+
     for product in products:
 
         product = product.copy()
@@ -96,8 +107,8 @@ def rank_products(
         result = calculate_product_score(
             product,
             user_need,
+            review_summary_map,
         )
-
         product["raw_score"] = result["raw_score"]
 
         product["required_feature_status"] = result[

@@ -143,6 +143,7 @@ def score_preferences(
 def calculate_product_score(
     product,
     need,
+    review_summary_map=None,
 ):
 
     reason_parts = []
@@ -521,6 +522,59 @@ def calculate_product_score(
     )
 
     # ==================================================
+    # Community Review
+    # ==================================================
+
+    community_score = 0
+
+    if review_summary_map:
+
+        product_id = (
+            product.get("id")
+            or product.get("product_id")
+            or product.get("productId")
+        )
+
+        summary = None
+
+        if product_id is not None:
+
+            summary = review_summary_map.get(
+                str(product_id)
+            )
+
+            if summary is None:
+                summary = review_summary_map.get(
+                    product_id
+                )
+
+        if summary:
+
+            try:
+                positive_ratio = float(
+                    summary.get(
+                        "positive_ratio",
+                        0,
+                    )
+                )
+
+            except (
+                TypeError,
+                ValueError,
+            ):
+                positive_ratio = 0
+
+            if positive_ratio >= 0.7:
+
+                community_score = 2
+
+                base_score += community_score
+
+                debug_score.append(
+                    "社群好評 +2"
+                )
+
+    # ==================================================
     # OS
     # ==================================================
 
@@ -653,6 +707,47 @@ def calculate_product_score(
     else:
 
         reason = generate_reason(product)
+
+
+    # ==================================================
+    # Community Review Summary
+    # ==================================================
+
+    summary_text = ""
+
+    if review_summary_map:
+
+        product_id = (
+            product.get("id")
+            or product.get("product_id")
+            or product.get("productId")
+        )
+
+        summary = None
+
+        if product_id is not None:
+
+            summary = review_summary_map.get(
+                str(product_id)
+            )
+
+            if summary is None:
+                summary = review_summary_map.get(
+                    product_id
+                )
+
+        if summary:
+
+            summary_text = str(
+                summary.get(
+                    "summary_text",
+                    ""
+                )
+            ).strip()
+
+    if summary_text:
+
+        reason = f"{reason}、{summary_text}"
 
     return {
         "raw_score": score,
