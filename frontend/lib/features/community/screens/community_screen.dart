@@ -4,6 +4,7 @@ import '../../../services/review_service.dart';
 import '../../../services/product_service.dart';
 import '../widgets/review_card.dart';
 import '../widgets/review_submit_sheet.dart';
+import '../../../core/constants/app_text_styles.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -34,27 +35,46 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Future<void> _loadMore() async {
     if (_isLoading || !_hasMore) return;
     setState(() => _isLoading = true);
-    final newItems = await ReviewService.getReviews(
-      limit: _pageSize, offset: _offset,
-    );
-    setState(() {
-      _reviews.addAll(newItems);
-      _offset += newItems.length;
-      _hasMore = newItems.length == _pageSize;
-      _isLoading = false;
-    });
+    try {
+      final newItems = await ReviewService.getReviews(
+        limit: _pageSize, offset: _offset,
+      );
+      setState(() {
+        _reviews.addAll(newItems);
+        _offset += newItems.length;
+        _hasMore = newItems.length == _pageSize;
+      });
+    } catch (e) {
+      debugPrint('社群心得載入失敗：$e');  // ← 先看這行印出什麼，就知道真正原因
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('載入失敗，請稍後再試')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);  // ← 不管成功失敗，一定會把轉圈關掉
+    }
   }
 
   Future<void> _openSubmitSheet() async {
-    final products = await ProductService.getProducts();
-    if (!mounted) return;
-    final success = await openReviewSubmitSheet(
-      context,
-      productListForSearch: products,
-    );
-    if (success == true) {
-      setState(() { _reviews.clear(); _offset = 0; _hasMore = true; });
-      _loadMore();
+    try {
+      final products = await ProductService.getProducts();
+      if (!mounted) return;
+      final success = await openReviewSubmitSheet(
+        context,
+        productListForSearch: products,
+      );
+      if (success == true) {
+        setState(() { _reviews.clear(); _offset = 0; _hasMore = true; });
+        _loadMore();
+      }
+    } catch (e) {
+      debugPrint('開啟留言表單失敗：$e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('無法載入商品清單，請稍後再試')),
+        );
+      }
     }
   }
 
@@ -62,7 +82,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg(context),
-      appBar: AppBar(title: const Text('社群心得')),
+      appBar: AppBar(
+        title: Text(
+          '社群心得',
+          style: AppTextStyles.displayMedium.copyWith(
+            fontSize: 18,  // 想再小可以調這個數字
+            color: AppColors.textMain(context),
+          ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openSubmitSheet,
         child: const Icon(Icons.edit),
