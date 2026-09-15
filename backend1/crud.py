@@ -115,11 +115,30 @@ def recalc_positive_ratio(db: Session, product_id: int):
     summary.review_count = total
     summary.positive_ratio = ratio
     db.commit()
+
 def get_reviews(db: Session, limit: int = 50, offset: int = 0):
-    """取得所有商品的心得列表，依時間新到舊排序，給社群動態牆分頁使用"""
-    return (db.query(models.ProductReview)
-            .order_by(models.ProductReview.created_at.desc())
-            .offset(offset).limit(limit).all())
+    results = (
+        db.query(
+            models.ProductReview,
+            models.Product.name.label("product_name"),
+            models.Product.image.label("product_image"),
+        )
+        .join(models.Product, models.ProductReview.product_id == models.Product.id)
+        .order_by(models.ProductReview.created_at.desc())
+        .offset(offset).limit(limit).all()
+    )
+    return [
+        {
+            "id": review.id,
+            "product_id": review.product_id,
+            "rating": review.rating,
+            "content": review.content,
+            "created_at": review.created_at,
+            "product_name": product_name,
+            "product_image": product_image,
+        }
+        for review, product_name, product_image in results
+    ]
 def get_reviews_by_product(db: Session, product_id: int):
     """取得單一商品的所有心得，給商品詳情頁「查看全部心得」使用"""
     return (db.query(models.ProductReview)
