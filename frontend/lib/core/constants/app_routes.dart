@@ -23,6 +23,8 @@ class AppRoutes {
   /// 情境篩選頁
   static const String recommendation = '/recommendation';
 
+  /// 社群心得動態牆
+  static const String community = '/community';
 
   /// AI 聊天導購
   static const String chat     = '/chat';

@@ -19,6 +19,7 @@ import 'features/product/screens/product_detail_screen.dart';
 import 'package:flutter/gestures.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart';
+import 'features/community/screens/community_screen.dart';
 
 // ════════════════════════════════════════════════════
 // 自訂 ScrollBehavior
@@ -232,6 +233,12 @@ final _router = GoRouter(
       path: AppRoutes.chat,
       pageBuilder: (context, state) => const NoTransitionPage(
         child: WebLayout(child: ChatScreen()),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.community,
+      pageBuilder: (context, state) => const NoTransitionPage(
+        child: WebLayout(child: CommunityScreen()),
       ),
     ),
     GoRoute(

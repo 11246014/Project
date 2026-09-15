@@ -47,7 +47,13 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() => _currentIndex = 0);
         });
         return const _HomeTab();
-      case 3:
+      case 3:  // ← 新增：跟篩選/AI助理同一種「push後歸位」模式
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.push(AppRoutes.community);
+          setState(() => _currentIndex = 0);
+        });
+        return const _HomeTab();
+      case 4:  // ← 原本是 case 3
         return const ProfileScreen();
       default:
         return const SizedBox();
@@ -76,6 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _NavItem(icon: Icons.home_outlined,   activeIcon: Icons.home_rounded,   label: '首頁'),
       _NavItem(icon: Icons.tune_outlined,   activeIcon: Icons.tune_rounded,   label: '篩選'),
       _NavItem(icon: Icons.chat_outlined,   activeIcon: Icons.chat_rounded,   label: 'AI 助理'),
+      _NavItem(icon: Icons.groups_outlined, activeIcon: Icons.groups_rounded, label: '社群'),  
       _NavItem(icon: Icons.person_outlined, activeIcon: Icons.person_rounded, label: '我的'),
     ];
 
