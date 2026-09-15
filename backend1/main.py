@@ -56,6 +56,7 @@ from models import (
 
 import models
 import crud
+BACKEND2_URL = "https://thumb-shakiness-zoom.ngrok-free.dev"
 
 
 
