@@ -39,7 +39,7 @@ from schemas import (
     CartItemUpdate,
     ReviewCreate,
     ReviewProcessUpdate,
-    ReviewSummaryUpsert
+    ReviewSummaryUpsert,ProductOut
 )
 from passlib.context import CryptContext
 
@@ -369,7 +369,7 @@ def create_product(
 # =========================
 
 
-@app.get("/products", response_model=List[ProductCreate])
+@app.get("/products", response_model=List[ProductOut])
 def products(
 
     db: Session = Depends(
