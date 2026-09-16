@@ -7,7 +7,7 @@ from services.db_search_service import (
 )
 
 from services.web_search_service import (
-    web_search_products,
+    web_search_products_with_status,
 )
 
 
@@ -342,7 +342,7 @@ def search_web(
     """
 
     try:
-        products = web_search_products(
+        products, timed_out = web_search_products_with_status(
             search_query,
             region=region,
         )
@@ -361,7 +361,7 @@ def search_web(
                     f"No Result"
                 )
 
-        return products or []
+        return products or [], timed_out
 
     except Exception as e:
         print(
@@ -369,7 +369,7 @@ def search_web(
             f"{e}"
         )
 
-        return []
+        return [], False
 
 
 # ==================================================
@@ -446,7 +446,7 @@ def retrieve_candidates(
     # TW
     # --------------------------------------------------
 
-    tw_products = search_web(
+    tw_products, tw_timed_out = search_web(
         search_query,
         "tw",
     )
@@ -469,6 +469,14 @@ def retrieve_candidates(
             "[Primary Search Results]",
             len(all_products),
         )
+
+    if tw_timed_out:
+        print(
+            "[Web Fallback Stopped] "
+            "TW primary search timed out"
+        )
+
+        return all_products
 
     # ==================================================
     # Phase 2
@@ -497,7 +505,7 @@ def retrieve_candidates(
                     repr(feature_query),
                 )
 
-            tw_feature_products = search_web(
+            tw_feature_products, tw_feature_timed_out = search_web(
                 feature_query,
                 "tw",
             )
@@ -505,6 +513,16 @@ def retrieve_candidates(
             if tw_feature_products:
                 all_products.extend(
                     tw_feature_products
+                )
+
+            if tw_feature_timed_out:
+                print(
+                    "[Web Fallback Stopped] "
+                    "TW feature search timed out"
+                )
+
+                return deduplicate_products(
+                    all_products
                 )
 
         all_products = deduplicate_products(
@@ -533,11 +551,11 @@ def retrieve_candidates(
                 repr(search_query),
             )
 
-        global_products = search_web(
+        global_products, global_timed_out = search_web(
             search_query,
             "global",
         )
-
+        
         if global_products:
             all_products.extend(
                 global_products
@@ -547,6 +565,16 @@ def retrieve_candidates(
             all_products
         )
 
+        if global_timed_out:
+            print(
+                "[Web Fallback Stopped] "
+                "global primary search timed out"
+            )
+
+            return deduplicate_products(
+                all_products
+            )
+        
         if DEBUG_SEARCH:
             print(
                 "[Global Primary Results]",
@@ -575,7 +603,7 @@ def retrieve_candidates(
                     repr(feature_query),
                 )
 
-            global_feature_products = search_web(
+            global_feature_products, global_feature_timed_out = search_web(
                 feature_query,
                 "global",
             )
@@ -583,6 +611,16 @@ def retrieve_candidates(
             if global_feature_products:
                 all_products.extend(
                     global_feature_products
+                )
+
+            if global_feature_timed_out:
+                print(
+                    "[Web Fallback Stopped] "
+                    "global feature search timed out"
+                )
+
+                return deduplicate_products(
+                    all_products
                 )
 
         all_products = deduplicate_products(

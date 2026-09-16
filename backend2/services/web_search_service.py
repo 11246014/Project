@@ -434,7 +434,7 @@ def build_products(
 # Main Web Search
 # =========================================================
 
-def web_search_products(
+def web_search_products_with_status(
     keyword,
     region="tw",
 ):
@@ -484,9 +484,12 @@ def web_search_products(
                 f"(region={region})"
             )
 
-        return SEARCH_CACHE[
-            cache_key
-        ]
+        return (
+            SEARCH_CACHE[
+                cache_key
+            ],
+            False,
+        )
 
     # =====================================================
     # Search
@@ -536,7 +539,7 @@ def web_search_products(
                     f"(region={region})"
                 )
 
-        return products
+        return products, False
 
     # =====================================================
     # Request Error
@@ -549,4 +552,25 @@ def web_search_products(
             f"{e}"
         )
 
-        return []
+        return (
+            [],
+            isinstance(
+                e,
+                requests.exceptions.Timeout,
+            ),
+        )
+
+def web_search_products(
+    keyword,
+    region="tw",
+):
+    """
+    保留既有 Web Search 呼叫介面。
+    """
+
+    products, _ = web_search_products_with_status(
+        keyword,
+        region,
+    )
+
+    return products
