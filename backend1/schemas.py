@@ -20,9 +20,11 @@ class ProductResponse(BaseModel):
     name: str
     price: int
     description: str
-
-    class Config:
-        from_attributes = True
+    platform: str
+    image: str
+    rating: int
+    reason: str
+    link: str | None = None
 # =========================
 # Sponsor Schema
 # =========================
