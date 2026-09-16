@@ -255,9 +255,9 @@ def recommend_from_need(
                     )
                 )
 
-            save_product(
-                product
-            )
+            new_id = save_product(product)
+            if new_id is not None:
+                product['id'] = new_id
 
         elif DEBUG_PIPELINE:
 
