@@ -70,6 +70,8 @@ def save_product(product):
         print(
             f"[Save Product] {response.status_code}"
         )
+        response.raise_for_status()
+        return response.json().get('id')
 
     except Exception as e:
 
@@ -298,7 +300,7 @@ def get_all_review_summaries():
     try:
 
         response = requests.get(
-            f"{BASE_URL}/review-summaries",
+            f"{BASE_URL}/review_summaries",
             timeout=10
         )
 
@@ -435,14 +437,21 @@ def upsert_review_summary(product_id, data: dict):
 
     try:
 
-        response = requests.put(
-            f"{BASE_URL}/review-summaries/{product_id}",
-            json=data,
+        payload = {
+            "review_count": data.get("review_count", 0),
+            "positive_ratio": data.get("positive_ratio", 0.0),
+            "top_pros": ",".join(data.get("top_pros", [])),
+            "top_cons": ",".join(data.get("top_cons", [])),
+            "summary_text": data.get("summary_text", ""),
+        }
+
+        response = requests.post(
+            f"{BASE_URL}/products/{product_id}/review_summary",
+            json=payload,
             timeout=10
         )
 
         response.raise_for_status()
-
         return response.json()
 
     except requests.RequestException as e:

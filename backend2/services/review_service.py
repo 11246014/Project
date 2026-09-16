@@ -306,8 +306,8 @@ def process_single_review(
         cons = keywords.get("cons", [])
 
         review_data = {
-            "pros": pros,
-            "cons": cons,
+            'pros': ','.join(pros),
+            'cons': ','.join(cons),
         }
 
         # ---------------------------------------------------------
@@ -450,15 +450,19 @@ def run_batch_aggregation(
             top_pros,
             top_cons,
         )
+        total = len(reviews)
+        positive = sum(1 for r in reviews if r.get('rating') == 3)
 
         # ---------------------------------------------------------
         # 4. 更新 product_review_summary
         # ---------------------------------------------------------
 
         summary_data = {
-            "top_pros": top_pros,
-            "top_cons": top_cons,
-            "summary_text": summary_text,
+            'review_count': total,
+            'positive_ratio': round(positive / total, 2) if total else 0.0,
+            'top_pros': top_pros,
+            'top_cons': top_cons,
+            'summary_text': summary_text,
         }
 
         result = upsert_review_summary(

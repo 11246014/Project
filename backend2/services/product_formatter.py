@@ -55,6 +55,8 @@ def format_product(product):
 
     return {
 
+        "id": product.get("id"),
+        
         "name": name,
 
         "price": product.get(
