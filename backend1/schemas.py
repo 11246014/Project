@@ -13,7 +13,7 @@ class ProductCreate(BaseModel):
     name: str
     price: int
     description: str
-class ProductOut(BaseModel):
+class ProductOut(ProductCreate):
     id: int
 
 
