@@ -20,6 +20,7 @@ import 'package:flutter/gestures.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart';
 import 'features/community/screens/community_screen.dart';
+import '../features/product/screens/product_reviews_screen.dart';
 
 // ════════════════════════════════════════════════════
 // 自訂 ScrollBehavior
@@ -260,6 +261,21 @@ final _router = GoRouter(
         return NoTransitionPage(
           child: WebLayout(
             child: ProductDetailScreen(product: product),
+          ),
+        );
+      },
+    ),
+    // 商品完整心得列表：接收 productId + productName
+    GoRoute(
+      path: AppRoutes.productReviews,
+      pageBuilder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return NoTransitionPage(
+          child: WebLayout(
+            child: ProductReviewsScreen(
+              productId: extra['productId'] as int,
+              productName: extra['productName']?.toString() ?? '',
+            ),
           ),
         );
       },

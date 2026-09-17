@@ -1,8 +1,13 @@
+/// 畫出「一則心得」的卡片：商品名稱（可點擊跳轉商品詳情頁）、
+/// 滿意度文字、心得內容（過長可展開/收起）、匿名與留言時間。
+/// 用於社群動態牆（community_screen.dart）
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../core/constants/app_formatters.dart';   // 新增：縮圖要用 proxyImageUrl / imageHeaders
 
 class ReviewCard extends StatefulWidget {
   final Map<String, dynamic> review;
@@ -25,6 +30,7 @@ class _ReviewCardState extends State<ReviewCard> {
     final content = widget.review['content']?.toString() ?? '';
     final rating = widget.review['rating'] ?? 0;
     final productName = widget.review['product_name']?.toString() ?? '未知商品';
+    final productImage = widget.review['product_image']?.toString() ?? '';   
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -40,32 +46,50 @@ class _ReviewCardState extends State<ReviewCard> {
           // 商品資訊列：獨立的 GestureDetector，點擊才會離開社群頁
           GestureDetector(
             onTap: () {
-              final rawId = widget.review['product_id'];
-              if (rawId == null) return;
-              // product_id 可能是 int 或字串型態的數字，統一轉成 int 才能查表
-              final productId = rawId is int ? rawId : int.tryParse(rawId.toString());
+              final productId = widget.review['product_id'];
               if (productId == null) return;
-
-              // 優先用完整商品資料（含價格／購買連結／平台／標籤）
-              // 找不到（例如商品已下架）才退回只有 id/name/image 的簡易版本
-              final fullProduct = widget.productsById[productId];
-              context.push(
-                AppRoutes.product,
-                extra: fullProduct ?? {
-                  'id': productId,
-                  'name': productName,
-                  'image': widget.review['product_image'] ?? '',
-                },
-              );
+              context.push(AppRoutes.product, extra: {
+                'id': productId,
+                'name': productName,
+                'image': productImage,
+              });
             },
-            
-            child: Text(productName, style: AppTextStyles.bodyMedium
-                .copyWith(fontWeight: FontWeight.w600, color: AppColors.primary)),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: productImage.isNotEmpty
+                      ? Image.network(
+                          AppFormatters.proxyImageUrl(productImage),
+                          headers: AppFormatters.imageHeaders,
+                          width: 36,
+                          height: 36,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _thumbPlaceholder(),
+                        )
+                      : _thumbPlaceholder(),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(productName, style: AppTextStyles.bodyMedium
+                      .copyWith(fontWeight: FontWeight.w600, color: AppColors.primary)),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 6),
-          Text(rating > 0 && rating <= 3
-              ? ['', '不滿意', '普通', '滿意'][rating] : '',
-              style: AppTextStyles.caption),
+          if (rating > 0 && rating <= 3)
+            Row(
+              children: [
+                ...List.generate(3, (i) => Icon(
+                  i < rating ? Icons.star_rounded : Icons.star_border_rounded,
+                  size: 16,
+                  color: i < rating ? Colors.amber : AppColors.textHint,
+                )),
+                const SizedBox(width: 6),
+                Text(['', '不滿意', '普通', '滿意'][rating], style: AppTextStyles.caption),
+              ],
+            ),
           if (content.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
@@ -90,4 +114,13 @@ class _ReviewCardState extends State<ReviewCard> {
       ),
     );
   }
+  Widget _thumbPlaceholder() => Container(
+  width: 36,
+  height: 36,
+  decoration: BoxDecoration(
+    color: AppColors.cardVariant(context),
+    borderRadius: BorderRadius.circular(8),
+  ),
+  child: Icon(Icons.watch_outlined, size: 18, color: AppColors.textHint),
+);
 }

@@ -401,9 +401,23 @@ class ProductDetailScreen extends ConsumerWidget {
                 Text('缺點：${topCons.join(' ')}', style: AppTextStyles.caption),
               ],
               const SizedBox(height: 12),
-              TextButton(
-                onPressed: () => _openReviewSubmitSheet(context, ref, productId: productId),
-                child: const Text('我要留言心得'),
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: () => _openReviewSubmitSheet(context, ref, productId: productId),
+                    child: const Text('我要留言心得'),
+                  ),
+                  TextButton(
+                    onPressed: () => context.push(
+                      AppRoutes.productReviews,
+                      extra: {
+                        'productId': productId,
+                        'productName': product['name']?.toString() ?? '',
+                      },
+                    ),
+                    child: const Text('查看全部心得'),
+                  ),
+                ],
               ),
             ],
           ),
