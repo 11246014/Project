@@ -6,7 +6,12 @@ import '../../../core/constants/app_routes.dart';
 
 class ReviewCard extends StatefulWidget {
   final Map<String, dynamic> review;
-  const ReviewCard({super.key, required this.review});
+  final Map<int, Map<String, dynamic>> productsById; // 新增：完整商品資料（id → 商品Map）
+  const ReviewCard({
+    super.key,
+    required this.review,
+    this.productsById = const {},
+  });
 
   @override
   State<ReviewCard> createState() => _ReviewCardState();
@@ -35,14 +40,25 @@ class _ReviewCardState extends State<ReviewCard> {
           // 商品資訊列：獨立的 GestureDetector，點擊才會離開社群頁
           GestureDetector(
             onTap: () {
-              final productId = widget.review['product_id'];
+              final rawId = widget.review['product_id'];
+              if (rawId == null) return;
+              // product_id 可能是 int 或字串型態的數字，統一轉成 int 才能查表
+              final productId = rawId is int ? rawId : int.tryParse(rawId.toString());
               if (productId == null) return;
-              context.push(AppRoutes.product, extra: {
-                'id': productId,
-                'name': productName,
-                'image': widget.review['product_image'] ?? '',
-              });
+
+              // 優先用完整商品資料（含價格／購買連結／平台／標籤）
+              // 找不到（例如商品已下架）才退回只有 id/name/image 的簡易版本
+              final fullProduct = widget.productsById[productId];
+              context.push(
+                AppRoutes.product,
+                extra: fullProduct ?? {
+                  'id': productId,
+                  'name': productName,
+                  'image': widget.review['product_image'] ?? '',
+                },
+              );
             },
+            
             child: Text(productName, style: AppTextStyles.bodyMedium
                 .copyWith(fontWeight: FontWeight.w600, color: AppColors.primary)),
           ),
