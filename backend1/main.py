@@ -39,7 +39,7 @@ from schemas import (
     CartItemUpdate,
     ReviewCreate,
     ReviewProcessUpdate,
-    ReviewSummaryUpsert,ProductOut
+    ReviewSummaryUpsert,ProductOut,ProductCreate
 )
 from passlib.context import CryptContext
 
@@ -146,25 +146,6 @@ class UserLogin(BaseModel):
 # 商品 Schema
 # =========================
 
-class ProductCreate(BaseModel):
-
-    name: str
-
-    price: int
-
-    description:  Optional[str] = ""
-
-    platform:  Optional[str] = ""
-
-    image:  Optional[str] = ""
-
-    rating:  Optional[int] = 0
-
-    reason:  Optional[str] = ""
-
-    link:  Optional[str]=""
-    class Config:
-        from_attributes = True
 
 class UserProfileUpdate(BaseModel):
     age_range: str=""
