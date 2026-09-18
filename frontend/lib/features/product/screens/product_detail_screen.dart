@@ -355,7 +355,7 @@ class ProductDetailScreen extends ConsumerWidget {
         final reviewCount = summary?['review_count'] ?? 0;
 
         if (summary == null || reviewCount == 0) {
-          return _buildEmptyCommunityCard(context, productId);
+          return _buildEmptyCommunityCard(context, ref, productId);
         }
 
         final positiveRatio = (summary['positive_ratio'] ?? 0.0) as num;
@@ -401,9 +401,23 @@ class ProductDetailScreen extends ConsumerWidget {
                 Text('缺點：${topCons.join(' ')}', style: AppTextStyles.caption),
               ],
               const SizedBox(height: 12),
-              TextButton(
-                onPressed: () => _openReviewSubmitSheet(context, productId: productId),
-                child: const Text('我要留言心得'),
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: () => _openReviewSubmitSheet(context, ref, productId: productId),
+                    child: const Text('我要留言心得'),
+                  ),
+                  TextButton(
+                    onPressed: () => context.push(
+                      AppRoutes.productReviews,
+                      extra: {
+                        'productId': productId,
+                        'productName': product['name']?.toString() ?? '',
+                      },
+                    ),
+                    child: const Text('查看全部心得'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -412,7 +426,7 @@ class ProductDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyCommunityCard(BuildContext context, int productId) {
+  Widget _buildEmptyCommunityCard(BuildContext context, WidgetRef ref, int productId) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -425,7 +439,7 @@ class ProductDetailScreen extends ConsumerWidget {
               style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSub(context))),
           const SizedBox(height: 8),
           TextButton(
-            onPressed: () => _openReviewSubmitSheet(context, productId: productId),
+            onPressed: () => _openReviewSubmitSheet(context, ref, productId: productId),
             child: const Text('我要留言心得'),
           ),
         ],
@@ -433,11 +447,19 @@ class ProductDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _openReviewSubmitSheet(BuildContext context, {required int productId}) {
-    openReviewSubmitSheet(
+  void _openReviewSubmitSheet(
+    BuildContext context,
+    WidgetRef ref, {
+    required int productId,
+  }) async {
+    final success = await openReviewSubmitSheet(
       context,
       productId: productId,
       productName: product['name']?.toString(),
     );
+    // 送出成功才重新查詢，避免使用者只是關掉表單也白打一次 API
+    if (success == true) {
+      ref.invalidate(reviewSummaryProvider(productId));
+    }
   }
 }

@@ -100,7 +100,7 @@ class _ReviewSubmitSheetState extends State<ReviewSubmitSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView( 
       padding: EdgeInsets.only(
         left: 20, right: 20, top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 20,
@@ -134,11 +134,21 @@ class _ReviewSubmitSheetState extends State<ReviewSubmitSheet> {
             ),
             ..._searchResults.map((p) => ListTile(
               title: Text(p['name']?.toString() ?? ''),
-              onTap: () => setState(() {
-                _selectedProductId = p['id'] as int;
-                _selectedProductName = p['name']?.toString();
-                _searchResults = [];
-              }),
+              onTap: () {
+                final rawId = p['id'];
+                if (rawId == null) {
+                  // 這個商品沒有資料庫 id，無法選取，提示使用者而不是讓 App 崩潰
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('這個商品目前無法留言，請稍後再試')),
+                  );
+                  return;
+                }
+                setState(() {
+                  _selectedProductId = rawId as int;
+                  _selectedProductName = p['name']?.toString();
+                  _searchResults = [];
+                });
+              },
             )),
           ],
           const SizedBox(height: 20),

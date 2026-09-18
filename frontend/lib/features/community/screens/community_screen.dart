@@ -15,6 +15,7 @@ class CommunityScreen extends StatefulWidget {
 class _CommunityScreenState extends State<CommunityScreen> {
   final _scrollController = ScrollController();
   final List<Map<String, dynamic>> _reviews = [];
+  final Map<int, Map<String, dynamic>> _productsById = {};
   bool _isLoading = false;
   bool _hasMore = true;
   int _offset = 0;
@@ -24,6 +25,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   void initState() {
     super.initState();
     _loadMore();
+    _loadProducts(); // 預先載入完整商品清單
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >
           _scrollController.position.maxScrollExtent - 200) {
@@ -55,6 +57,23 @@ class _CommunityScreenState extends State<CommunityScreen> {
       if (mounted) setState(() => _isLoading = false);  // ← 不管成功失敗，一定會把轉圈關掉
     }
   }
+
+  /// 預先載入完整商品清單，讓點擊心得卡片時能查到含 price/link 的完整資料
+Future<void> _loadProducts() async {
+  try {
+    final products = await ProductService.getProducts();
+    if (!mounted) return;
+    setState(() {
+      for (final p in products) {
+        final id = p['id'];
+        if (id is int) _productsById[id] = p;
+      }
+    });
+  } catch (e) {
+    debugPrint('社群頁預載商品清單失敗：$e');
+    // 失敗不影響主流程，ReviewCard 會自動退回簡易版資料
+  }
+}
 
   Future<void> _openSubmitSheet() async {
     try {
@@ -108,7 +127,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                   );
                 }
-                return ReviewCard(review: _reviews[index]);
+                return ReviewCard(review: _reviews[index], productsById: _productsById);
               },
             ),
     );

@@ -23,6 +23,9 @@ class AppRoutes {
   /// 情境篩選頁
   static const String recommendation = '/recommendation';
 
+  /// 單一商品的完整心得列表（「查看全部心得」用）
+  static const String productReviews = '/product/reviews';
+
   /// 社群心得動態牆
   static const String community = '/community';
 

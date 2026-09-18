@@ -191,7 +191,14 @@ def aggregate_top_keywords(
 
         keywords = review.get(field, [])
 
-        if not isinstance(keywords, list):
+        # Backend1 儲存格式為逗號分隔字串；同時保留對 list 的相容處理。
+        if isinstance(keywords, str):
+            keywords = [
+                keyword.strip()
+                for keyword in keywords.split(",")
+                if keyword.strip()
+            ]
+        elif not isinstance(keywords, list):
             continue
 
         for keyword in keywords:
@@ -308,6 +315,7 @@ def process_single_review(
         review_data = {
             'pros': ','.join(pros),
             'cons': ','.join(cons),
+            'process_status': 'done',
         }
 
         # ---------------------------------------------------------
