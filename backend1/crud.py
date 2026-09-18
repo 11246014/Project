@@ -141,9 +141,38 @@ def get_reviews(db: Session, limit: int = 50, offset: int = 0):
     ]
 def get_reviews_by_product(db: Session, product_id: int):
     """取得單一商品的所有心得，給商品詳情頁「查看全部心得」使用"""
-    return (db.query(models.ProductReview)
-            .filter_by(product_id=product_id)
-            .order_by(models.ProductReview.created_at.desc()).all())
+
+    results = (
+        db.query(
+            models.ProductReview,
+            models.Product.name.label("product_name"),
+            models.Product.image.label("product_image"),
+        )
+        .join(
+            models.Product,
+            models.ProductReview.product_id == models.Product.id
+        )
+        .filter(
+            models.ProductReview.product_id == product_id
+        )
+        .order_by(
+            models.ProductReview.created_at.desc()
+        )
+        .all()
+    )
+
+    return [
+        {
+            "id": review.id,
+            "product_id": review.product_id,
+            "rating": review.rating,
+            "content": review.content,
+            "created_at": review.created_at,
+            "product_name": product_name,
+            "product_image": product_image,
+        }
+        for review, product_name, product_image in results
+    ]
 def get_review_summary(db: Session, product_id: int):
     """取得單一商品的彙整摘要，給商品詳情頁的社群評價卡片使用"""
     return db.query(models.ProductReviewSummary).filter_by(product_id=product_id).first()

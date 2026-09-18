@@ -7,12 +7,26 @@ class UserCreate(BaseModel):
     username: str
     email: str
     password: str
-
-
 class ProductCreate(BaseModel):
+
     name: str
+
     price: int
-    description: str
+
+    description:  Optional[str] = ""
+
+    platform:  Optional[str] = ""
+
+    image:  Optional[str] = ""
+
+    rating:  Optional[int] = 0
+
+    reason:  Optional[str] = ""
+
+    link:  Optional[str]=""
+    class Config:
+        from_attributes = True
+
 class ProductOut(ProductCreate):
     id: int
 
