@@ -306,7 +306,15 @@ def create_product(
 ):
 
     db = SessionLocal()
-
+    existing = (
+        db.query(Product)
+        .filter(Product.name == product.name)
+        .filter(Product.platform == product.platform)
+        .first()
+    )
+    if existing:
+        db.close()
+        return {"message": "商品已存在，沿用既有紀錄", "id": existing.id}
     # =========================
     # 建立商品
 
