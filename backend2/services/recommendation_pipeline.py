@@ -203,48 +203,69 @@ def recommend_from_need(
             "",
         )
 
-        if not api_url:
+        # =========================
+        # Try to Resolve Product Link
+        # =========================
 
-            if DEBUG_PIPELINE:
+        if api_url:
+
+            link = fetch_immersive_product(
+                api_url,
+            )
+
+            if link:
+
+                # =========================
+                # Save Real E-commerce Link
+                # =========================
+
+                product["link"] = link
+
+                if DEBUG_PIPELINE:
+                    print(
+                        "[Product Link] Resolved:",
+                        product.get(
+                            "title",
+                            "",
+                        )
+                    )
+
+                    print(
+                        "Link:",
+                        link,
+                    )
+
+            elif DEBUG_PIPELINE:
+
                 print(
-                    "[Product Link] No Immersive API:",
+                    "[Product Link] Failed:",
                     product.get(
                         "title",
                         "",
                     )
                 )
 
-            continue
+        elif DEBUG_PIPELINE:
 
-        link = fetch_immersive_product(
-            api_url,
-        )
-
-        if link:
-
-            # =========================
-            # Save Real E-commerce Link
-            # =========================
-
-            product["link"] = link
-
-            if DEBUG_PIPELINE:
-                print(
-                    "[Product Link] Resolved:",
-                    product.get(
-                        "title",
-                        "",
-                    )
+            print(
+                "[Product Link] No Immersive API:",
+                product.get(
+                    "title",
+                    "",
                 )
+            )
 
-                print(
-                    "Link:",
-                    link,
-                )
+        # =========================
+        # Save Product to Backend1
+        # =========================
+        # 不管有沒有成功解析 link，
+        # 都要嘗試存進 Backend1
+        #
+        # 如果商品本來就有 id，
+        # 就不要重複建立商品
+        # =========================
 
-            # =========================
-            # Save Product to Backend1
-            # =========================
+        if product.get("id") is None:
 
             if DEBUG_PIPELINE:
                 print(
@@ -256,18 +277,9 @@ def recommend_from_need(
                 )
 
             new_id = save_product(product)
+
             if new_id is not None:
-                product['id'] = new_id
-
-        elif DEBUG_PIPELINE:
-
-            print(
-                "[Product Link] Failed:",
-                product.get(
-                    "title",
-                    "",
-                )
-            )
+                product["id"] = new_id
 
     # =========================
     # Format

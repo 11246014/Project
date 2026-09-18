@@ -647,6 +647,8 @@ async def search_db_products(keyword):
 
             matched.append({
 
+                "id": product.get("id"),
+
                 "title": product.get(
                     "name",
                     ""
