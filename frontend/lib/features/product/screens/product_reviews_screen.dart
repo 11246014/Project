@@ -3,6 +3,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../services/review_service.dart';
 import '../../community/widgets/review_card.dart';
+import '../../../services/product_service.dart';
 
 /// 商品詳情頁「查看全部心得」用：顯示單一商品的完整心得列表
 class ProductReviewsScreen extends StatefulWidget {
@@ -20,17 +21,34 @@ class ProductReviewsScreen extends StatefulWidget {
 
 class _ProductReviewsScreenState extends State<ProductReviewsScreen> {
   late Future<List<Map<String, dynamic>>> _future;
+  final Map<int, Map<String, dynamic>> _productsById = {};
 
   @override
   void initState() {
     super.initState();
     _future = ReviewService.getProductReviews(widget.productId);
+    _loadProducts(); // 新增：預先載入完整商品清單
+  }
+
+  Future<void> _loadProducts() async {
+    try {
+      final products = await ProductService.getProducts();
+      if (!mounted) return;
+      setState(() {
+        for (final p in products) {
+          final id = p['id'];
+          if (id is int) _productsById[id] = p;
+        }
+      });
+    } catch (e) {
+      debugPrint('商品心得頁預載商品清單失敗：$e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background(context),
+      backgroundColor: AppColors.bg(context),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
