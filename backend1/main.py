@@ -934,3 +934,21 @@ def upsert_review_summary_api(product_id: int, data: ReviewSummaryUpsert, db:
 Session = Depends(get_db)):
     """後端 2 批次彙整完 top_pros/top_cons/summary_text 後呼叫這支寫回"""
     return crud.upsert_review_summary(db, product_id, data)
+@app.get("/products/{product_id}", response_model=ProductOut)
+def get_product(
+    product_id: int,
+    db: Session = Depends(get_db)
+):
+    product = (
+        db.query(models.Product)
+        .filter(models.Product.id == product_id)
+        .first()
+    )
+
+    if not product:
+        raise HTTPException(
+            status_code=404,
+            detail="商品不存在"
+        )
+
+    return product
