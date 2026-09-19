@@ -1,6 +1,8 @@
 #web_search_service.py
 import os
 
+import time
+
 import requests
 from dotenv import load_dotenv
 
@@ -133,10 +135,19 @@ def fetch_shopping_results(
         "device": "desktop",
     }
 
+    web_request_start = time.perf_counter()
+
+    print("[Web Search Request] START")
+
     response = requests.get(
         SERPAPI_URL,
         params=params,
         timeout=SEARCH_TIMEOUT,
+    )
+
+    print(
+        f"[Timing] SerpAPI Request: "
+        f"{time.perf_counter() - web_request_start:.2f}s"
     )
 
     response.raise_for_status()
@@ -474,10 +485,19 @@ def web_search_products_with_status(
     # Cache Hit
     # =====================================================
 
-    if cache_key in SEARCH_CACHE:
+    cache_start = time.perf_counter()
+
+    cache_hit = cache_key in SEARCH_CACHE
+
+    if DEBUG_SEARCH:
+        print(
+            f"[Timing] Cache Check: "
+            f"{time.perf_counter() - cache_start:.4f}s"
+        )
+
+    if cache_hit:
 
         if DEBUG_SEARCH:
-
             print(
                 f"[Cache Hit] "
                 f"{keyword} "
@@ -490,7 +510,6 @@ def web_search_products_with_status(
             ],
             False,
         )
-
     # =====================================================
     # Search
     # =====================================================
@@ -508,11 +527,19 @@ def web_search_products_with_status(
         # Product Build
         # =================================================
 
+        build_start = time.perf_counter()
+
         products = build_products(
             shopping_results,
             keyword,
             region,
         )
+
+        if DEBUG_SEARCH:
+            print(
+                f"[Timing] Product Build: "
+                f"{time.perf_counter() - build_start:.2f}s"
+            )
 
         if DEBUG_SEARCH:
 

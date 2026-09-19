@@ -36,6 +36,16 @@ product_type：
 請保留原始名稱，
 不要自行修改。
 
+重要判斷規則：
+
+- Apple Watch 一律視為「智慧手錶」。
+- Apple Watch 不得判定為「智慧手環」。
+- 使用者只提到「Apple Watch」時：
+  brand = "Apple Watch"
+  product_type = "智慧手錶"
+- Apple Watch Series、Apple Watch SE、Apple Watch Ultra
+  也都屬於「智慧手錶」。
+
 brand：
 
 若使用者明確提到品牌，

@@ -25,7 +25,7 @@ load_dotenv()
 
 DEBUG_LINK = True
 
-SEARCH_TIMEOUT = 30
+PRODUCT_LINK_TIMEOUT = 15
 
 SERPAPI_KEY = os.getenv(
     "SERPAPI_KEY"
@@ -346,7 +346,7 @@ def fetch_immersive_product(
             params={
                 "api_key": SERPAPI_KEY,
             },
-            timeout=SEARCH_TIMEOUT,
+            timeout=PRODUCT_LINK_TIMEOUT,
         )
 
         response.raise_for_status()
