@@ -1,18 +1,17 @@
 #gemini_service.py
 import os
 
-import google.generativeai as genai
-
 from dotenv import load_dotenv
+from google import genai
+from google.genai import types
 
 from config.settings import GEMINI_MODEL
 
 load_dotenv()
 
-genai.configure(
-    api_key=os.getenv(
-        "GEMINI_API_KEY"
-    )
+
+client = genai.Client(
+    api_key=os.getenv("GEMINI_API_KEY")
 )
 
 
@@ -25,12 +24,9 @@ def ask_gemini(
     and return the generated text.
     """
 
-    model = genai.GenerativeModel(
-        model_name or GEMINI_MODEL
-    )
-
-    response = model.generate_content(
-        prompt
+    response = client.models.generate_content(
+        model=model_name or GEMINI_MODEL,
+        contents=prompt,
     )
 
     return (
@@ -39,19 +35,21 @@ def ask_gemini(
         else ""
     )
 
+
 def ask_gemini_structured(
     prompt,
     schema,
     model_name=None,
 ):
-    model = genai.GenerativeModel(
-        model_name or GEMINI_MODEL
-    )
+    """
+    Send a prompt to Gemini
+    and return structured JSON text.
+    """
 
-    response = model.generate_content(
-        prompt,
-        generation_config=genai.GenerationConfig(
-            temperature=0,
+    response = client.models.generate_content(
+        model=model_name or GEMINI_MODEL,
+        contents=prompt,
+        config=types.GenerateContentConfig(
             response_mime_type="application/json",
             response_schema=schema,
         ),

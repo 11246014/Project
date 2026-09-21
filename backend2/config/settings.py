@@ -5,7 +5,7 @@
 
 # Demo："gemini"
 # Development："ollama"
-AI_PROVIDER = "ollama"
+AI_PROVIDER = "gemini"
 
 
 # ==========================
@@ -21,15 +21,15 @@ OLLAMA_MODEL = "qwen3:1.7b"
 # Gemini
 # ==========================
 
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 
 # ==========================
 # Task Models
 # ==========================
 
-CHAT_MODEL = OLLAMA_MODEL
+CHAT_MODEL = GEMINI_MODEL
 
-KEYWORD_MODEL = OLLAMA_MODEL
+KEYWORD_MODEL = GEMINI_MODEL
 
-SUMMARY_MODEL = OLLAMA_MODEL
+SUMMARY_MODEL = GEMINI_MODEL
