@@ -46,6 +46,58 @@ st.set_page_config(
 )
 
 # ============================================================
+# 密碼保護（給廠商 / 自己看的後臺數據，避免連結外流被隨意查看）
+# ============================================================
+def check_password():
+    """
+    密碼驗證函式。
+    回傳 True 代表這次瀏覽階段（session）已通過密碼驗證。
+    用 st.session_state 記住驗證結果，避免每次互動
+    （切換篩選條件、日期範圍等）都要重新輸入密碼。
+    """
+
+    def password_entered():
+        # 比對輸入框的值與 .streamlit/secrets.toml 裡設定的密碼
+        if st.session_state["password"] == st.secrets["password"]:
+            st.session_state["password_correct"] = True
+            # 驗證成功後清掉輸入框的值，避免密碼字串殘留
+            del st.session_state["password"]
+        else:
+            st.session_state["password_correct"] = False
+
+    # 情況一：這次瀏覽階段第一次進來，還沒驗證過
+    if "password_correct" not in st.session_state:
+        st.text_input(
+            "請輸入密碼",
+            type="password",
+            on_change=password_entered,
+            key="password",
+        )
+        return False
+
+    # 情況二：曾經輸入過，但密碼錯誤
+    elif not st.session_state["password_correct"]:
+        st.text_input(
+            "請輸入密碼",
+            type="password",
+            on_change=password_entered,
+            key="password",
+        )
+        st.error("😕 密碼錯誤，請再試一次")
+        return False
+
+    # 情況三：已通過驗證
+    else:
+        return True
+
+
+# 密碼沒過就整個 script 停在這裡，下面所有品牌色彩、CSS、
+# 圖表、KPI 計算全部都不會執行，畫面上只會看到密碼輸入框
+if not check_password():
+    st.stop()
+
+
+# ============================================================
 # 品牌色彩（對齊 Flutter App 的深海藍 + 電光藍主題）
 # ============================================================
 NAVY = "#0A0E1A"
