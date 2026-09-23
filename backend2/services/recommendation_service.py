@@ -81,10 +81,12 @@ def is_need_complete(user_need):
 
     has_actual_requirement = (
         has_usage
-        or
-        has_features
-        or
-        has_budget
+        and
+        (
+            has_features
+            or
+            has_budget
+        )
     )
 
     return (
