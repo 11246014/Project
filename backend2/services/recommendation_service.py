@@ -93,6 +93,31 @@ def is_need_complete(user_need):
         has_actual_requirement
     )
 
+def generate_chat_reply(user_message):
+    """
+    一般聊天的本地回覆。
+    不呼叫 Gemini，避免單純聊天造成不必要的 AI 延遲。
+    """
+
+    text = user_message.strip().lower()
+
+    if any(x in text for x in ["你好", "嗨", "哈囉", "hello", "hi"]):
+        return "嗨～你好！今天想聊點什麼？"
+
+    if any(x in text for x in ["早安", "早上好"]):
+        return "早安～今天過得還好嗎？"
+
+    if any(x in text for x in ["晚安"]):
+        return "晚安～祝你今晚好好休息！"
+
+    if any(x in text for x in ["謝謝", "感謝"]):
+        return "不客氣～有需要都可以再找我！"
+
+    if any(x in text for x in ["掰掰", "拜拜", "再見"]):
+        return "掰掰～有需要再來找我！"
+
+    return "了解～你可以繼續跟我聊聊，或直接告訴我你想找什麼商品。"
+
 def wants_recommendation_guidance(user_message):
     """
     判斷使用者是否表示自己不確定需求，
@@ -234,30 +259,15 @@ def recommend_products(
 
         if intent == "chat":
 
-            chat_prompt = f"""
-請使用繁體中文回答使用者。
+            print("[Chat] Normal chat -> skip AI")
 
-使用者：
-{user_message}
-
-要求：
-
-1. 使用自然、親切的繁體中文。
-2. 不要使用簡體中文。
-3. 不需要推薦商品，除非使用者明確提出商品需求。
-4. 回答要像自然聊天，不要像制式客服。
-"""
-
-            reply = ask_ai(
-                chat_prompt
+            reply = generate_chat_reply(
+                user_message
             )
 
             return {
-
-                "summary": reply.strip(),
-
+                "summary": reply,
                 "products": [],
-
                 "user_need": None,
             }
 
@@ -396,9 +406,9 @@ def recommend_products(
             )
 
             follow_up = generate_follow_up(
-                user_need
+                user_need,
+                user_message
             )
-
             print(
                 f"[Follow-up] "
                 f"{follow_up}"
