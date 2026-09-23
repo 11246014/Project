@@ -1,13 +1,13 @@
-# keyword_service.py
-
+#keyword_service.py
 import json
 import re
 
 from config.settings import KEYWORD_MODEL
 from services.ai_service import ask_ai
 from services.keyword_prompt import build_keyword_prompt
-from services.search_query_builder import build_search_query
-
+from services.search_query_builder import (
+    build_search_query,
+)
 
 # ==================================================
 # Constants
@@ -63,14 +63,12 @@ BRAND_KEYWORDS = {
     "airpods": "AirPods",
 }
 
-
 # 裝置快速查詢
 DEVICE_KEYWORDS = {
     "智慧手錶": "智慧手錶",
     "智慧手環": "智慧手環",
     "藍牙耳機": "藍牙耳機",
 }
-
 
 # AI 常見簡體修正
 ZH_MAP = {
@@ -80,14 +78,12 @@ ZH_MAP = {
     "健康监测": "健康監測",
 }
 
-
 # 功能別名
 FEATURE_ALIAS = {
     "睡眠": "睡眠監測",
     "睡眠品質": "睡眠監測",
     "記錄睡眠": "睡眠監測",
 }
-
 
 # AI 常見未知值
 UNKNOWN_VALUES = {
@@ -97,7 +93,6 @@ UNKNOWN_VALUES = {
     "N/A",
     None,
 }
-
 
 # ==================================================
 # Helpers
@@ -162,12 +157,8 @@ def _keyword_result(
 
     return {
         "keyword": keyword or "",
-
-        # Budget 由 Gemini 負責解析。
-        # 這裡只負責保留結果，不重新判斷。
         "budget_min": budget_min or 0,
         "budget_max": budget_max or 0,
-
         "product_type": _none_if_empty(product_type),
         "brand": _none_if_empty(brand),
         "usage": _none_if_empty(usage),
@@ -216,8 +207,6 @@ def _parse_ai_response(response):
         )
 
     return data
-
-
 # ==================================================
 # Validation
 # ==================================================
@@ -226,14 +215,8 @@ def _validate_keyword_result(data):
     """
     驗證並修正 AI 回傳資料格式。
 
-    只修正：
-    1. 缺少欄位
-    2. 資料型別
-    3. features List 格式
-    4. budget 數字格式
-
-    不重新推測使用者需求。
-    不使用 Regex 覆蓋 Gemini 已經解析好的內容。
+    僅修正資料型別與缺少欄位，
+    不推測、不修改使用者需求。
     """
 
     if not isinstance(data, dict):
@@ -253,31 +236,18 @@ def _validate_keyword_result(data):
         "budget_max": 0,
     }
 
-    # --------------------------
     # 補齊缺少欄位
-    # --------------------------
-
     for key, default in defaults.items():
         data.setdefault(key, default)
 
-    # --------------------------
     # features 一律轉 List
-    # --------------------------
-
     if not isinstance(data["features"], list):
-
         if data["features"] in ("", None):
             data["features"] = []
-
         else:
-            data["features"] = [
-                data["features"]
-            ]
-
-    # --------------------------
+            data["features"] = [data["features"]]
+            
     # 字串欄位一律轉成字串
-    # --------------------------
-
     for key in (
         "product_type",
         "brand",
@@ -288,63 +258,30 @@ def _validate_keyword_result(data):
         "occupation",
         "age_group",
     ):
-
         value = data.get(key)
 
         if isinstance(value, list):
-
-            data[key] = (
-                value[0]
-                if value
-                else ""
-            )
+            data[key] = value[0] if value else ""
 
         elif value is None:
-
             data[key] = ""
 
         elif not isinstance(value, str):
-
             data[key] = str(value)
 
-    # --------------------------
-    # Budget
-    # --------------------------
-    #
-    # 這裡只確認型別。
-    #
-    # 不重新判斷：
-    # 「使用者到底有沒有預算」
-    #
-    # 也不使用 Regex 覆蓋 Gemini 結果。
-    #
-    # 例如 Gemini 已經解析：
-    #
-    # 一萬元內
-    # budget_min = 0
-    # budget_max = 10000
-    #
-    # 就直接保留。
-    # --------------------------
+    # usage
+    if data["usage"] is None:
+        data["usage"] = ""
 
+    # budget
     try:
-
-        data["budget_min"] = int(
-            data["budget_min"]
-        )
-
+        data["budget_min"] = int(data["budget_min"])
     except Exception:
-
         data["budget_min"] = 0
 
     try:
-
-        data["budget_max"] = int(
-            data["budget_max"]
-        )
-
+        data["budget_max"] = int(data["budget_max"])
     except Exception:
-
         data["budget_max"] = 0
 
     return data
@@ -354,15 +291,12 @@ def _validate_keyword_result(data):
 # Normalize
 # ==================================================
 
-def normalize_keyword_result(
-    data,
-    user_message
-):
+def normalize_keyword_result(data, user_message):
     """
     將 AI 回傳資料正規化。
 
-    只修正格式與資料表示方式，
-    不重新猜測需求。
+    只修正格式，
+    不猜測需求。
     """
 
     # --------------------------
@@ -384,16 +318,9 @@ def normalize_keyword_result(
 
         # AI 有時會回 [] 或 ["iOS"]
         if isinstance(value, list):
+            value = value[0] if value else ""
 
-            value = (
-                value[0]
-                if value
-                else ""
-            )
-
-        data[key] = _convert_traditional(
-            value
-        )
+        data[key] = _convert_traditional(value)
 
     # --------------------------
     # Features
@@ -401,14 +328,9 @@ def normalize_keyword_result(
 
     features = []
 
-    for item in data.get(
-        "features",
-        []
-    ):
+    for item in data.get("features", []):
 
-        item = _convert_traditional(
-            item
-        )
+        item = _convert_traditional(item)
 
         item = FEATURE_ALIAS.get(
             item,
@@ -416,10 +338,7 @@ def normalize_keyword_result(
         )
 
         if item not in features:
-
-            features.append(
-                item
-            )
+            features.append(item)
 
     data["features"] = features
 
@@ -427,10 +346,7 @@ def normalize_keyword_result(
     # Battery
     # --------------------------
 
-    if data.get(
-        "battery"
-    ) in UNKNOWN_VALUES:
-
+    if data.get("battery") in UNKNOWN_VALUES:
         data["battery"] = ""
 
     # --------------------------
@@ -441,7 +357,6 @@ def normalize_keyword_result(
         r"(商務|商务|時尚|时尚|運動|运动)",
         user_message,
     ):
-
         data["style"] = ""
 
     # --------------------------
@@ -455,22 +370,15 @@ def normalize_keyword_result(
     ):
 
         if data.get("os") == "Cross":
-
             data["os"] = ""
 
     # --------------------------
     # Usage
     # --------------------------
 
-    usage = data.get(
-        "usage",
-        ""
-    )
+    usage = data.get("usage", "")
 
-    if isinstance(
-        usage,
-        str
-    ):
+    if isinstance(usage, str):
 
         usage = _convert_traditional(
             usage
@@ -492,37 +400,21 @@ def normalize_keyword_result(
 
             if item in FEATURE_ALIAS:
 
-                feature = FEATURE_ALIAS[
-                    item
-                ]
+                feature = FEATURE_ALIAS[item]
 
-                if feature not in data[
-                    "features"
-                ]:
-
-                    data[
-                        "features"
-                    ].append(
+                if feature not in data["features"]:
+                    data["features"].append(
                         feature
                     )
 
-                # 睡眠同時屬於：
-                # 1. 使用情境
-                # 2. 功能需求
-
+                # 睡眠同時屬於「使用情境」與「功能需求」
                 if item not in new_usage:
-
-                    new_usage.append(
-                        item
-                    )
+                    new_usage.append(item)
 
             else:
 
                 if item not in new_usage:
-
-                    new_usage.append(
-                        item
-                    )
+                    new_usage.append(item)
 
         data["usage"] = "、".join(
             new_usage
@@ -548,50 +440,24 @@ def normalize_keyword_result(
             "None",
             "null",
         ):
-
             data[key] = ""
 
     return data
-
-
 # ==================================================
 # Extract Flow
 # ==================================================
 
 def extract_keyword(user_message):
     """
-    使用 Gemini 分析使用者需求，
+    使用 AI 分析使用者需求，
     並產生搜尋關鍵字。
-
-    流程：
-
-    User Message
-        ↓
-    Brand Shortcut
-        ↓
-    Device Shortcut
-        ↓
-    Gemini Keyword Extraction
-        ↓
-    JSON Parse
-        ↓
-    Validation
-        ↓
-    Normalize
-        ↓
-    Build Search Query
-        ↓
-    Keyword Result
-
-    Budget 由 Gemini 負責理解，
-    Python 不再重新判斷或覆蓋 Budget。
     """
 
     try:
 
-        # ==================================================
+        # --------------------------
         # Brand Shortcut
-        # ==================================================
+        # --------------------------
 
         msg = user_message.lower().strip()
 
@@ -601,115 +467,122 @@ def extract_keyword(user_message):
                 keyword=BRAND_KEYWORDS[msg],
                 brand=BRAND_KEYWORDS[msg]
             )
-
-        # ==================================================
+        
+        # --------------------------
         # Device Shortcut
-        # ==================================================
+        # --------------------------
 
         device = user_message.strip()
 
         if device in DEVICE_KEYWORDS:
 
-            print(
-                f"[Device Shortcut] matched: {device}"
-            )
+            print(f"[Device Shortcut] matched: {device}")
 
             return _keyword_result(
-                keyword=DEVICE_KEYWORDS[
-                    device
-                ],
-                product_type=DEVICE_KEYWORDS[
-                    device
-                ]
+                keyword=DEVICE_KEYWORDS[device]
             )
 
-        # ==================================================
+        # --------------------------
         # Build Prompt
-        # ==================================================
+        # --------------------------
 
         prompt = build_keyword_prompt(
             user_message
         )
 
-        # ==================================================
-        # Ask Gemini
-        # ==================================================
+        # --------------------------
+        # Ask AI
+        # --------------------------
 
         response = ask_ai(
             prompt,
             model_name=KEYWORD_MODEL
         )
 
-        print(
-            "\n========== Keyword Raw =========="
-        )
-
+        print("\n========== Keyword Raw ==========")
         print(response)
+        print("=================================\n")
 
-        print(
-            "=================================\n"
-        )
-
-        # ==================================================
+        # --------------------------
         # Parse
-        # ==================================================
+        # --------------------------
 
         data = _parse_ai_response(
             response
         )
 
-        # ==================================================
+        # --------------------------
         # Validation
-        # ==================================================
+        # --------------------------
 
-        data = _validate_keyword_result(
-            data
-        )
+        data = _validate_keyword_result(data)
 
-        print(
-            "[Budget Debug - Validation] "
-            f"min={data.get('budget_min')} "
-            f"max={data.get('budget_max')}"
-        )
-
-        # ==================================================
+        # --------------------------
         # Normalize
-        # ==================================================
+        # --------------------------
 
         data = normalize_keyword_result(
             data,
             user_message
         )
 
-        print(
-            "[Budget Debug - Normalize] "
-            f"min={data.get('budget_min')} "
-            f"max={data.get('budget_max')}"
+        # --------------------------
+        # Budget Validation
+        # --------------------------
+
+        has_budget = bool(
+            re.search(
+                r"(預算|\d+)",
+                user_message
+            )
         )
 
-        # ==================================================
-        # Budget Final Check
-        # ==================================================
-        #
-        # 只印出結果。
-        #
-        # 不再修改 Gemini 的答案。
-        # ==================================================
+        if not has_budget:
 
-        print(
-            "[FINAL BUDGET CHECK] "
-            f"min={data.get('budget_min')} "
-            f"max={data.get('budget_max')}"
-        )
+            data["budget_min"] = 0
+            data["budget_max"] = 0
 
-        # ==================================================
-        # Parsed Debug
-        # ==================================================
+        else:
 
-        print(
-            "\n========== Parsed =========="
-        )
+            # 使用者明確表示「以下／以內／不超過／最多／最高」
+            # 代表數字是「最高預算」，不是最低預算。
+            if re.search(
+                r"(以下|以內|不超過|最多|最高)",
+                user_message
+            ):
 
+                if data.get("budget_min", 0) > 0:
+
+                    data["budget_max"] = data["budget_min"]
+                    data["budget_min"] = 0
+
+            # 使用者明確表示「以上／至少／最低」
+            # 代表數字是「最低預算」。
+            elif re.search(
+                r"(以上|至少|最低)",
+                user_message
+            ):
+
+                if (
+                    data.get("budget_min", 0) == 0
+                    and data.get("budget_max", 0) > 0
+                ):
+
+                    data["budget_min"] = data["budget_max"]
+                    data["budget_max"] = 0
+                    
+            # 使用者只提供單一預算數字，例如「5000元」
+            # 沒有「以上／至少／最低」，
+            # 視為最高預算。
+            elif (
+                data.get("budget_min", 0) > 0
+                and data.get("budget_max", 0) > 0
+                and data.get("budget_min") == data.get("budget_max")
+            ):
+                data["budget_max"] = data["budget_min"]
+                data["budget_min"] = 0
+                    
+        print("\n========== Parsed ==========")
         print(data)
 
         print(
@@ -718,13 +591,11 @@ def extract_keyword(user_message):
             f"{data.get('budget_max')}"
         )
 
-        print(
-            "============================\n"
-        )
+        print("============================\n")
 
-        # ==================================================
+        # --------------------------
         # Build Search Query
-        # ==================================================
+        # --------------------------
 
         search_keyword = build_search_query(
             data,
@@ -734,8 +605,7 @@ def extract_keyword(user_message):
         if search_keyword:
 
             print(
-                f"[Keyword Extraction] "
-                f"{search_keyword}"
+                f"[Keyword Extraction] {search_keyword}"
             )
 
             return _keyword_result(
@@ -787,6 +657,7 @@ def extract_keyword(user_message):
                 age_group=data.get(
                     "age_group"
                 )
+
             )
 
     except Exception as e:

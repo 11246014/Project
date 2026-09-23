@@ -1,5 +1,4 @@
 # services/search_strategy.py
-import re
 
 import asyncio
 
@@ -98,69 +97,17 @@ def normalize_product_title(product):
     """
     將商品名稱標準化，
     供去重使用。
-
-    目的：
-    不同電商可能使用不同商品名稱，
-    但實際上是同一個商品。
-
-    例如：
-
-    GARMIN Forerunner 165 音樂版 暢快白,GPS智慧心率跑錶
-    GARMIN Forerunner 165 Music GPS智慧心率進階跑錶
-    GARMIN Forerunner 165 Music GPS智慧跑錶
-
-    → garmin forerunner 165
     """
 
-    title = (
-        product.get("title")
-        or product.get("name")
-        or ""
+    title = product.get(
+        "title",
+        "",
     )
 
     if not title:
         return ""
 
     title = title.strip().lower()
-
-    # --------------------------------------------------
-    # 移除常見品牌
-    # --------------------------------------------------
-
-    title = re.sub(
-        r"\bgarmin\b",
-        "",
-        title,
-        flags=re.IGNORECASE,
-    )
-
-    # --------------------------------------------------
-    # Forerunner 型號
-    # --------------------------------------------------
-
-    match = re.search(
-        r"forerunner.*?(\d{2,4})",
-        title,
-        flags=re.IGNORECASE,
-    )
-
-    if match:
-
-        model_number = match.group(1)
-
-        return (
-            f"garmin forerunner {model_number}"
-        )
-
-    # --------------------------------------------------
-    # 其他商品先使用原本標準化方式
-    # --------------------------------------------------
-
-    title = re.sub(
-        r"[^\w\s]",
-        " ",
-        title,
-    )
 
     return " ".join(
         title.split()
@@ -209,7 +156,6 @@ def deduplicate_products(products):
     unique_products = {}
 
     for product in products:
-
         title = normalize_product_title(
             product
         )
@@ -226,7 +172,6 @@ def deduplicate_products(products):
         )
 
         if existing_product is None:
-
             unique_products[title] = product
             continue
 
@@ -234,61 +179,14 @@ def deduplicate_products(products):
             existing_product
         )
 
-        if DEBUG_SEARCH:
-
-            old_name = (
-                existing_product.get("title")
-                or existing_product.get("name")
-                or ""
-            )
-
-            new_name = (
-                product.get("title")
-                or product.get("name")
-                or ""
-            )
-
-            print(
-                "\n[Product Dedup]"
-            )
-
-            print(
-                f"Key: {title}"
-            )
-
-            print(
-                f"Existing: {old_name}"
-            )
-
-            print(
-                f"New: {new_name}"
-            )
-
-            print(
-                f"Score: {existing_score} -> {current_score}"
-            )
-
         if current_score > existing_score:
-
             unique_products[title] = product
-
-            if DEBUG_SEARCH:
-                print(
-                    "[Product Dedup] "
-                    "Replaced with more complete product"
-                )
-
-        else:
-
-            if DEBUG_SEARCH:
-                print(
-                    "[Product Dedup] "
-                    "Keep existing product"
-                )
 
     return list(
         unique_products.values()
     )
+
+
 # ==================================================
 # Feature Fallback Query
 # ==================================================
