@@ -1,4 +1,5 @@
 from services.backend1_client import get_db_products
+from services.product_filter_service import detect_brand
 
 
 # ==================================================
@@ -720,6 +721,9 @@ async def search_db_products(keyword):
                 "matched_keywords": matched_keywords,
 
                 "matched_types": matched_types,
+                
+                
+                "brand": detect_brand(product.get("name", "")),  # DB 來源商品標出品牌
 
             })
 

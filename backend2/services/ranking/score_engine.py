@@ -736,18 +736,22 @@ def calculate_product_score(
                     product_id
                 )
 
-        if summary:
+            if summary:
 
-            summary_text = str(
-                summary.get(
-                    "summary_text",
-                    ""
+                raw_summary_text = summary.get(
+                    "summary_text"
                 )
-            ).strip()
 
-    if summary_text:
+                summary_text = str(
+                    raw_summary_text
+                ).strip() if raw_summary_text else ""
 
-        reason = f"{reason}、{summary_text}"
+            if (
+                summary_text
+                and summary_text.lower() not in ("none", "null")
+            ):
+
+                reason = f"{reason}、{summary_text}"
 
     return {
         "raw_score": score,
