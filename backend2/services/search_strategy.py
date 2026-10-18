@@ -151,6 +151,32 @@ def normalize_product_title(product):
         return (
             f"garmin forerunner {model_number}"
         )
+    
+    # --------------------------------------------------
+    # Garmin vívoactive 型號
+    # --------------------------------------------------
+
+    match = re.search(
+        r"\bv[ií]voactive\s+(\d+)\b",
+        title,
+        flags=re.IGNORECASE,
+    )
+
+    if match:
+        return f"garmin vivoactive {match.group(1)}"
+
+    # --------------------------------------------------
+    # Garmin Lily 型號
+    # --------------------------------------------------
+
+    match = re.search(
+        r"\blily\s+(\d+)\b",
+        title,
+        flags=re.IGNORECASE,
+    )
+
+    if match:
+        return f"garmin lily {match.group(1)}"
 
     # --------------------------------------------------
     # 其他商品先使用原本標準化方式

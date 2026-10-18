@@ -15,6 +15,7 @@ from services.search_filter_service import (
 
 from services.search_strategy import (
     retrieve_candidates,
+    deduplicate_products,
 )
 
 from services.product_link_service import (
@@ -178,6 +179,8 @@ def recommend_from_need(
         filtered,
         need,
     )
+     # 排序後再次去重
+    ranked = deduplicate_products(ranked)
 
     if DEBUG_PIPELINE:
         print(
