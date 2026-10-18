@@ -3,6 +3,7 @@ import time
 
 from services.product_formatter import (
     format_product,
+    clean_product_title,
 )
 
 from services.product_rank_service import (
@@ -199,7 +200,7 @@ def recommend_from_need(
 
             print(
                 f"{idx}. "
-                f"{product.get('title','')} | "
+                f"{clean_product_title(product.get('title', ''))} | "
                 f"Score={product.get('match',0)} | "
                 f"Reason={product.get('reason','')}"
             )

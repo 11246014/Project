@@ -1,5 +1,6 @@
 # services/summary_service.py
 
+from services.product_formatter import clean_product_title
 from config.settings import SUMMARY_MODEL
 from services.ai_service import ask_ai
 
@@ -236,7 +237,7 @@ def _build_product_context(products):
         # Product Name
         # --------------------------------------------------
 
-        product_name = (
+        product_name = clean_product_title(
             product.get("name")
             or product.get("title")
             or ""

@@ -47,11 +47,10 @@ def clean_product_title(title):
 
     # 3. 移除尾端獨立的商品編號，例如 A87108
     title = re.sub(
-        r"\s+[A-Z]{1,4}\d{4,}\s*$",
+        r"\s*[A-Z]{1,4}\d{4,}\s*$",
         "",
         title,
     )
-
     # 4. 整理多餘空白
     title = re.sub(
         r"\s+",
