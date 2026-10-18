@@ -279,7 +279,7 @@ def recommend_products(
             user_message
         )
 
-        user_history = user_history[-3:]
+        user_history = user_history[-10:]
 
         conversation = "\n".join(
             user_history
