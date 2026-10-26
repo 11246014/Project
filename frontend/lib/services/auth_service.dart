@@ -23,4 +23,21 @@ class AuthService {
       'password': password,
     });
   }
+
+  /// 申請重設密碼驗證碼
+  /// 後端不論 Email 是否存在，回應一律相同（避免被拿來探測帳號）
+  static Future<void> requestResetCode(String email) async {
+    await _dio.post('/forgot-password', data: {'email': email});
+  }
+
+  /// 用驗證碼重設密碼
+  /// 失敗時後端回 {"detail": "..."}，由畫面解析顯示
+  static Future<void> resetPassword(
+      String email, String code, String newPassword) async {
+    await _dio.post('/reset-password', data: {
+      'email': email,
+      'code': code,
+      'new_password': newPassword,
+    });
+  }
 }

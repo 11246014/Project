@@ -12,6 +12,7 @@ import '../../../core/providers/user_profile_provider.dart';
 import '../../../core/providers/cart_provider.dart';
 import '../../../core/utils/launch_helper.dart';
 import '../../../core/constants/app_formatters.dart';
+import '../../../core/utils/guest_helper.dart'; // 訪客模式
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -39,6 +40,9 @@ Map<String, dynamic> _user = {
   bool _isHistoryLoading = true;
   bool _hasHistoryError = false;
 
+  // 是否為訪客（決定要不要顯示「登入後可永久保存」提示）
+  bool _isGuest = false;
+
 
   @override
   void initState() {
@@ -54,6 +58,10 @@ Map<String, dynamic> _user = {
 
   Future<void> _loadUserInfo() async {
   try {
+    // 先判斷是否為訪客；訪客的 getMe() 會回傳本機資料，後面流程不用改
+    final isGuest = await GuestHelper.isGuest();
+    if (mounted) setState(() => _isGuest = isGuest);
+
     final user = await UserService.getMe();
     if (mounted) {
       setState(() {
@@ -127,6 +135,16 @@ Future<void> _loadHistory() async {
     super.dispose();
   }
 
+  /// 登出（一般使用者與訪客共用）
+  /// deleteAll 會一併清除 token、is_guest、guest_profile
+  /// 訪客離開時也必須先清掉 token，否則 GoRouter 會因為「已登入」把註冊頁導回首頁
+  Future<void> _performLogout() async {
+    await const FlutterSecureStorage().deleteAll();
+    ref.read(userProfileProvider.notifier).reset();
+    ref.read(cartProvider.notifier).clearLocalOnLogout();
+    if (mounted) context.go(AppRoutes.login);
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -147,8 +165,8 @@ Future<void> _loadHistory() async {
                 controller: _tabController,
                 children: [
                   _buildPreferenceTab(),
-                  _buildHistoryTab(),
-                  _buildCartTab(),
+                  _withGuestHint(_buildHistoryTab()), // 訪客才多一行提示
+                  _withGuestHint(_buildCartTab()),
                 ],
               ),
             ),
@@ -197,7 +215,7 @@ Future<void> _loadHistory() async {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _user['email'],
+                  _isGuest ? '訪客模式' : _user['email'],
                   style: AppTextStyles.bodyLarge.copyWith(
                   color: AppColors.textMain(context),
                 ),
@@ -220,6 +238,109 @@ Future<void> _loadHistory() async {
         ],
       ),
     );
+  }
+
+  /// 訪客模式：在 Tab 內容上方加一行提示；非訪客原樣回傳
+  Widget _withGuestHint(Widget content) {
+    if (!_isGuest) return content;
+    return Column(
+      children: [
+        _buildGuestHint('登入後可跨裝置永久保存'),
+        Expanded(child: content),
+      ],
+    );
+  }
+
+  /// 一行提示條（電光藍淡底）
+  Widget _buildGuestHint(String text) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, size: 16, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.caption
+                  .copyWith(color: AppColors.textMain(context)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 偏好設定頁頂部的訪客卡片：說明 + 註冊／登入入口
+  Widget _buildGuestCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg(context),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primary.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('目前是訪客模式',
+              style: AppTextStyles.displayMedium.copyWith(
+                  fontSize: 16, color: AppColors.textMain(context))),
+          const SizedBox(height: 6),
+          Text('個人資訊只存在這台裝置，註冊後可永久保存並跨裝置使用。',
+              style: AppTextStyles.bodyMedium
+                  .copyWith(color: AppColors.textSub(context))),
+          const SizedBox(height: 14),
+          CustomButton(
+            label: '註冊／登入',
+            onTap: _confirmLeaveGuest,
+            variant: ButtonVariant.outline,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 訪客離開前確認：訪客資料不會自動搬到新帳號（先不做，列為未來選項）
+  Future<void> _confirmLeaveGuest() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cardBg(ctx),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('註冊／登入',
+            style: AppTextStyles.displayMedium
+                .copyWith(fontSize: 16, color: AppColors.textMain(ctx))),
+        content: Text(
+          '前往註冊或登入後，目前訪客的購物車與歷史紀錄不會自動帶到新帳號，確定要離開訪客模式嗎？',
+          style: AppTextStyles.bodyMedium
+              .copyWith(color: AppColors.textMain(ctx)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('取消',
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.textMain(ctx))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('前往',
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await _performLogout();
   }
 
   /// Tab 列
@@ -250,6 +371,12 @@ Future<void> _loadHistory() async {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 訪客專屬：說明 + 註冊／登入入口
+          if (_isGuest) ...[
+            _buildGuestCard(),
+            const SizedBox(height: 20),
+          ],
+
           // 個人資訊（皆為選填，會自動套用到 Filter 問卷與 AI 聊天推薦）
           Text('個人資訊', style: AppTextStyles.displayMedium.copyWith(
               fontSize: 16, color: AppColors.textMain(context))),
@@ -339,7 +466,9 @@ Future<void> _loadHistory() async {
                       style: AppTextStyles.displayMedium.copyWith(fontSize: 16,color: AppColors.textMain(context))),
                       
                   content: Text(
-                    '確定要登出嗎？',
+                    _isGuest
+                        ? '登出後將無法找回訪客的購物車與歷史紀錄，確定要登出嗎？'
+                        : '確定要登出嗎？',
                     style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textMain(context)
 ),
@@ -354,10 +483,7 @@ Future<void> _loadHistory() async {
                     TextButton(
                       onPressed: () async {
                         Navigator.pop(context);
-                        await const FlutterSecureStorage().deleteAll();
-                        ref.read(userProfileProvider.notifier).reset();
-                        ref.read(cartProvider.notifier).clearLocalOnLogout(); // 新增
-                        if (mounted) context.go(AppRoutes.login);
+                        await _performLogout(); // 一般登出與訪客離開共用
                       },
                       child: Text('登出',
                           style: AppTextStyles.bodyMedium
