@@ -1,3 +1,11 @@
+import os
+import time
+import secrets
+import smtplib
+import ssl
+import threading
+from email.message import EmailMessage
+
 from fastapi import (
     FastAPI,
     Depends,
@@ -17,7 +25,8 @@ import requests
 
 from pydantic import (
     BaseModel,
-    EmailStr
+    EmailStr,
+    Field
 )
 from sqlalchemy import (
     Column,
@@ -140,6 +149,20 @@ class UserLogin(BaseModel):
     email: EmailStr
 
     password: str
+
+# =========================
+# 忘記密碼 Schema
+# =========================
+ 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+ 
+ 
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+    new_password: str = Field(min_length=6, max_length=128)
+
 
 
 # =========================
@@ -295,6 +318,146 @@ def login(user: UserLogin):
         "email": db_user.email
     }
 
+# =========================
+# 忘記密碼：驗證碼暫存與寄信
+# =========================
+
+ 
+RESET_CODE_TTL = 600       
+RESET_MAX_ATTEMPTS = 5     
+RESEND_COOLDOWN = 60        
+
+if os.environ.get("SMTP_USER") and os.environ.get("SMTP_PASSWORD"):
+    print(f"[SMTP] 已設定寄信帳號：{os.environ['SMTP_USER']}")
+else:
+    print("[SMTP] 未設定，驗證碼將印在後端 console（Demo 模式）")
+ 
+_reset_codes: Dict[str, dict] = {}
+
+_last_sent: Dict[str, float] = {}
+_reset_lock = threading.Lock()   
+ 
+ 
+def _purge_expired(now: float):
+    """清掉過期的驗證碼與冷卻紀錄，避免字典無限成長（呼叫時需已持有鎖）"""
+    for k in [k for k, v in _reset_codes.items() if v["expires_at"] <= now]:
+        del _reset_codes[k]
+    for k in [k for k, t in _last_sent.items() if now - t >= RESEND_COOLDOWN]:
+        del _last_sent[k]
+ 
+ 
+def _send_reset_email(to_email: str, code: str):
+    """
+    寄出驗證碼。
+    - 有設定 SMTP_USER / SMTP_PASSWORD：用 Gmail SMTP（SSL 465）寄信
+    - 沒設定：把驗證碼印在後端 console（開發 / Demo 保險，沒網路也能展示）
+    寄信失敗只記錄 log，不讓 API 報錯（否則會洩漏帳號是否存在）。
+    """
+    user = os.environ.get("SMTP_USER")
+    password = os.environ.get("SMTP_PASSWORD")
+ 
+    if not user or not password:
+        print(f"[DEV] 重設密碼驗證碼 → {to_email}: {code}")
+        return
+ 
+    host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+    port = int(os.environ.get("SMTP_PORT", "465"))
+ 
+    msg = EmailMessage()
+    msg["Subject"] = "WearWise 重設密碼驗證碼"
+    msg["From"] = user
+    msg["To"] = to_email
+    msg.set_content(
+        f"您好，\n\n您的 WearWise 重設密碼驗證碼為：{code}\n"
+        f"驗證碼 10 分鐘內有效。若這不是您本人的操作，請忽略此信。\n"
+    )
+ 
+    try:
+        with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=15) as smtp:
+            smtp.login(user, password)
+            smtp.send_message(msg)
+    except Exception as e:
+        print(f"[SMTP Error] {e}")   # 不要把驗證碼寫進 log
+ 
+ 
+# =========================
+# 忘記密碼 API：寄送驗證碼
+# =========================
+ 
+@app.post("/forgot-password")
+def forgot_password(body: ForgotPasswordRequest, background_tasks: BackgroundTasks):
+    key = body.email.strip().lower()
+    now = time.time()
+ 
+    # 1) 冷卻檢查（對所有 Email 一視同仁）
+    with _reset_lock:
+        _purge_expired(now)
+        if key in _last_sent:
+            raise HTTPException(status_code=429, detail="請稍候再重新取得驗證碼")
+        _last_sent[key] = now
+ 
+    # 2) 查帳號是否存在（只用來決定要不要寄，不影響回應內容）
+    db = SessionLocal()
+    try:
+        exists = db.query(User).filter(User.email == body.email).first() is not None
+    finally:
+        db.close()
+ 
+    # 3) 帳號存在才產生驗證碼並寄信
+    if exists:
+        code = f"{secrets.randbelow(1_000_000):06d}"   # 000000～999999，補零成 6 位
+        with _reset_lock:
+            _reset_codes[key] = {
+                "code": code,
+                "expires_at": now + RESET_CODE_TTL,
+                "attempts": 0,
+            }
+        background_tasks.add_task(_send_reset_email, body.email, code)
+ 
+    # 4) 不論存在與否，回應一律相同
+    return {"message": "若此 Email 已註冊，驗證碼已寄出，10 分鐘內有效"}
+ 
+ 
+# =========================
+# 忘記密碼 API：驗證並重設密碼
+# =========================
+ 
+@app.post("/reset-password")
+def reset_password(body: ResetPasswordRequest):
+    key = body.email.strip().lower()
+    now = time.time()
+ 
+    with _reset_lock:
+        _purge_expired(now)
+        entry = _reset_codes.get(key)
+ 
+        # 沒有驗證碼或已過期（過期的已被 purge）
+        if entry is None:
+            raise HTTPException(status_code=400, detail="驗證碼錯誤或已過期")
+ 
+        # 比對驗證碼（compare_digest 避免時間差攻擊）
+        if not secrets.compare_digest(entry["code"], body.code):
+            entry["attempts"] += 1
+            if entry["attempts"] >= RESET_MAX_ATTEMPTS:
+                del _reset_codes[key]   # 達上限，作廢
+                raise HTTPException(status_code=429, detail="嘗試次數過多，請重新取得驗證碼")
+            raise HTTPException(status_code=400, detail="驗證碼錯誤或已過期")
+ 
+        # 驗證成功：立即刪除（一次性）
+        del _reset_codes[key]
+ 
+    # 更新密碼（用現有的 pwd_context 雜湊，與 /register 相同方式）
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == body.email).first()
+        if not user:
+            raise HTTPException(status_code=400, detail="驗證碼錯誤或已過期")
+        user.hashed_password = pwd_context.hash(body.new_password)
+        db.commit()
+    finally:
+        db.close()
+ 
+    return {"message": "密碼已重設，請使用新密碼登入"}
 
 # =========================
 # 新增商品 API
