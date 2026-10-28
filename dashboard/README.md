@@ -1,7 +1,8 @@
 # WearWise 後台數據儀表板
 
 負責人：前端1
-用途：將匿名化的使用者偏好資料整理成統計圖表，提供給品牌商 / 代理商參考。
+用途：把匿名化的使用者偏好事件整理成「以單一品牌為中心、和競品對照」的統計報告，
+提供給品牌商 / 代理商參考（賣的是**購買前意圖數據**，不是出貨量或市佔）。
 
 ## 執行方式
 
@@ -12,51 +13,86 @@ streamlit run app.py
 
 執行後會開啟瀏覽器，網址預設為 `http://localhost:8501`。
 
-## 這一版的架構
+## 設定檔：`.streamlit/secrets.toml`
 
-目前畫面資料來自 `mock_data.py` 的 `MOCK_EVENTS`——**一筆一筆的原始事件**
-（模擬 `recommendation_events` 資料表的每一列），不是已經算好的統計總和。
-
-所有的圖表、KPI 數字、洞察摘要，都是 `app.py` 用 pandas 對這份原始資料
-**即時計算**出來的。這樣設計的好處：
-
-- 側邊欄的「事件來源」「日期範圍」篩選才能真正生效（選了會重新計算，不是套用寫死的數字）
-- **建議跟後端1討論**：不用讓後端1自己寫 GROUP BY 統計邏輯，
-  只要開一支「回傳原始事件列表」的 API 即可，例如：
-
-  ```
-  GET /analytics/events
-  → 回傳去識別化後的 recommendation_events 全部（或近期）資料列
-  ```
-
-  統計、篩選的邏輯都放在這支 Streamlit 程式裡處理，後端1的工作量會小很多，
-  也不用每次前端想加一種新篩選條件，就要麻煩後端1改一次 API 邏輯。
-
-## 之後串接後端1的真實 API 時
-
-打開 `app.py`，找到「資料來源」區塊：
-
-```python
-events_df = pd.DataFrame(MOCK_EVENTS)
+```toml
+password      = "你的密碼"
+api_base      = "https://你的ngrok網址"   # 後端1網址；免費版 ngrok 每次重啟都會變，變了只改這裡
+use_mock_data = true                       # true＝假資料展示；接真實資料改成 false
 ```
 
-改成：
+> secrets.toml 含密碼，**不要 commit 到 GitHub**（請確認 `.gitignore` 有排除）。
 
-```python
-import requests
+## 畫面結構（兩種模式）
 
-API_BASE = "https://your-ngrok-url.ngrok-free.app"  # 後端1的 ngrok 網址
-events_df = pd.DataFrame(requests.get(f"{API_BASE}/analytics/events").json())
-```
+| 模式 | 觸發方式 | 內容 |
+|---|---|---|
+| 品類模式 | 側邊欄「我的品牌」＝全部品牌 | KPI：事件數／熱門情境／熱門功能／曝光最高品牌；T1 看品類品牌排行；T5 看品類基準 |
+| 品牌模式 | 選了某個品牌 | KPI：Top1 份額／Top3 出現率／與競品組平均差距；T1～T4 全部有內容 |
 
-其餘統計、篩選、圖表程式碼完全不用改，因為欄位名稱已經對齊
-（`created_at`、`source`、`usage`、`features`、`device_type`、`budget_bucket`、
-`os`、`age_range`、`usage_scope`、`top_brand`、`top_platform`）。
+分頁：**T1 品牌總覽**（品類排行、推薦份額、份額趨勢）／**T2 受眾與需求**（受眾指數、功能與情境對照、預算帶落點、問卷 vs 對話）／
+**T3 競品對戰**（同時出現次數與勝率）／**T4 贊助成效**（只有選到合作品牌才會出現）／**T5 品類總覽**（既有圖表當基準）。
+
+### 側邊欄
+- **事件來源、時間範圍**：連動所有圖表與 KPI。
+- **我的品牌**：★＝合作品牌、🆕＝近 10 天新出現的品牌。
+- **競品組**：預設為與本品牌同時進前 3 名次數最多的 3 個品牌，可自行增減。
+- **最小樣本數**：展示預設 5，**對外報告建議 30**。分組樣本低於門檻會顯示「樣本不足」、不畫數字（同時是去識別化做法）。
+
+## 品牌清單是自動產生的（不需手動新增）
+
+品牌下拉選單與競品選單**不是寫死的名單**，而是每次載入時從事件資料的 `top_brands` 自動統計出來：
+
+- 推薦結果出現新品牌 → 按「🔄 重新整理資料」（或等快取 60 秒過期）→ 自動出現在側邊欄並標 🆕。
+- 後端1 `/sponsors` 新增合作品牌 → 即使還沒有任何事件也會自動列入，並標 ★。
+- 品牌被選到後若之後從資料消失，選單會自動退回「全部品牌」，不會報錯。
+
+## 品牌名稱對照表 `BRAND_LABEL_MAP`（app.py）
+
+同一品牌若有多種寫法（Apple / apple / 蘋果 / Apple Watch，或型號混進品牌欄 `Garmin Forerunner 255`），
+份額會被拆成多條。處理順序：
+
+1. 先查 `BRAND_LABEL_MAP` 別名表 → 換成標準名稱（不分大小寫、忽略空白與符號；別名夠長時「包含」即命中）。
+2. 查不到的品牌，大小寫 / 空白不同的寫法會**自動合併**成出現最多次的那一種。
+3. 全新品牌維持原樣，自動加入側邊欄。
+
+頁面最下方「🔍 資料品質檢查」會列出每種原始寫法被怎麼處理。發現新的別名，在 `BRAND_LABEL_MAP` 補一行即可。
+職業（App 端自由輸入）也有同樣機制：`OCCUPATION_LABEL_MAP` 用關鍵字歸成大類，歸到「其他」的會列在檢查區。
+
+## 資料欄位（GET /analytics/events 每筆事件）
+
+`created_at`、`source`（filter / chat）、`age_range`、`occupation`、`usage_scope`、`device_type`、
+`usage`（逗號分隔）、`features`（逗號分隔）、`os`、`brand_preference`（本版不使用）、
+`budget_min`、`budget_max`、`top_brands`（前 3 名商品的品牌，**依排名排列，可能重複或少於 3 個**）、
+`top_platforms`、`product_count`。
+
+> 注意：`top_brands` 的排名**含贊助加權**，所有品牌圖表都有標示。事件沒有使用者 ID（刻意匿名）、也沒有事件 id（程式用 DataFrame index 代替）。
+
+## 計算定義
+
+- **Top1 份額**＝本品牌為 Top1 的事件數 ÷ 有品牌資料的事件數
+- **Top3 出現率**＝Top3 命中事件數（同事件同品牌只算一次）÷ 有品牌資料的事件數
+- **勝率**＝兩品牌同時進 Top3 的事件中，本品牌名次較前的比例
+- **受眾指數**＝命中事件中該類別占比 ÷ 全體該類別占比 × 100（100＝與整體相同）
+- 趨勢以週為單位，資料不足 2 週改用日；單一期間改用長條圖
+
+## 假資料 `mock_data.py`
+
+600 筆、近 60 天，欄位與真實 API 完全一致。不是隨機亂抽，而是用迷你推薦分數引擎產生，
+所以各品牌有可辨識的特性（Apple 偏 iOS、Samsung 偏 Android、Garmin 偏運動與高預算、Xiaomi 偏低預算與學生、
+Amazfit 曝光逐步上升（合作品牌為 Garmin 與 Apple）、Ultrahuman 只在最近 8 天出現用來展示「新品牌自動加入」）。
+也刻意重現真實資料的不完美：欄位缺值、同品牌占兩個名額、少於 3 個品牌、chat 來源的詞彙差異與少數品牌別名寫法。
+**簡報若使用假資料請明講**（畫面側邊欄與頁首都有「假資料」標示）。
 
 ## 檔案說明
 
 - `app.py`：主程式，畫面與統計邏輯都在這裡
-- `mock_data.py`：假資料產生器，用固定亂數種子（seed=42）產生 180 筆模擬事件，
-  每次執行結果一致，方便展示與除錯；串接真實 API 後可以刪除或保留作為離線展示備用
-- `.streamlit/config.toml`：深色主題設定，配色對齊 Flutter App
+- `mock_data.py`：假資料產生器（固定亂數種子，除日期隨執行日往後移外，結果一致）
+- `.streamlit/config.toml`：淺色主題設定（白底，主色 #2563EB）
+- `app_backup_before_restyle.py`：外觀改版前的備份，出問題可直接換回 app.py
+- `.streamlit/secrets.toml`：密碼、後端網址、假資料開關（不要上傳）
 - `requirements.txt`：Python 套件需求
+
+## 外觀（改版）
+
+版面參考 `mock_dashboard.html`：卡片式區塊、橫向長條、受眾指數 100 虛線、勝率 50% 虛線；字體 Noto Sans TC（需連網載入，離線改用系統字體）。只改呈現層，所有數字與計算不變。真實模式的合作品牌來自後端 `/sponsors`，資料庫需有 Garmin 與 Apple。

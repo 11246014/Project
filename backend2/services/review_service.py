@@ -26,7 +26,6 @@ REVIEW_KEYWORD_SCHEMA = {
                 "type": "string",
                 "enum": REVIEW_KEYWORD_OPTIONS["pros"],
             },
-            "uniqueItems": True,
         },
         "cons": {
             "type": "array",
@@ -34,7 +33,6 @@ REVIEW_KEYWORD_SCHEMA = {
                 "type": "string",
                 "enum": REVIEW_KEYWORD_OPTIONS["cons"],
             },
-            "uniqueItems": True,
         },
     },
     "required": [

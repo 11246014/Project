@@ -48,11 +48,18 @@ class _ReviewCardState extends State<ReviewCard> {
             onTap: () {
               final productId = widget.review['product_id'];
               if (productId == null) return;
-              context.push(AppRoutes.product, extra: {
-                'id': productId,
-                'name': productName,
-                'image': productImage,
-              });
+
+              // 優先使用預載入的完整商品資料（含 price / link / platform）
+              // 查不到（例如尚未預載完成）才退回最簡易版本
+              final fullProduct = widget.productsById[productId];
+              context.push(
+                AppRoutes.product,
+                extra: fullProduct ?? {
+                  'id': productId,
+                  'name': productName,
+                  'image': productImage,
+                },
+              );
             },
             child: Row(
               children: [

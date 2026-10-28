@@ -10,6 +10,8 @@ import '../../../core/providers/cart_provider.dart'; // 新增：登入後同步
 import '../../../shared/widgets/custom_button.dart';
 import '../widgets/auth_text_field.dart';
 import '../../../services/auth_service.dart';
+import '../../../core/providers/user_profile_provider.dart'; // 訪客登入前清空個人資訊
+import '../../../core/utils/guest_helper.dart';              // 訪客模式
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -23,6 +25,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isGuestLoading = false; // 防止訪客按鈕連點
 
   @override
   void dispose() {
@@ -65,6 +68,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } finally {
       // 無論成功或失敗都關閉載入狀態
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// 訪客登入：不需帳號密碼，在本機產生 guest_ token 後直接進首頁
+  /// GoRouter 的 redirect 只看 token 是否存在，所以守衛完全不用改
+  Future<void> _handleGuestLogin() async {
+    if (_isGuestLoading) return;
+    _isGuestLoading = true;
+
+    try {
+      await GuestHelper.signInAsGuest();
+
+      // 清掉本機可能殘留的上一位使用者資料
+      ref.read(userProfileProvider.notifier).reset();
+      ref.read(cartProvider.notifier).clearLocalOnLogout();
+
+      if (mounted) context.go(AppRoutes.home);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('進入訪客模式失敗：$e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      _isGuestLoading = false;
     }
   }
 
@@ -151,6 +182,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     label: '還沒有帳號？立即註冊',
                     onTap: () => context.push(AppRoutes.register),
                     variant: ButtonVariant.outline,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 新增：訪客登入（降低使用門檻）
+                  CustomButton(
+                    label: '先逛逛（訪客模式）',
+                    onTap: _handleGuestLogin,
+                    variant: ButtonVariant.ghost,
+                    prefixIcon: Icons.explore_outlined,
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Text(
+                      '免註冊即可體驗推薦功能；登入後可跨裝置永久保存資料',
+                      style: AppTextStyles.caption
+                          .copyWith(color: AppColors.textSub(context)),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                   const SizedBox(height: 40),
                 ],

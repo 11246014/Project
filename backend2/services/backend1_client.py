@@ -448,7 +448,7 @@ def upsert_review_summary(product_id, data: dict):
         response = requests.post(
             f"{BASE_URL}/products/{product_id}/review_summary",
             json=payload,
-            timeout=10
+            timeout=15
         )
 
         response.raise_for_status()

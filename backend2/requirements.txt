@@ -4,4 +4,4 @@ requests
 pydantic
 httpx
 python-dotenv
-google-generativeai
+google-genai

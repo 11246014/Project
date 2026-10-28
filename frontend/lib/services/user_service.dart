@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/constants/api_config.dart';
 import '../core/utils/dio_client.dart';
 import 'package:flutter/foundation.dart';
+import '../core/utils/guest_helper.dart'; // 訪客模式：判斷訪客 + 本機個人資料
 
 class UserService {
   static final _dio = DioClient.create(ApiConfig.dbBaseUrl);
@@ -14,6 +15,13 @@ class UserService {
     final token = await _storage.read(key: 'token');
 
     if (token == null) throw Exception('尚未登入');
+
+    // 訪客不在後端 users 表，打 /me 會 404 → 直接回傳本機資料
+    // 欄位名稱與 /me 一致，ProfileScreen 的 hydrate() 不需要任何修改
+    if (GuestHelper.isGuestToken(token)) {
+      final local = await GuestHelper.readGuestProfile();
+      return {'username': '訪客', 'email': '', ...local};
+    }
 
     final res = await _dio.get('/me/$token');
 
@@ -28,6 +36,16 @@ class UserService {
   }) async {
     final token = await _storage.read(key: 'token');
     if (token == null) throw Exception('尚未登入');
+
+    // 訪客：存到本機，不呼叫後端（後端查不到會 404）
+    if (GuestHelper.isGuestToken(token)) {
+      await GuestHelper.saveGuestProfile(
+        ageRange: ageRange,
+        occupation: occupation,
+        currentDevice: currentDevice,
+      );
+      return;
+    }
 
     await _dio.put(
       '/users/$token/profile',

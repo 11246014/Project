@@ -33,6 +33,9 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# 把所有層級的 build/ 都排除（比 /build/ 更保險）
+**/build/
+
 # Symbolication related
 app.*.symbols
 
