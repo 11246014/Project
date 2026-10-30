@@ -1,8 +1,7 @@
-#search_filter_service.py
+# search_filter_service.py
 from services.ranking.helper import (
     _price,
 )
-
 
 # ==================================================
 # Search Filter Config
@@ -30,6 +29,7 @@ ANDROID_ONLY_KEYWORDS = [
 # Device Type Filter
 # ==================================================
 
+
 def match_device_type(product, need):
     """
     檢查商品是否符合使用者指定的裝置類型。
@@ -41,10 +41,7 @@ def match_device_type(product, need):
     if not need.device_type:
         return True
 
-    title = product.get(
-        "title",
-        ""
-    ).lower()
+    title = product.get("title", "").lower()
 
     # ==================================================
     # Smart Ring
@@ -52,11 +49,7 @@ def match_device_type(product, need):
 
     if need.device_type == "smart_ring":
 
-        return (
-            "戒指" in title
-            or "指環" in title
-            or "ring" in title
-        )
+        return "戒指" in title or "指環" in title or "ring" in title
 
     # ==================================================
     # Smart Band
@@ -64,11 +57,7 @@ def match_device_type(product, need):
 
     elif need.device_type == "smart_band":
 
-        return (
-            "手環" in title
-            or "band" in title
-            or "fit" in title
-        )
+        return "手環" in title or "band" in title or "fit" in title
 
     # ==================================================
     # Smartwatch
@@ -77,14 +66,12 @@ def match_device_type(product, need):
     elif need.device_type == "smartwatch":
 
         smartwatch_keywords = [
-
             # General
             "手錶",
             "腕錶",
             "跑錶",
             "運動錶",
             "watch",
-
             # Garmin
             "forerunner",
             "fenix",
@@ -92,39 +79,30 @@ def match_device_type(product, need):
             "instinct",
             "venu",
             "vivoactive",
-
             # Apple
             "apple watch",
-
             # Samsung
             "galaxy watch",
-
             # Amazfit
             "amazfit",
             "gtr",
             "gts",
-
             # COROS
             "coros",
             "pace",
             "apex",
             "vertix",
-
             # Polar
             "polar",
             "vantage",
             "ignite",
-
             # Suunto
             "suunto",
             "race",
             "vertical",
         ]
 
-        return any(
-            keyword in title
-            for keyword in smartwatch_keywords
-        )
+        return any(keyword in title for keyword in smartwatch_keywords)
 
     # ==================================================
     # Unknown Device Type
@@ -136,6 +114,7 @@ def match_device_type(product, need):
 # ==================================================
 # OS Filter
 # ==================================================
+
 
 def match_os(product, need):
     """
@@ -151,10 +130,7 @@ def match_os(product, need):
     if not os_type:
         return True
 
-    title = product.get(
-        "title",
-        ""
-    ).lower()
+    title = product.get("title", "").lower()
 
     # ==================================================
     # iOS
@@ -194,7 +170,6 @@ USAGE_KEYWORDS = {
         "forerunner",
         "runner",
     ],
-
     "運動": [
         "運動",
         "跑步",
@@ -202,7 +177,6 @@ USAGE_KEYWORDS = {
         "forerunner",
         "runner",
     ],
-
     "跑步": [
         "跑步",
         "跑錶",
@@ -220,39 +194,23 @@ def match_usage(product, need):
     避免預算不足時推薦完全不符合用途的商品。
     """
 
-    usages = getattr(
-        need,
-        "usage",
-        []
-    ) or []
+    usages = getattr(need, "usage", []) or []
 
     # 使用者沒有指定用途
     if not usages:
         return True
 
-    title = product.get(
-        "title",
-        ""
-    ).lower()
+    title = product.get("title", "").lower()
 
-    desc = product.get(
-        "desc",
-        ""
-    ).lower()
+    desc = product.get("desc", "").lower()
 
     text = f"{title} {desc}"
 
     for usage in usages:
 
-        keywords = USAGE_KEYWORDS.get(
-            usage,
-            [str(usage)]
-        )
+        keywords = USAGE_KEYWORDS.get(usage, [str(usage)])
 
-        if any(
-            keyword.lower() in text
-            for keyword in keywords
-        ):
+        if any(keyword.lower() in text for keyword in keywords):
             return True
 
     return False
@@ -261,6 +219,7 @@ def match_usage(product, need):
 # ==================================================
 # Hard Filter
 # ==================================================
+
 
 def hard_filter_candidates(
     candidates,
@@ -288,43 +247,21 @@ def hard_filter_candidates(
 
     if DEBUG_SEARCH_FILTER:
 
-        print(
-            "\n========== Filter Need Debug =========="
-        )
+        print("\n========== Filter Need Debug ==========")
 
-        print(
-            "device_type =",
-            need.device_type
-        )
+        print("device_type =", need.device_type)
 
-        print(
-            "usage =",
-            need.usage
-        )
+        print("usage =", need.usage)
 
-        print(
-            "features =",
-            need.features
-        )
+        print("features =", need.features)
 
-        print(
-            "os =",
-            need.preferences.os
-        )
+        print("os =", need.preferences.os)
 
-        print(
-            "budget_min =",
-            need.budget.min
-        )
+        print("budget_min =", need.budget.min)
 
-        print(
-            "budget_max =",
-            need.budget.max
-        )
+        print("budget_max =", need.budget.max)
 
-        print(
-            "========================================"
-        )
+        print("========================================")
 
     filtered = []
 
@@ -334,15 +271,9 @@ def hard_filter_candidates(
     # Budget
     # ==================================================
 
-    budget_min = (
-        need.budget.min
-        or 0
-    )
+    budget_min = need.budget.min or 0
 
-    budget_max = (
-        need.budget.max
-        or 0
-    )
+    budget_max = need.budget.max or 0
 
     # ==================================================
     # Normal Filtering
@@ -362,17 +293,11 @@ def hard_filter_candidates(
         # Device Type
         # ==================================================
 
-        if not match_device_type(
-            product,
-            need
-        ):
+        if not match_device_type(product, need):
 
             if DEBUG_SEARCH_FILTER:
 
-                print(
-                    f"[Device Filter] "
-                    f"{product.get('title')}"
-                )
+                print(f"[Device Filter] " f"{product.get('title')}")
 
             continue
 
@@ -380,17 +305,11 @@ def hard_filter_candidates(
         # OS
         # ==================================================
 
-        if not match_os(
-            product,
-            need
-        ):
+        if not match_os(product, need):
 
             if DEBUG_SEARCH_FILTER:
 
-                print(
-                    f"[OS Filter] "
-                    f"{product.get('title')}"
-                )
+                print(f"[OS Filter] " f"{product.get('title')}")
 
             continue
 
@@ -405,18 +324,9 @@ def hard_filter_candidates(
         # Budget
         # ==================================================
 
-        currency = str(
-            product.get(
-                "currency",
-                ""
-            )
-        ).upper()
+        currency = str(product.get("currency", "")).upper()
 
-        if (
-            (budget_min or budget_max)
-            and currency
-            and currency != "TWD"
-        ):
+        if (budget_min or budget_max) and currency and currency != "TWD":
 
             if DEBUG_SEARCH_FILTER:
 
@@ -428,9 +338,7 @@ def hard_filter_candidates(
 
             continue
 
-        price = _price(
-            product
-        )
+        price = _price(product)
 
         if price > 0:
 
@@ -438,18 +346,11 @@ def hard_filter_candidates(
             # Minimum Budget
             # -------------------------
 
-            if (
-                budget_min
-                and price < budget_min
-            ):
+            if budget_min and price < budget_min:
 
                 if DEBUG_SEARCH_FILTER:
 
-                    print(
-                        f"[Budget Min] "
-                        f"{product.get('title')} "
-                        f"({price})"
-                    )
+                    print(f"[Budget Min] " f"{product.get('title')} " f"({price})")
 
                 continue
 
@@ -457,18 +358,11 @@ def hard_filter_candidates(
             # Maximum Budget
             # -------------------------
 
-            if (
-                budget_max
-                and price > budget_max
-            ):
+            if budget_max and price > budget_max:
 
                 if DEBUG_SEARCH_FILTER:
 
-                    print(
-                        f"[Budget Max] "
-                        f"{product.get('title')} "
-                        f"({price})"
-                    )
+                    print(f"[Budget Max] " f"{product.get('title')} " f"({price})")
 
                 continue
 
@@ -478,14 +372,9 @@ def hard_filter_candidates(
 
         if DEBUG_SEARCH_FILTER:
 
-            print(
-                f"[PASS] "
-                f"{product.get('title')}"
-            )
+            print(f"[PASS] " f"{product.get('title')}")
 
-        filtered.append(
-            product
-        )
+        filtered.append(product)
 
     # ==================================================
     # Normal Result
@@ -493,10 +382,7 @@ def hard_filter_candidates(
 
     if filtered:
 
-        return (
-            filtered,
-            budget_fallback
-        )
+        return (filtered, budget_fallback)
 
     # ==================================================
     # No Budget Condition
@@ -504,10 +390,7 @@ def hard_filter_candidates(
 
     if not budget_max:
 
-        return (
-            filtered,
-            budget_fallback
-        )
+        return (filtered, budget_fallback)
 
     # ==================================================
     # Budget Fallback
@@ -518,27 +401,11 @@ def hard_filter_candidates(
     fallback_candidates = [
         product
         for product in candidates
-
-        if match_device_type(
-            product,
-            need
-        )
-
-        and match_os(
-            product,
-            need
-        )
-
-        and match_usage(
-            product,
-            need
-        )
-
+        if match_device_type(product, need)
+        and match_os(product, need)
+        and match_usage(product, need)
         and (
-            not product.get("currency")
-            or str(
-                product.get("currency")
-            ).upper() == "TWD"
+            not product.get("currency") or str(product.get("currency")).upper() == "TWD"
         )
     ]
 
@@ -548,20 +415,11 @@ def hard_filter_candidates(
 
     fallback = sorted(
         fallback_candidates,
-
-        key=lambda p: (
-            _price(p) > budget_max,
-            abs(
-                _price(p) - budget_max
-            )
-        )
+        key=lambda p: (_price(p) > budget_max, abs(_price(p) - budget_max)),
     )
 
     # ==================================================
     # Fallback Result
     # ==================================================
 
-    return (
-        fallback[:3],
-        budget_fallback
-    )
+    return (fallback[:3], budget_fallback)

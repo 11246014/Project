@@ -1,4 +1,4 @@
-#product_link_service.py
+# product_link_service.py
 """
 Product Link Service
 
@@ -15,7 +15,6 @@ import os
 import requests
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
 
@@ -27,9 +26,7 @@ DEBUG_LINK = True
 
 PRODUCT_LINK_TIMEOUT = 15
 
-SERPAPI_KEY = os.getenv(
-    "SERPAPI_KEY"
-)
+SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 
 
 # ==================================================
@@ -49,6 +46,7 @@ TAIWAN_STORE_PRIORITY = [
 # ==================================================
 # Link Validation
 # ==================================================
+
 
 def is_valid_store_link(link):
     """
@@ -82,16 +80,13 @@ def is_valid_store_link(link):
     # URL Format
     # =========================
 
-    return (
-        lower_link.startswith("http://")
-        or
-        lower_link.startswith("https://")
-    )
+    return lower_link.startswith("http://") or lower_link.startswith("https://")
 
 
 # ==================================================
 # Extract Store Offers
 # ==================================================
+
 
 def extract_store_offers(stores):
     """
@@ -115,19 +110,13 @@ def extract_store_offers(stores):
         # Store
         # =========================
 
-        name = store.get(
-            "name",
-            ""
-        )
+        name = store.get("name", "")
 
         # =========================
         # Link
         # =========================
 
-        link = store.get(
-            "link",
-            ""
-        )
+        link = store.get("link", "")
 
         if not is_valid_store_link(link):
             continue
@@ -136,49 +125,27 @@ def extract_store_offers(stores):
         # Price
         # =========================
 
-        price = store.get(
-            "extracted_price"
-        )
+        price = store.get("extracted_price")
 
         if price is None:
 
-            price = store.get(
-                "price",
-                ""
-            )
+            price = store.get("price", "")
 
         # =========================
         # Offer
         # =========================
 
-        offers.append({
-
-            "store": name,
-
-            "title": store.get(
-                "title",
-                ""
-            ),
-
-            "price": price,
-
-            "currency": store.get(
-                "currency",
-                ""
-            ),
-
-            "rating": store.get(
-                "rating",
-                0
-            ),
-
-            "reviews": store.get(
-                "reviews",
-                0
-            ),
-
-            "link": link,
-        })
+        offers.append(
+            {
+                "store": name,
+                "title": store.get("title", ""),
+                "price": price,
+                "currency": store.get("currency", ""),
+                "rating": store.get("rating", 0),
+                "reviews": store.get("reviews", 0),
+                "link": link,
+            }
+        )
 
     return offers
 
@@ -186,6 +153,7 @@ def extract_store_offers(stores):
 # ==================================================
 # Select Store Link
 # ==================================================
+
 
 def select_store_link(
     stores,
@@ -210,9 +178,7 @@ def select_store_link(
 
     if preferred_store:
 
-        preferred_text = str(
-            preferred_store
-        ).strip().lower()
+        preferred_text = str(preferred_store).strip().lower()
 
         if preferred_text:
 
@@ -224,39 +190,34 @@ def select_store_link(
                 ):
                     continue
 
-                name = str(
-                    store.get(
-                        "name",
-                        "",
+                name = (
+                    str(
+                        store.get(
+                            "name",
+                            "",
+                        )
                     )
-                ).strip().lower()
+                    .strip()
+                    .lower()
+                )
 
-                if (
-                    preferred_text
-                    in name
-                ):
+                if preferred_text in name:
 
                     link = store.get(
                         "link",
                         "",
                     )
 
-                    if is_valid_store_link(
-                        link
-                    ):
+                    if is_valid_store_link(link):
                         return link
 
     # ==================================================
     # 2. Taiwan Store Priority
     # ==================================================
 
-    for preferred_name in (
-        TAIWAN_STORE_PRIORITY
-    ):
+    for preferred_name in TAIWAN_STORE_PRIORITY:
 
-        preferred_text = (
-            preferred_name.lower()
-        )
+        preferred_text = preferred_name.lower()
 
         for store in stores:
 
@@ -266,26 +227,25 @@ def select_store_link(
             ):
                 continue
 
-            name = str(
-                store.get(
-                    "name",
-                    "",
+            name = (
+                str(
+                    store.get(
+                        "name",
+                        "",
+                    )
                 )
-            ).strip().lower()
+                .strip()
+                .lower()
+            )
 
-            if (
-                preferred_text
-                in name
-            ):
+            if preferred_text in name:
 
                 link = store.get(
                     "link",
                     "",
                 )
 
-                if is_valid_store_link(
-                    link
-                ):
+                if is_valid_store_link(link):
                     return link
 
     # ==================================================
@@ -305,9 +265,7 @@ def select_store_link(
             "",
         )
 
-        if is_valid_store_link(
-            link
-        ):
+        if is_valid_store_link(link):
             return link
 
     return ""
@@ -316,6 +274,7 @@ def select_store_link(
 # ==================================================
 # Fetch Immersive Product
 # ==================================================
+
 
 def fetch_immersive_product(
     api_url,
@@ -387,15 +346,11 @@ def fetch_immersive_product(
         # Extract Offers
         # =========================
 
-        offers = extract_store_offers(
-            stores
-        )
+        offers = extract_store_offers(stores)
 
         if DEBUG_LINK:
 
-            print(
-                "\n========== Product Link =========="
-            )
+            print("\n========== Product Link ==========")
 
             print(
                 "Store Count:",
@@ -428,32 +383,24 @@ def fetch_immersive_product(
                 link,
             )
 
-            print(
-                "=================================\n"
-            )
+            print("=================================\n")
 
         return link
 
     except requests.RequestException as e:
 
-        print(
-            f"[Product Link Error] {e}"
-        )
+        print(f"[Product Link Error] {e}")
 
         return ""
 
     except ValueError as e:
 
-        print(
-            f"[Product Link JSON Error] {e}"
-        )
+        print(f"[Product Link JSON Error] {e}")
 
         return ""
 
     except Exception as e:
 
-        print(
-            f"[Product Link Unexpected Error] {e}"
-        )
+        print(f"[Product Link Unexpected Error] {e}")
 
         return ""

@@ -40,6 +40,7 @@ def _list(value):
 
     return [value]
 
+
 def _text(product):
     """
     合併商品可用的文字與功能資訊
@@ -67,11 +68,7 @@ def _text(product):
     elif tags:
         text_parts.append(str(tags))
 
-    return " ".join(
-        str(value)
-        for value in text_parts
-        if value
-    ).lower()
+    return " ".join(str(value) for value in text_parts if value).lower()
 
 
 def _price(product):

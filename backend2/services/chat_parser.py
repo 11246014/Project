@@ -46,10 +46,7 @@ def parse_chat_message(message):
     # Search Query (Single Source of Truth)
     # ==========================================
 
-    search_query = build_search_query(
-        keyword_result,
-        message
-    )
+    search_query = build_search_query(keyword_result, message)
     print("[Chat Parser Search Query]", repr(search_query))
 
     print(f"[Keyword Extraction] {search_query}")
@@ -59,12 +56,8 @@ def parse_chat_message(message):
     # ==========================================
 
     budget = Budget(
-        min=_none_if_empty(
-            keyword_result.get("budget_min")
-        ),
-        max=_none_if_empty(
-            keyword_result.get("budget_max")
-        )
+        min=_none_if_empty(keyword_result.get("budget_min")),
+        max=_none_if_empty(keyword_result.get("budget_max")),
     )
 
     # ==========================================
@@ -72,66 +65,25 @@ def parse_chat_message(message):
     # ==========================================
 
     need = UserNeed(
-
         persona=Persona(
-
-            age_range=normalize_age_group(
-                keyword_result.get("age_group")
-            ),
-
-            occupation=normalize_occupation(
-                keyword_result.get("occupation")
-            )
-
+            age_range=normalize_age_group(keyword_result.get("age_group")),
+            occupation=normalize_occupation(keyword_result.get("occupation")),
         ),
-
         budget=budget,
-
         device_type=normalize_device_type(
-            keyword_result.get("product_type")
-            or keyword_result.get("device_type")
+            keyword_result.get("product_type") or keyword_result.get("device_type")
         ),
-
-        usage=normalize_list(
-            keyword_result.get("usage"),
-            normalize_usage
-        ),
-
-        features=normalize_list(
-            keyword_result.get("features"),
-            normalize_feature
-        ),
-
+        usage=normalize_list(keyword_result.get("usage"), normalize_usage),
+        features=normalize_list(keyword_result.get("features"), normalize_feature),
         preferences=Preferences(
-
-            os=normalize_os(
-                keyword_result.get("os")
-            ),
-
-            brand=_none_if_empty(
-                keyword_result.get("brand")
-            ),
-
-            style=normalize_style(
-                keyword_result.get("style")
-            ),
-
-            battery=normalize_battery(
-                keyword_result.get("battery")
-            )
-
+            os=normalize_os(keyword_result.get("os")),
+            brand=_none_if_empty(keyword_result.get("brand")),
+            style=normalize_style(keyword_result.get("style")),
+            battery=normalize_battery(keyword_result.get("battery")),
         ),
-
         # 唯一 Search Query
         search_query=search_query,
-
-        raw=RawInput(
-            text=message
-        )
-
+        raw=RawInput(text=message),
     )
 
-    return RecommendationRequest(
-        source="chat",
-        need=need
-    )
+    return RecommendationRequest(source="chat", need=need)

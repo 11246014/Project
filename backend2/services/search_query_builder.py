@@ -8,7 +8,6 @@ USAGE_MAPPING = {
     "運動": "運動",
     "跑步": "跑步",
     "健康": "健康",
-
     "日常": "",
     "日常生活（看時間 / 通知）": "",
     "商務": "",
@@ -17,13 +16,10 @@ USAGE_MAPPING = {
 
 FEATURE_MAPPING = {
     "GPS": "GPS",
-
     "睡眠": "睡眠",
     "睡眠監測": "睡眠",
-
     "健康": "",
     "健康監測": "",
-
     "心率": "心率",
     "血氧": "血氧",
     "ECG": "ECG",
@@ -105,11 +101,7 @@ def build_search_query(keyword_result, user_message=""):
 
     query_parts = list(dict.fromkeys(query_parts))
 
-    query_parts = [
-        q.strip()
-        for q in query_parts
-        if q and q.strip()
-    ]
+    query_parts = [q.strip() for q in query_parts if q and q.strip()]
 
     # ==========================================
     # Keyword Fallback

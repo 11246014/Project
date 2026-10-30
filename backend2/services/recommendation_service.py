@@ -23,6 +23,7 @@ user_history = []
 # Need Completeness Check
 # =========================
 
+
 def is_need_complete(user_need):
     """
     判斷目前使用者需求是否足夠開始商品推薦。
@@ -45,53 +46,34 @@ def is_need_complete(user_need):
     # Product Type
     # =========================
 
-    has_device_type = bool(
-        user_need.device_type
-    )
+    has_device_type = bool(user_need.device_type)
 
     # =========================
     # Usage
     # =========================
 
-    has_usage = bool(
-        user_need.usage
-    )
+    has_usage = bool(user_need.usage)
 
     # =========================
     # Features
     # =========================
 
-    has_features = bool(
-        user_need.features
-    )
+    has_features = bool(user_need.features)
 
     # =========================
     # Budget
     # =========================
 
-    has_budget = (
-        user_need.budget.min is not None
-        or
-        user_need.budget.max is not None
-    )
+    has_budget = user_need.budget.min is not None or user_need.budget.max is not None
 
     # =========================
     # Final Check
     # =========================
 
-    has_actual_requirement = (
-        has_usage
-        or
-        has_features
-        or
-        has_budget
-    )
+    has_actual_requirement = has_usage or has_features or has_budget
 
-    return (
-        has_device_type
-        and
-        has_actual_requirement
-    )
+    return has_device_type and has_actual_requirement
+
 
 def generate_chat_reply(user_message):
     """
@@ -118,6 +100,7 @@ def generate_chat_reply(user_message):
 
     return "了解～你可以繼續跟我聊聊，或直接告訴我你想找什麼商品。"
 
+
 def wants_recommendation_guidance(user_message):
     """
     判斷使用者是否表示自己不確定需求，
@@ -137,37 +120,23 @@ def wants_recommendation_guidance(user_message):
         "都可以",
     ]
 
-    return any(
-        keyword in text
-        for keyword in guidance_keywords
-    )
+    return any(keyword in text for keyword in guidance_keywords)
+
 
 # =========================
 # Follow-up Question
 # =========================
 
-def generate_follow_up(
-    user_need,
-    user_message=None
-):
+
+def generate_follow_up(user_need, user_message=None):
 
     # =========================
     # 0. 使用者希望系統協助決定
     # =========================
 
-    if (
-        user_message
-        and
-        wants_recommendation_guidance(
-            user_message
-        )
-    ):
+    if user_message and wants_recommendation_guidance(user_message):
 
-        if (
-            user_need.budget.min is None
-            and
-            user_need.budget.max is None
-        ):
+        if user_need.budget.min is None and user_need.budget.max is None:
 
             return (
                 "可以～那我可以依照一般使用需求幫你挑。"
@@ -199,15 +168,9 @@ def generate_follow_up(
     # 3. 預算
     # =========================
 
-    if (
-        user_need.budget.min is None
-        and
-        user_need.budget.max is None
-    ):
+    if user_need.budget.min is None and user_need.budget.max is None:
 
-        return (
-            "了解～那你的預算大概落在哪個範圍呢？"
-        )
+        return "了解～那你的預算大概落在哪個範圍呢？"
 
     # =========================
     # 4. 其他偏好
@@ -215,9 +178,7 @@ def generate_follow_up(
 
     if not user_need.preferences.os:
 
-        return (
-            "另外，你平常使用 iPhone 還是 Android 手機呢？"
-        )
+        return "另外，你平常使用 iPhone 還是 Android 手機呢？"
 
     # =========================
     # 5. 已經足夠
@@ -225,14 +186,13 @@ def generate_follow_up(
 
     return None
 
+
 # =========================
 # Main Recommendation
 # =========================
 
-def recommend_products(
-    user_message,
-    persona=None
-):
+
+def recommend_products(user_message, persona=None):
 
     total_start = time.time()
 
@@ -244,14 +204,9 @@ def recommend_products(
         # Intent Detection
         # =========================
 
-        intent = detect_intent(
-            user_message,
-            in_recommendation=bool(user_history)
-        )
+        intent = detect_intent(user_message, in_recommendation=bool(user_history))
 
-        print(
-            f"[Intent] {intent}"
-        )
+        print(f"[Intent] {intent}")
 
         # =========================
         # Normal Chat
@@ -261,9 +216,7 @@ def recommend_products(
 
             print("[Chat] Normal chat -> skip AI")
 
-            reply = generate_chat_reply(
-                user_message
-            )
+            reply = generate_chat_reply(user_message)
 
             return {
                 "summary": reply,
@@ -275,27 +228,17 @@ def recommend_products(
         # Conversation Memory
         # =========================
 
-        user_history.append(
-            user_message
-        )
+        user_history.append(user_message)
 
         user_history = user_history[-10:]
 
-        conversation = "\n".join(
-            user_history
-        )
+        conversation = "\n".join(user_history)
 
-        print(
-            "\n========== Conversation =========="
-        )
+        print("\n========== Conversation ==========")
 
-        print(
-            conversation
-        )
+        print(conversation)
 
-        print(
-            "==================================\n"
-        )
+        print("==================================\n")
 
         # =========================
         # Chat Parser
@@ -303,9 +246,7 @@ def recommend_products(
 
         keyword_start = time.time()
 
-        recommendation_request = parse_chat_message(
-            conversation
-        )
+        recommendation_request = parse_chat_message(conversation)
 
         user_need = recommendation_request.need
 
@@ -327,72 +268,39 @@ def recommend_products(
 
             if persona.get("age_range"):
 
-                user_need.persona.age_range = (
-                    persona["age_range"]
-                )
+                user_need.persona.age_range = persona["age_range"]
 
             if persona.get("occupation"):
 
-                user_need.persona.occupation = (
-                    persona["occupation"]
-                )
+                user_need.persona.occupation = persona["occupation"]
 
             if persona.get("current_device"):
 
-                user_need.persona.current_device = (
-                    persona["current_device"]
-                )
+                user_need.persona.current_device = persona["current_device"]
 
-        print(
-            f"[Persona Merged] "
-            f"{user_need.persona}"
-        )
+        print(f"[Persona Merged] " f"{user_need.persona}")
 
-        print(
-            f"[Keyword Time] "
-            f"{time.time() - keyword_start:.2f}s"
-        )
+        print(f"[Keyword Time] " f"{time.time() - keyword_start:.2f}s")
 
         # =========================
         # Need Completeness Check
         # =========================
 
-        print(
-            "\n========== Need Check =========="
-        )
+        print("\n========== Need Check ==========")
 
-        print(
-            f"Device Type: "
-            f"{user_need.device_type}"
-        )
+        print(f"Device Type: " f"{user_need.device_type}")
 
-        print(
-            f"Usage: "
-            f"{user_need.usage}"
-        )
+        print(f"Usage: " f"{user_need.usage}")
 
-        print(
-            f"Features: "
-            f"{user_need.features}"
-        )
+        print(f"Features: " f"{user_need.features}")
 
-        print(
-            f"Budget: "
-            f"{user_need.budget}"
-        )
+        print(f"Budget: " f"{user_need.budget}")
 
-        need_complete = is_need_complete(
-            user_need
-        )
+        need_complete = is_need_complete(user_need)
 
-        print(
-            f"[Need Complete] "
-            f"{need_complete}"
-        )
+        print(f"[Need Complete] " f"{need_complete}")
 
-        print(
-            "================================\n"
-        )
+        print("================================\n")
 
         # =========================
         # Need Not Complete
@@ -400,26 +308,14 @@ def recommend_products(
 
         if not need_complete:
 
-            print(
-                "[Recommendation] "
-                "Need incomplete -> Follow-up"
-            )
+            print("[Recommendation] " "Need incomplete -> Follow-up")
 
-            follow_up = generate_follow_up(
-                user_need,
-                user_message
-            )
-            print(
-                f"[Follow-up] "
-                f"{follow_up}"
-            )
+            follow_up = generate_follow_up(user_need, user_message)
+            print(f"[Follow-up] " f"{follow_up}")
 
             return {
-
                 "summary": follow_up,
-
                 "products": [],
-
                 "user_need": user_need.to_dict(),
             }
 
@@ -429,50 +325,25 @@ def recommend_products(
 
         pipeline_start = time.time()
 
-        result = recommend_from_need(
-            user_need
-        )
+        result = recommend_from_need(user_need)
 
-        formatted_products = (
-            result["products"]
-        )
+        formatted_products = result["products"]
 
-        budget_fallback = (
-            result["budget_fallback"]
-        )
+        budget_fallback = result["budget_fallback"]
 
-        search_query = (
-            result["search_query"]
-        )
+        search_query = result["search_query"]
 
-        print(
-            f"[Pipeline Time] "
-            f"{time.time() - pipeline_start:.2f}s"
-        )
+        print(f"[Pipeline Time] " f"{time.time() - pipeline_start:.2f}s")
 
-        print(
-            "\n====== Recommend Start ======"
-        )
+        print("\n====== Recommend Start ======")
 
-        print(
-            f"User: "
-            f"{user_message}"
-        )
+        print(f"User: " f"{user_message}")
 
-        print(
-            f"Search Query: "
-            f"{search_query}"
-        )
+        print(f"Search Query: " f"{search_query}")
 
-        print(
-            f"Budget Fallback: "
-            f"{budget_fallback}"
-        )
+        print(f"Budget Fallback: " f"{budget_fallback}")
 
-        print(
-            f"Products: "
-            f"{len(formatted_products)}"
-        )
+        print(f"Products: " f"{len(formatted_products)}")
 
         # =========================
         # No Product
@@ -481,14 +352,8 @@ def recommend_products(
         if not formatted_products:
 
             return {
-
-                "summary": (
-                    "目前尚未找到符合需求的商品，"
-                    "可以再試試其他關鍵字。"
-                ),
-
+                "summary": ("目前尚未找到符合需求的商品，" "可以再試試其他關鍵字。"),
                 "products": [],
-
                 "user_need": user_need.to_dict(),
             }
 
@@ -498,36 +363,21 @@ def recommend_products(
 
         summary_start = time.time()
 
-        summary = generate_summary(
-            formatted_products,
-            user_need,
-            budget_fallback
-        )
+        summary = generate_summary(formatted_products, user_need, budget_fallback)
 
-        print(
-            f"[Summary Time] "
-            f"{time.time() - summary_start:.2f}s"
-        )
+        print(f"[Summary Time] " f"{time.time() - summary_start:.2f}s")
 
-        print(
-            "====== Recommend End ======\n"
-        )
+        print("====== Recommend End ======\n")
 
-        print(
-            f"[Total Time] "
-            f"{time.time() - total_start:.2f}s"
-        )
+        print(f"[Total Time] " f"{time.time() - total_start:.2f}s")
 
         # =========================
         # Return
         # =========================
 
         return {
-
             "summary": summary,
-
             "products": formatted_products,
-
             "user_need": user_need.to_dict(),
         }
 
@@ -535,23 +385,13 @@ def recommend_products(
 
         import traceback
 
-        print(
-            f"[Recommendation Error] "
-            f"{e}"
-        )
+        print(f"[Recommendation Error] " f"{e}")
 
         traceback.print_exc()
 
         return {
-
-            "summary": (
-                "不好意思，目前推薦系統有點忙碌，"
-                "請稍後再試～"
-            ),
-
+            "summary": ("不好意思，目前推薦系統有點忙碌，" "請稍後再試～"),
             "products": [],
-
             "user_need": None,
-
             "error": str(e),
         }

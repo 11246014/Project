@@ -4,13 +4,13 @@ from services.product_formatter import clean_product_title
 from config.settings import SUMMARY_MODEL
 from services.ai_service import ask_ai
 
-
 DEBUG_SUMMARY = True
 
 
 # ==================================================
 # Persona Context
 # ==================================================
+
 
 def _build_persona_text(persona):
     """
@@ -27,15 +27,11 @@ def _build_persona_text(persona):
 
     # 年齡層
     if getattr(persona, "age_range", None):
-        parts.append(
-            f"年齡層：{persona.age_range}"
-        )
+        parts.append(f"年齡層：{persona.age_range}")
 
     # 職業
     if getattr(persona, "occupation", None):
-        parts.append(
-            f"職業：{persona.occupation}"
-        )
+        parts.append(f"職業：{persona.occupation}")
 
     # 使用範圍
     if getattr(persona, "usage_scope", None):
@@ -55,23 +51,18 @@ def _build_persona_text(persona):
 
     # 目前裝置
     if getattr(persona, "current_device", None):
-        parts.append(
-            f"目前使用裝置：{persona.current_device}"
-        )
+        parts.append(f"目前使用裝置：{persona.current_device}")
 
     if not parts:
         return ""
 
-    return (
-        "【使用者背景】\n"
-        + "\n".join(parts)
-        + "\n\n"
-    )
+    return "【使用者背景】\n" + "\n".join(parts) + "\n\n"
 
 
 # ==================================================
 # User Need Context
 # ==================================================
+
 
 def _build_user_need_context(user_need):
     """
@@ -85,9 +76,7 @@ def _build_user_need_context(user_need):
 
     # 裝置
     if getattr(user_need, "device_type", None):
-        lines.append(
-            f"裝置：{user_need.device_type}"
-        )
+        lines.append(f"裝置：{user_need.device_type}")
 
     # 用途
     usage = getattr(
@@ -97,16 +86,10 @@ def _build_user_need_context(user_need):
     )
 
     if usage:
-        usage_text = "、".join(
-            str(item)
-            for item in usage
-            if item
-        )
+        usage_text = "、".join(str(item) for item in usage if item)
 
         if usage_text:
-            lines.append(
-                f"用途：{usage_text}"
-            )
+            lines.append(f"用途：{usage_text}")
 
     # 功能需求
     features = getattr(
@@ -116,16 +99,10 @@ def _build_user_need_context(user_need):
     )
 
     if features:
-        feature_text = "、".join(
-            str(item)
-            for item in features
-            if item
-        )
+        feature_text = "、".join(str(item) for item in features if item)
 
         if feature_text:
-            lines.append(
-                f"需求功能：{feature_text}"
-            )
+            lines.append(f"需求功能：{feature_text}")
 
     # Preferences
     preferences = getattr(
@@ -142,9 +119,7 @@ def _build_user_need_context(user_need):
             "os",
             None,
         ):
-            lines.append(
-                f"手機系統：{preferences.os}"
-            )
+            lines.append(f"手機系統：{preferences.os}")
 
         # 品牌偏好
         if getattr(
@@ -152,9 +127,7 @@ def _build_user_need_context(user_need):
             "brand",
             None,
         ):
-            lines.append(
-                f"偏好品牌：{preferences.brand}"
-            )
+            lines.append(f"偏好品牌：{preferences.brand}")
 
     # 預算
     budget = getattr(
@@ -171,28 +144,19 @@ def _build_user_need_context(user_need):
             None,
         )
 
-        if (
-            budget_max
-            and budget_max > 0
-            and budget_max < 999999
-        ):
-            lines.append(
-                f"預算：約 {budget_max} 元"
-            )
+        if budget_max and budget_max > 0 and budget_max < 999999:
+            lines.append(f"預算：約 {budget_max} 元")
 
     if not lines:
         return ""
 
-    return (
-        "【使用者需求】\n"
-        + "\n".join(lines)
-        + "\n\n"
-    )
+    return "【使用者需求】\n" + "\n".join(lines) + "\n\n"
 
 
 # ==================================================
 # Product Context
 # ==================================================
+
 
 def _build_product_context(products):
     """
@@ -205,9 +169,7 @@ def _build_product_context(products):
     不修改商品原始名稱。
     """
 
-    print(
-        "\n========== SUMMARY PRODUCT RAW =========="
-    )
+    print("\n========== SUMMARY PRODUCT RAW ==========")
 
     for idx, product in enumerate(
         products,
@@ -222,9 +184,7 @@ def _build_product_context(products):
             f"match={product.get('match', '')}"
         )
 
-    print(
-        "=========================================\n"
-    )
+    print("=========================================\n")
 
     result = []
 
@@ -238,28 +198,20 @@ def _build_product_context(products):
         # --------------------------------------------------
 
         product_name = clean_product_title(
-            product.get("name")
-            or product.get("title")
-            or ""
+            product.get("name") or product.get("title") or ""
         )
 
         # --------------------------------------------------
         # Brand
         # --------------------------------------------------
 
-        brand = (
-            product.get("brand")
-            or ""
-        )
+        brand = product.get("brand") or ""
 
         # --------------------------------------------------
         # Price
         # --------------------------------------------------
 
-        price = (
-            product.get("price")
-            or ""
-        )
+        price = product.get("price") or ""
 
         # --------------------------------------------------
         # Match
@@ -274,10 +226,7 @@ def _build_product_context(products):
         # Reason
         # --------------------------------------------------
 
-        reason = (
-            product.get("reason")
-            or ""
-        )
+        reason = product.get("reason") or ""
 
         # --------------------------------------------------
         # Tags
@@ -290,11 +239,7 @@ def _build_product_context(products):
 
         if isinstance(tags, list):
 
-            tag_text = "、".join(
-                str(tag)
-                for tag in tags
-                if tag
-            )
+            tag_text = "、".join(str(tag) for tag in tags if tag)
 
         else:
 
@@ -304,8 +249,7 @@ def _build_product_context(products):
         # Context
         # --------------------------------------------------
 
-        result.append(
-            f"""
+        result.append(f"""
 【第 {idx} 名】
 
 商品名稱：{product_name}
@@ -314,19 +258,15 @@ def _build_product_context(products):
 推薦度：{match}%
 推薦原因：{reason}
 已知標籤：{tag_text}
-""".strip()
-        )
+""".strip())
 
-    return (
-        "\n\n"
-        "-----------------------------"
-        "\n\n"
-    ).join(result)
+    return ("\n\n" "-----------------------------" "\n\n").join(result)
 
 
 # ==================================================
 # Prompt Builder
 # ==================================================
+
 
 def _build_summary_prompt(
     persona_text,
@@ -468,9 +408,11 @@ def _build_summary_prompt(
 現在開始。
 """
 
+
 # ==================================================
 # Fallback Summary
 # ==================================================
+
 
 def _build_fallback_summary(
     products,
@@ -506,11 +448,7 @@ def _build_fallback_summary(
                 None,
             )
 
-            if (
-                value
-                and value > 0
-                and value < 999999
-            ):
+            if value and value > 0 and value < 999999:
                 budget_max = value
 
     # --------------------------------------------------
@@ -529,11 +467,7 @@ def _build_fallback_summary(
 
         if raw_usage:
 
-            usages = [
-                str(item)
-                for item in raw_usage
-                if item
-            ]
+            usages = [str(item) for item in raw_usage if item]
 
     usage_text = "、".join(usages)
 
@@ -546,21 +480,11 @@ def _build_fallback_summary(
         start=1,
     ):
 
-        name = (
-            product.get("name")
-            or product.get("title")
-            or ""
-        )
+        name = product.get("name") or product.get("title") or ""
 
-        price = (
-            product.get("price")
-            or ""
-        )
+        price = product.get("price") or ""
 
-        reason = (
-            product.get("reason")
-            or ""
-        )
+        reason = product.get("reason") or ""
 
         tags = product.get(
             "tags",
@@ -569,11 +493,7 @@ def _build_fallback_summary(
 
         if isinstance(tags, list):
 
-            tag_text = "、".join(
-                str(tag)
-                for tag in tags
-                if tag
-            )
+            tag_text = "、".join(str(tag) for tag in tags if tag)
 
         else:
 
@@ -589,40 +509,29 @@ def _build_fallback_summary(
 
             reason_lower = reason.lower()
 
-            usage_match = any(
-                usage.lower() in reason_lower
-                for usage in usages
-            )
+            usage_match = any(usage.lower() in reason_lower for usage in usages)
 
             if usage_match:
 
                 content_parts.append(
-                    f"如果你主要是拿來{usage_text}，"
-                    f"這款的推薦原因就是{reason}。"
+                    f"如果你主要是拿來{usage_text}，" f"這款的推薦原因就是{reason}。"
                 )
 
             else:
 
                 content_parts.append(
-                    f"這款會出現在推薦結果中，"
-                    f"主要是因為{reason}。"
+                    f"這款會出現在推薦結果中，" f"主要是因為{reason}。"
                 )
 
         elif reason:
 
-            content_parts.append(
-                f"這款會出現在推薦結果中，"
-                f"主要是因為{reason}。"
-            )
+            content_parts.append(f"這款會出現在推薦結果中，" f"主要是因為{reason}。")
 
         # --------------------------------------------------
         # 預算 + 價格
         # --------------------------------------------------
 
-        if (
-            budget_max
-            and price
-        ):
+        if budget_max and price:
 
             try:
 
@@ -636,8 +545,7 @@ def _build_fallback_summary(
                 if price_number <= budget_max:
 
                     content_parts.append(
-                        f"價格為 {price} 元，"
-                        f"在你 {budget_max} 元的預算內。"
+                        f"價格為 {price} 元，" f"在你 {budget_max} 元的預算內。"
                     )
 
             except (
@@ -650,18 +558,11 @@ def _build_fallback_summary(
         # Tags
         # --------------------------------------------------
 
-        if (
-            tag_text
-            and len(content_parts) < 2
-        ):
+        if tag_text and len(content_parts) < 2:
 
-            content_parts.append(
-                f"這款也有 {tag_text} 相關資訊。"
-            )
+            content_parts.append(f"這款也有 {tag_text} 相關資訊。")
 
-        content = " ".join(
-            content_parts
-        ).strip()
+        content = " ".join(content_parts).strip()
 
         # --------------------------------------------------
         # 最後保底
@@ -671,22 +572,13 @@ def _build_fallback_summary(
 
             if reason:
 
-                content = (
-                    f"這款會出現在推薦結果中，"
-                    f"主要是因為{reason}。"
-                )
+                content = f"這款會出現在推薦結果中，" f"主要是因為{reason}。"
 
             else:
 
-                content = (
-                    "這款商品是本次推薦結果中的選項。"
-                )
+                content = "這款商品是本次推薦結果中的選項。"
 
-        lines.append(
-            f"【第{idx}名】\n"
-            f"{name}\n"
-            f"{content}"
-        )
+        lines.append(f"【第{idx}名】\n" f"{name}\n" f"{content}")
 
     return "\n\n".join(lines)
 
@@ -694,6 +586,7 @@ def _build_fallback_summary(
 # ==================================================
 # Summary Generator
 # ==================================================
+
 
 def generate_summary(
     products,
@@ -722,9 +615,7 @@ def generate_summary(
     Final Summary
     """
 
-    print(
-        "[Summary Service]"
-    )
+    print("[Summary Service]")
 
     # ==================================================
     # 沒有商品
@@ -732,9 +623,7 @@ def generate_summary(
 
     if not products:
 
-        return (
-            "目前沒有找到符合條件的推薦商品。"
-        )
+        return "目前沒有找到符合條件的推薦商品。"
 
     # ==================================================
     # Build Context
@@ -748,13 +637,9 @@ def generate_summary(
         )
     )
 
-    user_need_text = _build_user_need_context(
-        user_need
-    )
+    user_need_text = _build_user_need_context(user_need)
 
-    product_text = _build_product_context(
-        products
-    )
+    product_text = _build_product_context(products)
 
     summary_prompt = _build_summary_prompt(
         persona_text,
@@ -769,9 +654,7 @@ def generate_summary(
 
     if DEBUG_SUMMARY:
 
-        print(
-            "\n========== Summary Context =========="
-        )
+        print("\n========== Summary Context ==========")
 
         if persona_text:
             print(persona_text)
@@ -781,9 +664,7 @@ def generate_summary(
 
         print(product_text)
 
-        print(
-            "=====================================\n"
-        )
+        print("=====================================\n")
 
     # ==================================================
     # Budget Notice
@@ -797,10 +678,7 @@ def generate_summary(
         None,
     )
 
-    if (
-        budget_fallback
-        and budget
-    ):
+    if budget_fallback and budget:
 
         budget_max = getattr(
             budget,
@@ -808,11 +686,7 @@ def generate_summary(
             None,
         )
 
-        if (
-            budget_max
-            and budget_max > 0
-            and budget_max < 999999
-        ):
+        if budget_max and budget_max > 0 and budget_max < 999999:
 
             budget_notice = (
                 f"未找到符合 {budget_max} 元以下預算的商品，"
@@ -823,9 +697,7 @@ def generate_summary(
     # AI Summary
     # ==================================================
 
-    print(
-        "[Summary Mode] AI"
-    )
+    print("[Summary Mode] AI")
 
     try:
 
@@ -836,9 +708,7 @@ def generate_summary(
 
     except Exception as e:
 
-        print(
-            f"[Summary AI Error] {e}"
-        )
+        print(f"[Summary AI Error] {e}")
 
         summary = ""
 
@@ -846,15 +716,9 @@ def generate_summary(
     # AI Empty
     # ==================================================
 
-    if (
-        not summary
-        or not summary.strip()
-    ):
+    if not summary or not summary.strip():
 
-        print(
-            "[Summary AI] "
-            "Empty response -> fallback"
-        )
+        print("[Summary AI] " "Empty response -> fallback")
 
         summary = _build_fallback_summary(
             products,
@@ -867,10 +731,7 @@ def generate_summary(
 
     if budget_notice:
 
-        summary = (
-            budget_notice
-            + summary
-        )
+        summary = budget_notice + summary
 
     # ==================================================
     # Debug Output
@@ -878,18 +739,12 @@ def generate_summary(
 
     if DEBUG_SUMMARY:
 
-        print(
-            "\n========== Summary =========="
-        )
+        print("\n========== Summary ==========")
 
         print(summary)
 
-        print(
-            "=============================\n"
-        )
+        print("=============================\n")
 
-    print(
-        "[Summary End]"
-    )
+    print("[Summary End]")
 
     return summary

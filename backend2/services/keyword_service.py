@@ -8,57 +8,43 @@ from services.ai_service import ask_ai
 from services.keyword_prompt import build_keyword_prompt
 from services.search_query_builder import build_search_query
 
-
 # ==================================================
 # Constants
 # ==================================================
 
 # 品牌快速查詢
 BRAND_KEYWORDS = {
-
     # Apple
     "apple": "Apple",
     "apple watch": "Apple Watch",
-
     # Samsung
     "samsung": "Samsung",
     "galaxy": "Samsung",
     "galaxy watch": "Galaxy Watch",
     "galaxy buds": "Galaxy Buds",
-
     # Garmin
     "garmin": "Garmin",
-
     # Huawei
     "huawei": "Huawei",
-
     # Google
     "google": "Google",
     "pixel watch": "Google",
-
     # Amazfit
     "amazfit": "Amazfit",
-
     # Fitbit
     "fitbit": "Fitbit",
-
     # Xiaomi
     "xiaomi": "Xiaomi",
     "mi band": "Xiaomi",
-
     # COROS
     "coros": "COROS",
-
     # Polar
     "polar": "Polar",
-
     # Suunto
     "suunto": "Suunto",
-
     # Smart Ring
     "oura": "Oura",
     "ringconn": "RingConn",
-
     # Earbuds
     "airpods": "AirPods",
 }
@@ -102,6 +88,7 @@ UNKNOWN_VALUES = {
 # ==================================================
 # Helpers
 # ==================================================
+
 
 def _as_list(value):
     """
@@ -162,12 +149,10 @@ def _keyword_result(
 
     return {
         "keyword": keyword or "",
-
         # Budget 由 Gemini / AI Prompt 負責解析。
         # Python 不重新判斷使用者預算。
         "budget_min": budget_min or 0,
         "budget_max": budget_max or 0,
-
         "product_type": _none_if_empty(product_type),
         "brand": _none_if_empty(brand),
         "usage": _none_if_empty(usage),
@@ -184,6 +169,7 @@ def _keyword_result(
 # Parser
 # ==================================================
 
+
 def _parse_ai_response(response):
     """
     解析 AI 回傳 JSON。
@@ -198,31 +184,21 @@ def _parse_ai_response(response):
     """
 
     if not isinstance(response, str):
-        raise ValueError(
-            "AI response must be a string."
-        )
+        raise ValueError("AI response must be a string.")
 
     response = response.strip()
 
     # 移除 Gemini 偶爾可能產生的 Markdown code fence
-    response = response.replace(
-        "```json",
-        ""
-    )
+    response = response.replace("```json", "")
 
-    response = response.replace(
-        "```",
-        ""
-    )
+    response = response.replace("```", "")
 
     response = response.strip()
 
     data = json.loads(response)
 
     if not isinstance(data, dict):
-        raise ValueError(
-            "AI response must be a JSON object."
-        )
+        raise ValueError("AI response must be a JSON object.")
 
     return data
 
@@ -231,10 +207,8 @@ def _parse_ai_response(response):
 # Normalize
 # ==================================================
 
-def normalize_keyword_result(
-    data,
-    user_message
-):
+
+def normalize_keyword_result(data, user_message):
     """
     將 AI 回傳資料正規化。
 
@@ -277,15 +251,9 @@ def normalize_keyword_result(
         # 這裡只處理格式，不重新判斷內容。
         if isinstance(value, list):
 
-            value = (
-                value[0]
-                if value
-                else ""
-            )
+            value = value[0] if value else ""
 
-        data[key] = _convert_traditional(
-            value
-        )
+        data[key] = _convert_traditional(value)
 
     # ==================================================
     # Features
@@ -293,25 +261,15 @@ def normalize_keyword_result(
 
     features = []
 
-    for item in data.get(
-        "features",
-        []
-    ):
+    for item in data.get("features", []):
 
-        item = _convert_traditional(
-            item
-        )
+        item = _convert_traditional(item)
 
-        item = FEATURE_ALIAS.get(
-            item,
-            item
-        )
+        item = FEATURE_ALIAS.get(item, item)
 
         if item not in features:
 
-            features.append(
-                item
-            )
+            features.append(item)
 
     data["features"] = features
 
@@ -319,9 +277,7 @@ def normalize_keyword_result(
     # Battery
     # ==================================================
 
-    if data.get(
-        "battery"
-    ) in UNKNOWN_VALUES:
+    if data.get("battery") in UNKNOWN_VALUES:
 
         data["battery"] = ""
 
@@ -360,24 +316,13 @@ def normalize_keyword_result(
     # Usage
     # ==================================================
 
-    usage = data.get(
-        "usage",
-        ""
-    )
+    usage = data.get("usage", "")
 
-    if isinstance(
-        usage,
-        str
-    ):
+    if isinstance(usage, str):
 
-        usage = _convert_traditional(
-            usage
-        )
+        usage = _convert_traditional(usage)
 
-        parts = re.split(
-            r"[、,，/ ]+",
-            usage
-        )
+        parts = re.split(r"[、,，/ ]+", usage)
 
         new_usage = []
 
@@ -397,37 +342,23 @@ def normalize_keyword_result(
             # 因此兩邊都保留。
             if item in FEATURE_ALIAS:
 
-                feature = FEATURE_ALIAS[
-                    item
-                ]
+                feature = FEATURE_ALIAS[item]
 
-                if feature not in data[
-                    "features"
-                ]:
+                if feature not in data["features"]:
 
-                    data[
-                        "features"
-                    ].append(
-                        feature
-                    )
+                    data["features"].append(feature)
 
                 if item not in new_usage:
 
-                    new_usage.append(
-                        item
-                    )
+                    new_usage.append(item)
 
             else:
 
                 if item not in new_usage:
 
-                    new_usage.append(
-                        item
-                    )
+                    new_usage.append(item)
 
-        data["usage"] = "、".join(
-            new_usage
-        )
+        data["usage"] = "、".join(new_usage)
 
     # ==================================================
     # Empty Value
@@ -458,6 +389,7 @@ def normalize_keyword_result(
 # ==================================================
 # Extract Flow
 # ==================================================
+
 
 def extract_keyword(user_message):
     """
@@ -501,8 +433,7 @@ def extract_keyword(user_message):
         if msg in BRAND_KEYWORDS:
 
             return _keyword_result(
-                keyword=BRAND_KEYWORDS[msg],
-                brand=BRAND_KEYWORDS[msg]
+                keyword=BRAND_KEYWORDS[msg], brand=BRAND_KEYWORDS[msg]
             )
 
         # ==================================================
@@ -513,62 +444,41 @@ def extract_keyword(user_message):
 
         if device in DEVICE_KEYWORDS:
 
-            print(
-                f"[Device Shortcut] matched: {device}"
-            )
+            print(f"[Device Shortcut] matched: {device}")
 
             return _keyword_result(
-                keyword=DEVICE_KEYWORDS[
-                    device
-                ],
-                product_type=DEVICE_KEYWORDS[
-                    device
-                ]
+                keyword=DEVICE_KEYWORDS[device], product_type=DEVICE_KEYWORDS[device]
             )
 
         # ==================================================
         # Build Prompt
         # ==================================================
 
-        prompt = build_keyword_prompt(
-            user_message
-        )
+        prompt = build_keyword_prompt(user_message)
 
         # ==================================================
         # Ask AI
         # ==================================================
 
-        response = ask_ai(
-            prompt,
-            model_name=KEYWORD_MODEL
-        )
+        response = ask_ai(prompt, model_name=KEYWORD_MODEL)
 
-        print(
-            "\n========== Keyword Raw =========="
-        )
+        print("\n========== Keyword Raw ==========")
 
         print(response)
 
-        print(
-            "=================================\n"
-        )
+        print("=================================\n")
 
         # ==================================================
         # Parse
         # ==================================================
 
-        data = _parse_ai_response(
-            response
-        )
+        data = _parse_ai_response(response)
 
         # ==================================================
         # Normalize
         # ==================================================
 
-        data = normalize_keyword_result(
-            data,
-            user_message
-        )
+        data = normalize_keyword_result(data, user_message)
 
         print(
             "[Budget Debug - Normalize] "
@@ -595,94 +505,42 @@ def extract_keyword(user_message):
         # Parsed Debug
         # ==================================================
 
-        print(
-            "\n========== Parsed =========="
-        )
+        print("\n========== Parsed ==========")
 
         print(data)
 
-        print(
-            f"Budget: "
-            f"{data.get('budget_min')} ~ "
-            f"{data.get('budget_max')}"
-        )
+        print(f"Budget: " f"{data.get('budget_min')} ~ " f"{data.get('budget_max')}")
 
-        print(
-            "============================\n"
-        )
+        print("============================\n")
 
         # ==================================================
         # Build Search Query
         # ==================================================
 
-        search_keyword = build_search_query(
-            data,
-            user_message
-        )
+        search_keyword = build_search_query(data, user_message)
 
         if search_keyword:
 
-            print(
-                f"[Keyword Extraction] "
-                f"{search_keyword}"
-            )
+            print(f"[Keyword Extraction] " f"{search_keyword}")
 
             return _keyword_result(
-
                 keyword=search_keyword,
-
-                budget_min=data.get(
-                    "budget_min",
-                    0
-                ),
-
-                budget_max=data.get(
-                    "budget_max",
-                    0
-                ),
-
-                product_type=data.get(
-                    "product_type"
-                ),
-
-                brand=data.get(
-                    "brand"
-                ),
-
-                usage=data.get(
-                    "usage"
-                ),
-
-                features=data.get(
-                    "features"
-                ),
-
-                os=data.get(
-                    "os"
-                ),
-
-                style=data.get(
-                    "style"
-                ),
-
-                battery=data.get(
-                    "battery"
-                ),
-
-                occupation=data.get(
-                    "occupation"
-                ),
-
-                age_group=data.get(
-                    "age_group"
-                )
+                budget_min=data.get("budget_min", 0),
+                budget_max=data.get("budget_max", 0),
+                product_type=data.get("product_type"),
+                brand=data.get("brand"),
+                usage=data.get("usage"),
+                features=data.get("features"),
+                os=data.get("os"),
+                style=data.get("style"),
+                battery=data.get("battery"),
+                occupation=data.get("occupation"),
+                age_group=data.get("age_group"),
             )
 
     except Exception as e:
 
-        print(
-            f"[Keyword Extraction Error] {e}"
-        )
+        print(f"[Keyword Extraction Error] {e}")
 
         return _keyword_result()
 

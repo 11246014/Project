@@ -10,15 +10,10 @@ from config.settings import GEMINI_MODEL
 load_dotenv()
 
 
-client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
-)
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
-def ask_gemini(
-    prompt,
-    model_name=None
-):
+def ask_gemini(prompt, model_name=None):
     """
     Send a prompt to Gemini
     and return the generated text.
@@ -32,11 +27,7 @@ def ask_gemini(
 
     start_time = time.perf_counter()
 
-    print(
-        f"[Gemini] Request Start | "
-        f"model={model} | "
-        f"prompt_len={len(prompt)}"
-    )
+    print(f"[Gemini] Request Start | " f"model={model} | " f"prompt_len={len(prompt)}")
 
     # ==================================================
     # Gemini Request
@@ -53,19 +44,13 @@ def ask_gemini(
 
     elapsed = time.perf_counter() - start_time
 
-    print(
-        f"[Gemini] Request Time: {elapsed:.2f}s"
-    )
+    print(f"[Gemini] Request Time: {elapsed:.2f}s")
 
     # ==================================================
     # Response
     # ==================================================
 
-    return (
-        response.text
-        if response.text
-        else ""
-    )
+    return response.text if response.text else ""
 
 
 def ask_gemini_structured(
@@ -99,13 +84,6 @@ def ask_gemini_structured(
 
     elapsed = time.perf_counter() - start_time
 
-    print(
-        f"[Gemini Structured] Request Time: "
-        f"{elapsed:.2f}s"
-    )
+    print(f"[Gemini Structured] Request Time: " f"{elapsed:.2f}s")
 
-    return (
-        response.text
-        if response.text
-        else ""
-    )
+    return response.text if response.text else ""

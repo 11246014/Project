@@ -1,16 +1,9 @@
 import requests
 
-from config.settings import (
-    OLLAMA_URL,
-    OLLAMA_MODEL
-)
+from config.settings import OLLAMA_URL, OLLAMA_MODEL
 
 
-def ask_ollama(
-    prompt,
-    model_name=None,
-    timeout=120
-):
+def ask_ollama(prompt, model_name=None, timeout=120):
     """
     Send a prompt to Ollama
     and return the generated text.
@@ -18,32 +11,18 @@ def ask_ollama(
 
     model = model_name or OLLAMA_MODEL
 
-    print(
-        f"[Model] {model}"
-    )
+    print(f"[Model] {model}")
 
     response = requests.post(
-
         OLLAMA_URL,
-
-        json={
-
-            "model": model,
-
-            "prompt": prompt,
-
-            "stream": False
-        },
-
-        timeout=timeout
+        json={"model": model, "prompt": prompt, "stream": False},
+        timeout=timeout,
     )
 
     response.raise_for_status()
 
-    return response.json().get(
-        "response",
-        ""
-    )
+    return response.json().get("response", "")
+
 
 def ask_ollama_structured(
     prompt,
@@ -69,7 +48,4 @@ def ask_ollama_structured(
 
     response.raise_for_status()
 
-    return response.json().get(
-        "response",
-        ""
-    )
+    return response.json().get("response", "")

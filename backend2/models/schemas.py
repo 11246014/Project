@@ -1,4 +1,4 @@
-#schemas.py
+# schemas.py
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -15,9 +15,11 @@ class Budget(BaseModel):
 
 
 class Persona(BaseModel):
-    age_range: Optional[str] = None       # 改名：原本叫 age_group，統一對齊前端的 age_range
+    age_range: Optional[str] = None  # 改名：原本叫 age_group，統一對齊前端的 age_range
     occupation: Optional[str] = None
-    usage_scope: Optional[str] = None     # 新增：個人用／家庭用／送禮（來自 Filter 問卷 Q9）
+    usage_scope: Optional[str] = (
+        None  # 新增：個人用／家庭用／送禮（來自 Filter 問卷 Q9）
+    )
     current_device: Optional[str] = None  # 新增：目前使用中的穿戴裝置
 
 

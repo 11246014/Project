@@ -47,7 +47,6 @@ FEATURE_BONUS = {
     "ECG": 20,
     "防水": 10,
     "心率": 12,
-
     "battery_life": 20,
     "location_accuracy": 20,
     "durability": 18,
@@ -57,6 +56,7 @@ FEATURE_BONUS = {
 # ==================================================
 # Dynamic Weight
 # ==================================================
+
 
 def build_dynamic_weights(need):
     """
@@ -90,10 +90,7 @@ def build_dynamic_weights(need):
     # Brand
     # ==================================================
 
-    if (
-        getattr(need, "preferences", None)
-        and getattr(need.preferences, "brand", None)
-    ):
+    if getattr(need, "preferences", None) and getattr(need.preferences, "brand", None):
         weights["brand"] = BRAND_WEIGHT
 
     # ==================================================
@@ -111,10 +108,7 @@ def build_dynamic_weights(need):
     # Budget
     # ==================================================
 
-    if (
-        getattr(need, "budget", None)
-        and getattr(need.budget, "max", None)
-    ):
+    if getattr(need, "budget", None) and getattr(need.budget, "max", None):
         weights["budget"] = BUDGET_WEIGHT
 
     return weights

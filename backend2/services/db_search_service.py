@@ -1,7 +1,6 @@
 from services.backend1_client import get_db_products
 from services.product_filter_service import detect_brand
 
-
 # ==================================================
 # Search Config
 # ==================================================
@@ -115,6 +114,7 @@ FEATURE_KEYWORDS = [
 # Keyword Normalize
 # ==================================================
 
+
 def normalize_keyword_text(text):
     """
     將搜尋關鍵字做基本正規化。
@@ -153,15 +153,10 @@ def normalize_keyword_text(text):
     ]
 
     for separator in separators:
-        text = text.replace(
-            separator,
-            " "
-        )
+        text = text.replace(separator, " ")
 
     # 多個空白壓成一個
-    text = " ".join(
-        text.split()
-    )
+    text = " ".join(text.split())
 
     return text
 
@@ -169,6 +164,7 @@ def normalize_keyword_text(text):
 # ==================================================
 # Build Search Keywords
 # ==================================================
+
 
 def build_search_keywords(keyword_text):
     """
@@ -193,9 +189,7 @@ def build_search_keywords(keyword_text):
     「smartwatch」時完全匹配不到。
     """
 
-    normalized = normalize_keyword_text(
-        keyword_text
-    )
+    normalized = normalize_keyword_text(keyword_text)
 
     if not normalized:
         return []
@@ -241,7 +235,7 @@ def build_search_keywords(keyword_text):
         "fitness band",
         "fitness tracker",
     ]
-    
+
     category_aliases = {
         "smartwatch": [
             "smartwatch",
@@ -302,10 +296,8 @@ def build_search_keywords(keyword_text):
 # Keyword Score
 # ==================================================
 
-def calculate_keyword_score(
-    keyword,
-    text
-):
+
+def calculate_keyword_score(keyword, text):
     """
     計算單一 keyword 的匹配分數。
 
@@ -339,9 +331,7 @@ def calculate_keyword_score(
             "type": None,
         }
 
-    keyword = str(
-        keyword
-    ).strip().lower()
+    keyword = str(keyword).strip().lower()
 
     if not keyword:
         return {
@@ -413,6 +403,7 @@ def calculate_keyword_score(
 # DB Search
 # ==================================================
 
+
 async def search_db_products(keyword):
     """
     從 Backend1 / MySQL 搜尋商品。
@@ -444,22 +435,13 @@ async def search_db_products(keyword):
 
         if DEBUG_SEARCH:
 
-            print(
-                "\n===== DB Products ====="
-            )
+            print("\n===== DB Products =====")
 
             for product in products:
 
-                print(
-                    product.get(
-                        "name",
-                        ""
-                    )
-                )
+                print(product.get("name", ""))
 
-            print(
-                f"\n[DB Keyword] {keyword}"
-            )
+            print(f"\n[DB Keyword] {keyword}")
 
         # ==================================================
         # Keyword Normalize
@@ -469,23 +451,17 @@ async def search_db_products(keyword):
 
             if DEBUG_SEARCH:
 
-                print(
-                    "[DB Search] Empty Keyword"
-                )
+                print("[DB Search] Empty Keyword")
 
             return []
 
-        keyword_text = normalize_keyword_text(
-            keyword
-        )
+        keyword_text = normalize_keyword_text(keyword)
 
         if not keyword_text:
 
             if DEBUG_SEARCH:
 
-                print(
-                    "[DB Search] Empty Keyword"
-                )
+                print("[DB Search] Empty Keyword")
 
             return []
 
@@ -493,24 +469,17 @@ async def search_db_products(keyword):
         # Build Search Keywords
         # ==================================================
 
-        keywords = build_search_keywords(
-            keyword_text
-        )
+        keywords = build_search_keywords(keyword_text)
 
         if DEBUG_SEARCH:
 
-            print(
-                "[DB Keywords]",
-                keywords
-            )
+            print("[DB Keywords]", keywords)
 
         if not keywords:
 
             if DEBUG_SEARCH:
 
-                print(
-                    "[DB Search] No Keywords"
-                )
+                print("[DB Search] No Keywords")
 
             return []
 
@@ -526,28 +495,19 @@ async def search_db_products(keyword):
             # 商品名稱
             # =========================
 
-            name = product.get(
-                "name",
-                ""
-            )
+            name = product.get("name", "")
 
             # =========================
             # 商品描述
             # =========================
 
-            description = product.get(
-                "description",
-                ""
-            )
+            description = product.get("description", "")
 
             # =========================
             # 統一搜尋文字
             # =========================
 
-            text = (
-                f"{name} "
-                f"{description}"
-            ).lower()
+            text = (f"{name} " f"{description}").lower()
 
             # =========================
             # Score
@@ -565,10 +525,7 @@ async def search_db_products(keyword):
 
             for k in keywords:
 
-                result = calculate_keyword_score(
-                    k,
-                    text
-                )
+                result = calculate_keyword_score(k, text)
 
                 if not result["matched"]:
                     continue
@@ -592,10 +549,7 @@ async def search_db_products(keyword):
                 if keyword_type == "category":
 
                     # 同一商品類型只算一次
-                    already_category = (
-                        "category"
-                        in matched_types
-                    )
+                    already_category = "category" in matched_types
 
                     if already_category:
                         continue
@@ -606,15 +560,11 @@ async def search_db_products(keyword):
 
                 score += result["score"]
 
-                matched_keywords.append(
-                    k
-                )
+                matched_keywords.append(k)
 
                 if keyword_type not in matched_types:
 
-                    matched_types.append(
-                        keyword_type
-                    )
+                    matched_types.append(keyword_type)
 
             # ==================================================
             # Minimum Match Threshold
@@ -626,10 +576,7 @@ async def search_db_products(keyword):
                 # 只在有命中但分數不足時顯示，
                 # 方便確認為什麼被排除。
 
-                if (
-                    DEBUG_SEARCH
-                    and matched_keywords
-                ):
+                if DEBUG_SEARCH and matched_keywords:
 
                     print(
                         "[DB Candidate Rejected]",
@@ -637,7 +584,7 @@ async def search_db_products(keyword):
                         "| Score:",
                         score,
                         "| Keywords:",
-                        matched_keywords
+                        matched_keywords,
                     )
 
                 continue
@@ -646,100 +593,50 @@ async def search_db_products(keyword):
             # WearWise Product Format
             # ==================================================
 
-            matched.append({
-
-                "id": product.get("id"),
-
-                "title": product.get(
-                    "name",
-                    ""
-                ),
-
-                "price": product.get(
-                    "price",
-                    0
-                ),
-
-                "desc": product.get(
-                    "description",
-                    ""
-                ),
-
-                "platform": "MySQL",
-
-                "rating": product.get(
-                    "rating",
-                    5
-                ),
-
-                # 注意：
-                # 這裡的 match 是 DB Keyword Match Score，
-                # 不是最終推薦百分比。
-                "match": score,
-
-                "reason": (
-                    f"DB 關鍵字匹配分數 {score}"
-                ),
-
-                "isTop": False,
-
-                "tags": [],
-
-                "image": product.get(
-                    "image",
-                    ""
-                ),
-
-                # =========================
-                # Product Source
-                # =========================
-
-                "source": "db",
-
-                # =========================
-                # Shop
-                # =========================
-
-                "shop": product.get(
-                    "shop",
-                    ""
-                ),
-
-                # =========================
-                # Link
-                # =========================
-
-                "link": product.get(
-                    "link",
-                    ""
-                ),
-
-                # =========================
-                # Debug / Matching Info
-                # =========================
-
-                "matched_keywords": matched_keywords,
-
-                "matched_types": matched_types,
-                
-                
-                "brand": detect_brand(product.get("name", "")),  # DB 來源商品標出品牌
-
-            })
+            matched.append(
+                {
+                    "id": product.get("id"),
+                    "title": product.get("name", ""),
+                    "price": product.get("price", 0),
+                    "desc": product.get("description", ""),
+                    "platform": "MySQL",
+                    "rating": product.get("rating", 5),
+                    # 注意：
+                    # 這裡的 match 是 DB Keyword Match Score，
+                    # 不是最終推薦百分比。
+                    "match": score,
+                    "reason": (f"DB 關鍵字匹配分數 {score}"),
+                    "isTop": False,
+                    "tags": [],
+                    "image": product.get("image", ""),
+                    # =========================
+                    # Product Source
+                    # =========================
+                    "source": "db",
+                    # =========================
+                    # Shop
+                    # =========================
+                    "shop": product.get("shop", ""),
+                    # =========================
+                    # Link
+                    # =========================
+                    "link": product.get("link", ""),
+                    # =========================
+                    # Debug / Matching Info
+                    # =========================
+                    "matched_keywords": matched_keywords,
+                    "matched_types": matched_types,
+                    "brand": detect_brand(
+                        product.get("name", "")
+                    ),  # DB 來源商品標出品牌
+                }
+            )
 
         # ==================================================
         # Sort
         # ==================================================
 
-        matched.sort(
-
-            key=lambda x: x.get(
-                "match",
-                0
-            ),
-
-            reverse=True
-        )
+        matched.sort(key=lambda x: x.get("match", 0), reverse=True)
 
         # ==================================================
         # Debug
@@ -747,34 +644,19 @@ async def search_db_products(keyword):
 
         if DEBUG_SEARCH:
 
-            print(
-                f"[DB Match] "
-                f"{len(matched)} 筆"
-            )
+            print(f"[DB Match] " f"{len(matched)} 筆")
 
             for product in matched:
 
                 print(
                     "[DB Candidate]",
-                    product.get(
-                        "title",
-                        ""
-                    ),
+                    product.get("title", ""),
                     "| Score:",
-                    product.get(
-                        "match",
-                        0
-                    ),
+                    product.get("match", 0),
                     "| Keywords:",
-                    product.get(
-                        "matched_keywords",
-                        []
-                    ),
+                    product.get("matched_keywords", []),
                     "| Types:",
-                    product.get(
-                        "matched_types",
-                        []
-                    )
+                    product.get("matched_types", []),
                 )
 
         return matched
@@ -785,8 +667,6 @@ async def search_db_products(keyword):
 
     except Exception as e:
 
-        print(
-            f"[DB Search Error] {e}"
-        )
+        print(f"[DB Search Error] {e}")
 
         return []

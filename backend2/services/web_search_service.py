@@ -1,4 +1,4 @@
-#web_search_service.py
+# web_search_service.py
 import os
 
 import time
@@ -29,13 +29,9 @@ MIN_PRODUCT_PRICE = 100
 
 MAX_PRODUCT_PRICE = 30000
 
-SERPAPI_KEY = os.getenv(
-    "SERPAPI_KEY"
-)
+SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 
-SERPAPI_URL = (
-    "https://serpapi.com/search"
-)
+SERPAPI_URL = "https://serpapi.com/search"
 
 
 # =========================================================
@@ -43,19 +39,16 @@ SERPAPI_URL = (
 # =========================================================
 
 REGION_CONFIG = {
-
     "tw": {
         "google_domain": "google.com",
         "hl": "zh-tw",
         "gl": "tw",
     },
-
     "us": {
         "google_domain": "google.com",
         "hl": "en",
         "gl": "us",
     },
-
     "global": {
         "google_domain": "google.com",
         "hl": "en",
@@ -79,9 +72,7 @@ def normalize_region(region):
     if not region:
         return "tw"
 
-    region = str(
-        region
-    ).lower().strip()
+    region = str(region).lower().strip()
 
     if region in REGION_CONFIG:
         return region
@@ -92,6 +83,7 @@ def normalize_region(region):
 # =========================================================
 # SerpAPI Search
 # =========================================================
+
 
 def fetch_shopping_results(
     keyword,
@@ -107,31 +99,17 @@ def fetch_shopping_results(
     不負責 Summary。
     """
 
-    region = normalize_region(
-        region
-    )
+    region = normalize_region(region)
 
-    config = REGION_CONFIG[
-        region
-    ]
+    config = REGION_CONFIG[region]
 
     params = {
         "engine": "google_shopping",
         "q": keyword,
         "api_key": SERPAPI_KEY,
-
-        "google_domain": config[
-            "google_domain"
-        ],
-
-        "hl": config[
-            "hl"
-        ],
-
-        "gl": config[
-            "gl"
-        ],
-
+        "google_domain": config["google_domain"],
+        "hl": config["hl"],
+        "gl": config["gl"],
         "device": "desktop",
     }
 
@@ -146,8 +124,7 @@ def fetch_shopping_results(
     )
 
     print(
-        f"[Timing] SerpAPI Request: "
-        f"{time.perf_counter() - web_request_start:.2f}s"
+        f"[Timing] SerpAPI Request: " f"{time.perf_counter() - web_request_start:.2f}s"
     )
 
     response.raise_for_status()
@@ -172,6 +149,7 @@ def fetch_shopping_results(
 # SerpAPI Debug
 # =========================================================
 
+
 def print_search_debug(
     keyword,
     region,
@@ -190,31 +168,21 @@ def print_search_debug(
 
     print("=" * 50)
 
-    print(
-        f"[Web Search] "
-        f"{keyword} "
-        f"(region={region})"
-    )
+    print(f"[Web Search] " f"{keyword} " f"(region={region})")
 
     # -----------------------------------------------------
     # Request Params
     # -----------------------------------------------------
 
-    print(
-        "\n========== Search Parameters =========="
-    )
+    print("\n========== Search Parameters ==========")
 
     safe_params = params.copy()
 
     safe_params["api_key"] = "***"
 
-    print(
-        safe_params
-    )
+    print(safe_params)
 
-    print(
-        "======================================"
-    )
+    print("======================================")
 
     # -----------------------------------------------------
     # HTTP Status
@@ -236,28 +204,18 @@ def print_search_debug(
 
     print(
         "Shopping Results:",
-        len(
-            shopping_results
-        ),
+        len(shopping_results),
     )
 
     # -----------------------------------------------------
     # Search Information
     # -----------------------------------------------------
 
-    print(
-        "\n========== Search Information =========="
-    )
+    print("\n========== Search Information ==========")
 
-    print(
-        data.get(
-            "search_information"
-        )
-    )
+    print(data.get("search_information"))
 
-    print(
-        "======================================"
-    )
+    print("======================================")
 
     # -----------------------------------------------------
     # Query
@@ -286,16 +244,13 @@ def print_search_debug(
 # Product Validation
 # =========================================================
 
+
 def is_valid_product(product):
     """
     商品至少需要有名稱。
     """
 
-    return bool(
-        product.get(
-            "title"
-        )
-    )
+    return bool(product.get("title"))
 
 
 def is_valid_price(product):
@@ -313,18 +268,14 @@ def is_valid_price(product):
     這裡只做 Web 商品資料的基本品質檢查。
     """
 
-    price = product.get(
-        "price"
-    )
+    price = product.get("price")
 
     if price is None:
         return False
 
     try:
 
-        price = float(
-            price
-        )
+        price = float(price)
 
     except (
         TypeError,
@@ -333,16 +284,13 @@ def is_valid_price(product):
 
         return False
 
-    return (
-        MIN_PRODUCT_PRICE
-        <= price
-        <= MAX_PRODUCT_PRICE
-    )
+    return MIN_PRODUCT_PRICE <= price <= MAX_PRODUCT_PRICE
 
 
 # =========================================================
 # Build Products
 # =========================================================
+
 
 def build_products(
     shopping_results,
@@ -366,22 +314,15 @@ def build_products(
     - User Requirement Filter
     """
 
-    region = normalize_region(
-        region
-    )
+    region = normalize_region(region)
 
     products = []
 
-    for item in shopping_results[
-        :MAX_SEARCH_RESULTS
-    ]:
+    for item in shopping_results[:MAX_SEARCH_RESULTS]:
 
         if DEBUG_SEARCH:
 
-            print(
-                f"[Item] "
-                f"{item.get('title')}"
-            )
+            print(f"[Item] " f"{item.get('title')}")
 
         # -------------------------------------------------
         # Product Clean
@@ -400,14 +341,10 @@ def build_products(
         # Basic Validation
         # -------------------------------------------------
 
-        if not is_valid_product(
-            product
-        ):
+        if not is_valid_product(product):
             continue
 
-        if not is_valid_price(
-            product
-        ):
+        if not is_valid_price(product):
             continue
 
         # -------------------------------------------------
@@ -434,9 +371,7 @@ def build_products(
                 ),
             )
 
-        products.append(
-            product
-        )
+        products.append(product)
 
     return products
 
@@ -444,6 +379,7 @@ def build_products(
 # =========================================================
 # Main Web Search
 # =========================================================
+
 
 def web_search_products_with_status(
     keyword,
@@ -468,9 +404,7 @@ def web_search_products_with_status(
     - Summary
     """
 
-    region = normalize_region(
-        region
-    )
+    region = normalize_region(region)
 
     # =====================================================
     # Cache Key
@@ -490,24 +424,15 @@ def web_search_products_with_status(
     cache_hit = cache_key in SEARCH_CACHE
 
     if DEBUG_SEARCH:
-        print(
-            f"[Timing] Cache Check: "
-            f"{time.perf_counter() - cache_start:.4f}s"
-        )
+        print(f"[Timing] Cache Check: " f"{time.perf_counter() - cache_start:.4f}s")
 
     if cache_hit:
 
         if DEBUG_SEARCH:
-            print(
-                f"[Cache Hit] "
-                f"{keyword} "
-                f"(region={region})"
-            )
+            print(f"[Cache Hit] " f"{keyword} " f"(region={region})")
 
         return (
-            SEARCH_CACHE[
-                cache_key
-            ],
+            SEARCH_CACHE[cache_key],
             False,
         )
     # =====================================================
@@ -516,11 +441,9 @@ def web_search_products_with_status(
 
     try:
 
-        shopping_results = (
-            fetch_shopping_results(
-                keyword,
-                region,
-            )
+        shopping_results = fetch_shopping_results(
+            keyword,
+            region,
         )
 
         # =================================================
@@ -537,16 +460,12 @@ def web_search_products_with_status(
 
         if DEBUG_SEARCH:
             print(
-                f"[Timing] Product Build: "
-                f"{time.perf_counter() - build_start:.2f}s"
+                f"[Timing] Product Build: " f"{time.perf_counter() - build_start:.2f}s"
             )
 
         if DEBUG_SEARCH:
 
-            print(
-                f"[Clean Products] "
-                f"{len(products)}"
-            )
+            print(f"[Clean Products] " f"{len(products)}")
 
         # =================================================
         # Cache Save
@@ -554,17 +473,11 @@ def web_search_products_with_status(
 
         if products:
 
-            SEARCH_CACHE[
-                cache_key
-            ] = products
+            SEARCH_CACHE[cache_key] = products
 
             if DEBUG_SEARCH:
 
-                print(
-                    f"[Cache Save] "
-                    f"{keyword} "
-                    f"(region={region})"
-                )
+                print(f"[Cache Save] " f"{keyword} " f"(region={region})")
 
         return products, False
 
@@ -574,10 +487,7 @@ def web_search_products_with_status(
 
     except requests.RequestException as e:
 
-        print(
-            f"[Web Search Error] "
-            f"{e}"
-        )
+        print(f"[Web Search Error] " f"{e}")
 
         return (
             [],
@@ -586,6 +496,7 @@ def web_search_products_with_status(
                 requests.exceptions.Timeout,
             ),
         )
+
 
 def web_search_products(
     keyword,

@@ -34,6 +34,7 @@ POPULAR_BRANDS = {
 # Generate Reason
 # ==================================================
 
+
 def generate_reason(product):
     """
     產生商品推薦原因

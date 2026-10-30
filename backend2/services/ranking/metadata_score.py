@@ -7,18 +7,17 @@ Metadata Score Service
 1. Apple Watch 系列評分
 2. 商品 Metadata 加分
 """
+
 # ==================================================
 # Metadata Config
 # ==================================================
 
 SERIES_SCORE = {
-
     "Apple": {
         "Ultra": 3,
         "Series": 2,
         "SE": 1,
     },
-
     "Garmin": {
         "Fenix": 4,
         "Forerunner": 3,
@@ -26,23 +25,19 @@ SERIES_SCORE = {
         "Venu": 2,
         "Vivoactive": 2,
     },
-
     "Samsung": {
         "Ultra": 3,
         "Classic": 2,
         "Galaxy Watch": 2,
     },
-
     "Google": {
         "Pixel Watch": 2,
     },
-
     "Huawei": {
         "GT": 2,
         "Fit": 1,
         "Ultimate": 3,
     },
-
     "Amazfit": {
         "T-Rex": 3,
         "Balance": 3,
@@ -51,19 +46,16 @@ SERIES_SCORE = {
         "Bip": 1,
         "Active": 2,
     },
-
     "COROS": {
         "Vertix": 4,
         "Apex": 3,
         "Pace": 3,
     },
-
     "Polar": {
         "Vantage": 3,
         "Ignite": 2,
         "Pacer": 2,
     },
-
     "Suunto": {
         "Vertical": 4,
         "Race": 3,
@@ -84,6 +76,7 @@ FEATURE_SCORE = {
 # ==================================================
 # Metadata Score
 # ==================================================
+
 
 def score_metadata(
     product,
@@ -106,19 +99,13 @@ def score_metadata(
     brand = product.get("brand")
     series = product.get("series")
 
-    series_score = (
-        SERIES_SCORE
-        .get(brand, {})
-        .get(series, 0)
-    )
+    series_score = SERIES_SCORE.get(brand, {}).get(series, 0)
 
     if series_score:
 
         metadata_score += series_score
 
-        debug_score.append(
-            f"Metadata({brand} {series}) +{series_score}"
-        )
+        debug_score.append(f"Metadata({brand} {series}) +{series_score}")
 
     return (
         metadata_score,
