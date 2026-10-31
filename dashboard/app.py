@@ -141,7 +141,7 @@ st.markdown("""
   --font: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", system-ui, sans-serif;
 }
 .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
-.head h1 { font-size: 22px; line-height: 1.3; margin: 0; padding: 0; color: var(--fg); font-weight: 700; }
+.head h1 { font-size: 24px; line-height: 1.3; margin: 0; padding: 0; color: var(--fg); font-weight: 700; }
 .head .sub { color: var(--muted); font-size: 13px; }
 .mode { font-size: 12px; font-weight: 700; padding: 3px 12px; border-radius: 999px; background: var(--accent); color: #fff; white-space: nowrap; }
 .mode.cat { background: var(--bar-all); }
@@ -157,11 +157,11 @@ st.markdown("""
 .sec { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; min-width: 0; margin-bottom: 14px; }
 .sec.open { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: 0; margin-bottom: 0; padding-bottom: 6px; }
 .sec-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 4px; }
-.sec-head h2 { font-size: 15.5px; margin: 0 4px 0 0; padding: 0; color: var(--fg); font-weight: 700; }
+.sec-head h2 { font-size: 18px !important; line-height: 1.4 !important; margin: 0 4px 0 0; padding: 0; color: var(--fg); font-weight: 700; }
 .sec-head .n { color: var(--muted); font-size: 12px; margin-left: auto; }
 .how { color: var(--muted); font-size: 12.5px; margin: 0 0 12px; }
 .how b { color: var(--fg); font-weight: 500; }
-.sub-h { font-size: 13px; margin: 0 0 8px; color: var(--fg); font-weight: 700; }
+.sub-h { font-size: 16px !important; line-height: 1.4 !important; margin: 0 0 8px !important; padding: 0 !important; color: var(--fg); font-weight: 700; }
 .n-inline { color: var(--muted); font-size: 12px; font-weight: 400; margin-left: 8px; }
 .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .rows { display: flex; flex-direction: column; gap: 9px; }
@@ -214,6 +214,7 @@ st.markdown("""
 .stApp { background: var(--bg); font-family: var(--font); }
 .block-container { max-width: 1280px; padding-top: 3.5rem; padding-bottom: 3rem; }
 [data-testid="stSidebar"] { border-right: 1px solid var(--line); }
+[data-testid="stSidebar"] h3 { font-size: 20px; }  /* 側邊欄 WearWise 標題（原約 18px，+2） */
 .stTabs [data-baseweb="tab-list"] { gap: 4px; border-bottom: 1px solid var(--line); }
 .stTabs [data-baseweb="tab"] { font-weight: 500; padding: 9px 14px; }
 </style>
@@ -346,6 +347,27 @@ USAGE_LABEL_MAP = {
 }
 
 
+# 關鍵字備援規則（依序比對，先命中先用；健康放最前面避免被「運動」搶走）
+_U_SPORT = "運動（跑步 / 健身 / 戶外）"
+_U_DAILY = "日常生活（看時間 / 通知）"
+_U_WORK = "工作 / 商務（訊息 / 行事曆）"
+_U_HEALTH = "健康管理（心率 / 睡眠）"
+_U_STYLE = "穿搭 / 外型"
+USAGE_KEYWORD_RULES = [
+    (("健康", "心率", "睡眠", "health", "sleep", "heart"), _U_HEALTH),
+    (("運動", "跑", "健身", "戶外", "登山", "游泳", "騎", "球", "sport", "run", "gym", "workout", "hik", "outdoor", "swim", "cycl"), _U_SPORT),
+    (("工作", "商務", "辦公", "訊息", "行事曆", "business", "office", "work"), _U_WORK),
+    (("日常", "通知", "看時間", "daily", "notification"), _U_DAILY),
+    (("穿搭", "外型", "時尚", "style", "fashion"), _U_STYLE),
+]
+
+
+# 受眾指數的顏色門檻：指數是「比值」（100＝與整體相同），不會因資料變多而改變意義，
+# 所以固定即可；資料變多時變的是「可信度」，那由「最小樣本數」控制。
+AUDIENCE_UP = 120   # ≥120：這群人明顯偏多（藍）
+AUDIENCE_LOW = 80   # ≤80：明顯偏少（灰）
+
+
 def normalize_usage_label(raw: str) -> str:
     """把單一使用情境字串對應回問卷的 5 個標準分類；查不到就維持原字串
     （這樣未來若出現新詞彙，圖表上還是看得到，方便回來補字典，
@@ -353,7 +375,15 @@ def normalize_usage_label(raw: str) -> str:
     if not raw:
         return raw
     stripped = raw.strip()
-    return USAGE_LABEL_MAP.get(stripped) or USAGE_LABEL_MAP.get(stripped.lower(), stripped)
+    hit = USAGE_LABEL_MAP.get(stripped) or USAGE_LABEL_MAP.get(stripped.lower())
+    if hit:
+        return hit
+    # 字典查不到時，改用關鍵字歸類（例如聊天室的「健身、跑步」「戶外運動」）
+    low = stripped.lower()
+    for keywords, label in USAGE_KEYWORD_RULES:
+        if any(k in low for k in keywords):
+            return label
+    return stripped  # 仍然對不上：保留原字串，方便在資料品質區發現並補字典
 
 
 def normalize_usage_column(value: str) -> str:
@@ -361,6 +391,9 @@ def normalize_usage_column(value: str) -> str:
     並去除正規化後可能出現的重複（例如原始資料同時有「運動」跟「跑步」）"""
     if not value or not isinstance(value, str):
         return value
+    # 先把中文頓號 / 全形逗號 / 分號也當成分隔符（聊天室可能送「健身、跑步」）
+    for sep in ("、", "，", "；", ";"):
+        value = value.replace(sep, ",")
     items = [normalize_usage_label(v) for v in value.split(",") if v.strip()]
     return ",".join(dict.fromkeys(items))  # dict.fromkeys 去重且保留順序
 
@@ -1272,16 +1305,18 @@ elif not brand_ready:
     可放寬日期 / 來源篩選，或調低左側「最小樣本數」。
     """
 else:
-    # 主要受眾：命中事件中最多的年齡層與職業（需達樣本門檻）
+    # 主要受眾：用「受眾指數」找出相對全體「特別偏多」的年齡層與職業（需達樣本門檻、指數 ≥ AUDIENCE_UP）。
+    # 不用「人數最多」：否則每個品牌都會是全體裡最大的族群（例如上班族），沒有區辨力。
     def _mode_text(column):
-        s = my_df[column].astype(str).str.strip()
-        s = s[s != ""]
-        if s.empty or s.value_counts().iloc[0] < min_n:
+        df_i, _m, _n = audience_index(filtered_df, my_df, column, min_n)
+        if df_i.empty:
             return None
-        return s.value_counts().index[0]
+        df_i = df_i[df_i["類別"] != OCCUPATION_OTHER]  # 「其他」不是具體族群，不列入
+        df_i = df_i[df_i["指數"] >= AUDIENCE_UP].sort_values("指數", ascending=False)
+        return None if df_i.empty else df_i.iloc[0]["類別"]
 
     _age, _occ = _mode_text("age_range"), _mode_text("occupation")
-    audience_text = "、".join([x for x in [_age, _occ] if x]) or "（樣本不足以判斷）"
+    audience_text = "、".join([x for x in [_age, _occ] if x]) or "（無明顯偏向）"
     if rival_metrics and any(m["n_hit"] >= min_n for m in rival_metrics.values()):
         _vals = [m["top3_rate"] for m in rival_metrics.values() if m["n_hit"] >= min_n]
         _avg = sum(_vals) / len(_vals)
@@ -1296,7 +1331,7 @@ else:
     insight_text = f"""
     在目前篩選範圍（{esc(scope_text)}）中，<b>{esc(my_brand)}</b>{sponsor_text}的 Top1 份額為
     <b>{my_metrics['top1_share']:.1f}%</b>、Top3 出現率為 <b>{my_metrics['top3_rate']:.1f}%</b>；
-    {gap_text}。被推薦到 {esc(my_brand)} 的使用者以 <b>{esc(audience_text)}</b> 居多。
+    {gap_text}。被推薦到 {esc(my_brand)} 的使用者相對全體特別偏多的是 <b>{esc(audience_text)}</b>。
     """
 html_out(f'<div class="insight">💡 {" ".join(insight_text.split())}</div>')
 
@@ -1411,7 +1446,9 @@ with tab_overview:
             + f'<div class="cols">{share_blocks}</div>' + share_note,
             f"n={n_base}",
             "<b>怎麼讀：</b>三條一組。本品牌比另外兩條長，代表在推薦裡比對手更常被選中。"
-            "Top1 是第一名占比，Top3 是進前三名的占比。排名含贊助加權。",
+            "Top1 是第一名占比，Top3 是進前三名的占比。"
+            "「品類平均」＝目前篩選範圍內所有品牌各自數值的平均，當作這個品類的基準線；"
+            "「競品組」＝你在左側選的競品的平均。排名含贊助加權。",
         ))
 
         # 本品牌 + 競品逐一列出（小樣本顯示『樣本不足』）
@@ -1512,7 +1549,7 @@ with tab_audience:
         age_order = ["18 歲以下", "19–25 歲", "26–35 歲", "36–45 歲", "46–55 歲", "56 歲以上"]
         audience_dims = [
             ("age_range", "年齡層"), ("occupation", "職業"), ("usage_scope", "使用情境定位"),
-            ("os", "作業系統"), ("device_type", "裝置類型"),
+            ("device_type", "裝置類型"),  # 作業系統已移除：品牌與 OS 幾乎一對一（Apple=iOS），指數沒有資訊量
         ]
         dim_blocks, raw_tables = "", []
         for col_name, label in audience_dims:
@@ -1525,7 +1562,7 @@ with tab_audience:
                 else:
                     df_idx = df_idx.sort_values("指數", ascending=False)
                 for _, r in df_idx.iterrows():
-                    cls = "up" if r["指數"] >= 120 else ("low" if r["指數"] <= 80 else "mid")
+                    cls = "up" if r["指數"] >= AUDIENCE_UP else ("low" if r["指數"] <= AUDIENCE_LOW else "mid")
                     rows_html.append(
                         f'<div class="row"><div class="lb">{esc(r["類別"])}</div>'
                         f'<div class="track"><div class="fill {cls}" style="width:{min(100.0, r["指數"] / 250 * 100):.1f}%"></div>'
@@ -1544,8 +1581,10 @@ with tab_audience:
             )
         html_out(sec_card(
             f"{my_brand} 的受眾輪廓指數", f'<div class="cols">{dim_blocks}</div>', f"命中事件 n={my_metrics['n_hit']}",
-            "<b>怎麼讀：</b>虛線是 100，代表和整體一樣。藍色條超過 120 表示這群人特別會被推薦到本品牌；"
-            "灰色（80 以下）表示較少。空白填答不計入，樣本不足的類別不顯示。排名含贊助加權。",
+            "<b>怎麼讀：</b>指數＝這群人在「推薦到本品牌的事件」中的占比 ÷ 在「全體事件」中的占比 ×100。"
+            "虛線是 100，代表和整體一樣；例如全體有 20% 是 26–35 歲，但本品牌的推薦對象有 30% 是，指數就是 150。"
+            f"藍色（≥{AUDIENCE_UP}）＝這群人特別常被推薦到本品牌；灰色（≤{AUDIENCE_LOW}）＝較少；中間＝差不多。"
+            "樣本不足的類別不顯示。排名含贊助加權。",
         ))
         with st.expander("查看原始統計數字"):
             for label, tbl in raw_tables:
