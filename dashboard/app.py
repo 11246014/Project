@@ -1584,7 +1584,7 @@ with tab_audience:
             "<b>怎麼讀：</b>指數＝這群人在「推薦到本品牌的事件」中的占比 ÷ 在「全體事件」中的占比 ×100。"
             "虛線是 100，代表和整體一樣；例如全體有 20% 是 26–35 歲，但本品牌的推薦對象有 30% 是，指數就是 150。"
             f"藍色（≥{AUDIENCE_UP}）＝這群人特別常被推薦到本品牌；灰色（≤{AUDIENCE_LOW}）＝較少；中間＝差不多。"
-            "樣本不足的類別不顯示，排名含贊助加權。",
+            "樣本不足的類別不顯示。排名含贊助加權。",
         ))
         with st.expander("查看原始統計數字"):
             for label, tbl in raw_tables:
@@ -1778,16 +1778,16 @@ if tab_sponsor is not None:
             non_sponsor = df_spon[(df_spon["類型"] == "一般品牌") & (df_spon["Top3 事件數"] >= min_n)]
             non_avg = non_sponsor["Top3 出現率(%)"].mean() if not non_sponsor.empty else float("nan")
             sp_items = [
-                kpi_item(f"{my_brand} 曝光占比", f"{mine['曝光占比(%)']:.1f}%", "占全部品牌曝光"),
+                kpi_item(f"{my_brand} 曝光占比", f"{mine['曝光占比(%)']:.1f}%", "占所有前3名名額（分母＝各品牌事件數加總）"),
                 kpi_item("Top1 次數", f"{int(mine['Top1 次數'])}", f"份額 {mine['Top1 份額(%)']:.1f}%"),
                 kpi_item("Top3 出現率", f"{mine['Top3 出現率(%)']:.1f}%", f"{int(mine['Top3 事件數'])} 個事件"),
             ]
             if non_avg == non_avg:  # 非 NaN
                 gap = mine["Top3 出現率(%)"] - non_avg
-                sp_items.append(kpi_item("對比一般品牌平均", f"{gap:+.1f} 個百分點", f"一般品牌平均 {non_avg:.1f}%",
+                sp_items.append(kpi_item("Top3 出現率 對比一般品牌", f"{gap:+.1f} 個百分點", f"一般品牌（非合作）平均 Top3 出現率 {non_avg:.1f}%",
                                          tone="up" if gap >= 0 else "down"))
             else:
-                sp_items.append(kpi_item("對比一般品牌平均", "—", "一般品牌樣本不足"))
+                sp_items.append(kpi_item("Top3 出現率 對比一般品牌", "—", "一般品牌樣本不足"))
             html_out('<section class="kpis">' + "".join(sp_items) + '</section>')
 
             max_exp = max(float(df_spon["曝光占比(%)"].max()), 0.1)
@@ -1818,11 +1818,11 @@ with tab_category:
     n_all = len(filtered_df)
     html_out(sec_card(
         "使用情境分布", count_bars_html(usage_counter), f"n={n_all}",
-        "<b>怎麼讀：</b>多選題，一個事件可能提到多個情境，所以比例加總會超過 100%。以下整個頁面是整個品類（不分品牌）的基準分布。"))
+        "<b>怎麼讀：</b>一個事件可能提到多個情境，所以比例加總會超過 100%。以下整個頁面是整個品類（不分品牌）的基準分布。"))
     html_out(sec_card("熱門功能需求排行", count_bars_html(feature_counter), f"n={n_all}",
-                      "<b>怎麼讀：</b>各功能被提及的次數，多選題。"))
+                      "<b>怎麼讀：</b>各功能被提及的次數。"))
     html_out(sec_card(
-        "預算區間分布（不含跳過預算題者）",
+        "預算區間分布",
         count_bars_html(budget_counter, order=BUDGET_OPTIONS), f"n={sum(budget_counter.values())}"))
     html_out(
         '<div class="cols">'
@@ -1836,7 +1836,7 @@ with tab_category:
     age_order_t5 = ["18 歲以下", "19–25 歲", "26–35 歲", "36–45 歲", "46–55 歲", "56 歲以上"]
     html_out(sec_card("年齡層分布", count_bars_html(age_counter, order=age_order_t5), f"n={sum(age_counter.values())}"))
     html_out(sec_card(
-        "職業分布（已歸類）", count_bars_html(occupation_counter), f"n={sum(occupation_counter.values())}",
+        "職業分布", count_bars_html(occupation_counter), f"n={sum(occupation_counter.values())}",
         "<b>怎麼讀：</b>職業是使用者自由輸入，已用關鍵字歸成大類；受眾指數的分母就是這裡的分布。"))
     html_out(sec_card("來源平台曝光次數", count_bars_html(platform_counter), f"n={sum(platform_counter.values())}"))
 
