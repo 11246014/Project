@@ -1,5 +1,6 @@
-#product_filter_service.py
+# product_filter_service.py
 import re
+
 DEBUG_SEARCH = False
 
 # =========================
@@ -7,7 +8,6 @@ DEBUG_SEARCH = False
 # =========================
 
 TITLE_REMOVE_PATTERNS = [
-
     r"\[.*?\]",
     r"【.*?】",
     r"\d+號前最高回饋\$?\d*",
@@ -26,7 +26,6 @@ TITLE_REMOVE_PATTERNS = [
     r"免運",
     r"聖誕禮物",
     r"交換禮物",
-
     # 購物平台促銷 / 地區資訊
     r"Mastercard\s*再減\$?\d+",
     r"香港行貨",
@@ -38,26 +37,20 @@ FEATURE_KEYWORDS = {
     "定位": "GPS",
     "導航": "GPS",
     "衛星": "GPS",
-
     "睡眠": "睡眠",
     "sleep": "睡眠",
-
     "心率": "心率",
     "heart rate": "心率",
-
     "血氧": "血氧",
     "spo2": "血氧",
-
     "ecg": "ECG",
     "心電圖": "ECG",
-
     "防水": "防水",
     "ip68": "防水",
     "5atm": "防水",
 }
 
 KNOWN_BRANDS = [
-
     "Apple",
     "Samsung",
     "Garmin",
@@ -66,19 +59,15 @@ KNOWN_BRANDS = [
     "Amazfit",
     "Fitbit",
     "Xiaomi",
-
     "COROS",
     "Polar",
     "Suunto",
-
     "Oura",
     "RingConn",
-
     "OPPO",
     "realme",
 ]
 SMART_BRANDS = [
-
     "Apple",
     "Samsung",
     "Garmin",
@@ -94,21 +83,15 @@ SMART_BRANDS = [
     "Suunto",
 ]
 SMART_TITLE_KEYWORDS = [
-
     "智慧",
     "智能",
-
     "smart",
-
     "smartwatch",
-
     "wear os",
     "wearos",
-
     "智慧手錶",
     "智慧手環",
     "智慧戒指",
-
     "智能手錶",
     "智能手環",
     "智能戒指",
@@ -118,40 +101,32 @@ SMART_TITLE_KEYWORDS = [
 # =========================
 
 ACCESSORY_KEYWORDS = [
-
     # 錶帶
     "錶帶",
     "表帶",
     "腕帶",
     "替換帶",
-
     # 錶環
     "錶環",
     "表環",
-
     # 保護
     "保護貼",
     "保護殼",
-
     # 充電
     "充電器",
     "充電線",
     "充電座",
-
     # 配件
     "配件",
     "支架",
     "底座",
-
     # 手機
     "手機殼",
     "耳機殼",
-
     # 感測器
     "胸帶",
     "臂帶",
     "感測器",
-
     # 其他
     "吊飾",
     "掛繩",
@@ -162,118 +137,66 @@ ACCESSORY_KEYWORDS = [
 # =========================
 
 WEARABLE_KEYWORDS = [
-
     "智慧手錶",
     "智慧手環",
     "智慧腕錶",
-
     "智能手錶",
     "智能手表",
-
     "運動手錶",
-
     "smartwatch",
-
     "watch",
-
     "watch fit",
-
     "galaxy watch",
-
     "apple watch",
-
     "garmin",
-
     "amazfit",
-
     "fitbit",
-
     "huawei",
-
     "xiaomi watch",
-
     "mi watch",
-
     "穿戴",
-
     "腕錶",
-
     "手環",
-
     "智慧手環",
-
     "智能手環",
-
     "運動手環",
-
     "band",
-
     "xiaomi band",
-
     "mi band",
-
     "galaxy fit",
-
     "fit3",
-
     "fit 3",
-
     "huawei band",
-
     "smart band",
-
     "fit3",
-
     "fit 3",
-
     "galaxy fit3",
-    
     "samsung fit",
-    
     "戒指",
-
     "智慧戒指",
-
     "智能戒指",
-
     "指環",
-
     "智慧指環",
-
     "智能指環",
-
     "smart ring",
-
-    "ring"
-    
+    "ring",
 ]
 # =========================
 # 智慧手錶強化白名單
 # =========================
 
 SMARTWATCH_KEYWORDS = [
-
     "智慧手錶",
-
     "智能手錶",
-
     "智慧腕錶",
-
     "smartwatch",
-
     "watch",
-
     "watch fit",
-
     "galaxy watch",
-
     "apple watch",
-
     "garmin",
-
     "huawei watch",
-
-    "xiaomi watch"
+    "xiaomi watch",
 ]
 
 # =========================
@@ -281,38 +204,30 @@ SMARTWATCH_KEYWORDS = [
 # =========================
 
 SERIES_PATTERNS = {
-
     "Ultra": [
         r"\bultra\b",
     ],
-
     "SE": [
         r"\bse\b",
         r"\bse\s*2\b",
         r"\bse\s*3\b",
     ],
-
     "Series": [
         r"\bseries\b",
     ],
 }
+
 
 def extract_product_metadata(title):
 
     title_lower = title.lower()
 
     metadata = {
-
         "series": None,
-
         "series_number": None,
-
         "gps": None,
-
         "cellular": False,
-
         "size": None,
-
         "tier": None,
     }
 
@@ -322,10 +237,7 @@ def extract_product_metadata(title):
 
     for series, patterns in SERIES_PATTERNS.items():
 
-        if any(
-            re.search(pattern, title_lower)
-            for pattern in patterns
-        ):
+        if any(re.search(pattern, title_lower) for pattern in patterns):
 
             metadata["series"] = series
 
@@ -334,17 +246,11 @@ def extract_product_metadata(title):
     # Series Number
     # -------------------------
 
-    match = re.search(
-        r"series\s*(\d+)",
-        title,
-        re.IGNORECASE
-    )
+    match = re.search(r"series\s*(\d+)", title, re.IGNORECASE)
 
     if match:
 
-        metadata["series_number"] = int(
-            match.group(1)
-        )
+        metadata["series_number"] = int(match.group(1))
 
     # -------------------------
     # GPS
@@ -358,11 +264,7 @@ def extract_product_metadata(title):
     # Cellular
     # -------------------------
 
-    if (
-        "cellular" in title_lower
-        or
-        "行動網路" in title
-    ):
+    if "cellular" in title_lower or "行動網路" in title:
 
         metadata["cellular"] = True
 
@@ -370,17 +272,11 @@ def extract_product_metadata(title):
     # Size
     # -------------------------
 
-    match = re.search(
-        r"(\d{2})\s*(mm|公釐)",
-        title,
-        re.IGNORECASE
-    )
+    match = re.search(r"(\d{2})\s*(mm|公釐)", title, re.IGNORECASE)
 
     if match:
 
-        metadata["size"] = int(
-            match.group(1)
-        )
+        metadata["size"] = int(match.group(1))
 
     # -------------------------
     # Product Tier
@@ -400,9 +296,11 @@ def extract_product_metadata(title):
 
     return metadata
 
+
 # =========================
 # Price
 # =========================
+
 
 def clean_price(price_text):
 
@@ -423,19 +321,17 @@ def clean_price(price_text):
 
         return 0
 
+
 # =========================
 # Price Parsing
 # =========================
+
 
 def parse_price(price_text, region=""):
 
     if not price_text:
 
-        return {
-            "price": 0,
-            "currency": "",
-            "display_price": ""
-        }
+        return {"price": 0, "currency": "", "display_price": ""}
 
     display_price = str(price_text).strip()
 
@@ -460,11 +356,7 @@ def parse_price(price_text, region=""):
             currency = "USD"
 
     # 保留數字
-    number = re.sub(
-        r"[^\d.]",
-        "",
-        text
-    )
+    number = re.sub(r"[^\d.]", "", text)
 
     try:
 
@@ -474,18 +366,13 @@ def parse_price(price_text, region=""):
 
         price = 0
 
-    return {
+    return {"price": price, "currency": currency, "display_price": display_price}
 
-        "price": price,
-
-        "currency": currency,
-
-        "display_price": display_price
-    }
 
 # =========================
 # Title
 # =========================
+
 
 def clean_title(title):
 
@@ -497,12 +384,7 @@ def clean_title(title):
 
     for pattern in TITLE_REMOVE_PATTERNS:
 
-        cleaned = re.sub(
-            pattern,
-            "",
-            cleaned,
-            flags=re.IGNORECASE
-        )
+        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
 
     if "(" in cleaned:
         cleaned = cleaned.split("(")[0]
@@ -510,17 +392,9 @@ def clean_title(title):
     if "（" in cleaned:
         cleaned = cleaned.split("（")[0]
 
-    cleaned = re.sub(
-        r"([a-z])([A-Z])",
-        r"\1 \2",
-        cleaned
-    )
+    cleaned = re.sub(r"([a-z])([A-Z])", r"\1 \2", cleaned)
 
-    cleaned = re.sub(
-        r"[A-Z0-9\-]{12,}",
-        "",
-        cleaned
-    )
+    cleaned = re.sub(r"[A-Z0-9\-]{12,}", "", cleaned)
 
     words = cleaned.split()
 
@@ -528,11 +402,7 @@ def clean_title(title):
 
     for word in words:
 
-        if (
-            len(word) >= 15
-            and re.search(r"[A-Z]", word)
-            and re.search(r"\d", word)
-        ):
+        if len(word) >= 15 and re.search(r"[A-Z]", word) and re.search(r"\d", word):
 
             continue
 
@@ -541,7 +411,6 @@ def clean_title(title):
     cleaned = " ".join(filtered_words)
 
     replacements = {
-
         "智慧型手錶": "智慧手錶",
         "智能手表": "智慧手錶",
         "智能手錶": "智慧手錶",
@@ -550,21 +419,17 @@ def clean_title(title):
 
     for old, new in replacements.items():
 
-        cleaned = cleaned.replace(
-            old,
-            new
-        )
+        cleaned = cleaned.replace(old, new)
 
-    cleaned = re.sub(
-        r"\s+",
-        " ",
-        cleaned
-    )
+    cleaned = re.sub(r"\s+", " ", cleaned)
 
     return cleaned.strip()
+
+
 # =========================
 # Brand
 # =========================
+
 
 def detect_brand(title):
 
@@ -582,6 +447,7 @@ def detect_brand(title):
 # =========================
 # Feature Extraction
 # =========================
+
 
 def extract_features(feature_text):
 
@@ -602,6 +468,7 @@ def extract_features(feature_text):
 # Accessory Detection
 # =========================
 
+
 def is_accessory(title):
 
     title_lower = title.lower()
@@ -614,14 +481,13 @@ def is_accessory(title):
 
     return False
 
+
 # =========================
 # Wearable Score
 # =========================
 
-def calculate_wearable_score(
-    title,
-    snippet=""
-):
+
+def calculate_wearable_score(title, snippet=""):
 
     score = 0
 
@@ -649,55 +515,32 @@ def calculate_wearable_score(
 
     return score
 
+
 # =========================
 # Wearable Detection
 # =========================
 
-def is_wearable_device(
-    title,
-    snippet=""
-):
 
-    score = calculate_wearable_score(
-        title,
-        snippet
-    )
+def is_wearable_device(title, snippet=""):
+
+    score = calculate_wearable_score(title, snippet)
     title_lower = title.lower()
 
-    is_wearable = any(
+    is_wearable = any(word.lower() in title_lower for word in WEARABLE_KEYWORDS)
 
-        word.lower() in title_lower
+    smartwatch_match = any(word.lower() in title_lower for word in SMARTWATCH_KEYWORDS)
 
-        for word in WEARABLE_KEYWORDS
-    )
+    return is_wearable or smartwatch_match
 
-    smartwatch_match = any(
-
-        word.lower() in title_lower
-
-        for word in SMARTWATCH_KEYWORDS
-    )
-
-    return (
-        is_wearable
-        or
-        smartwatch_match
-    )
 
 # =========================
 # Product Clean
 # =========================
 
-def clean_product(
-    item,
-    keyword,
-    region=""
-):
 
-    rating = item.get(
-        "rating",
-        0
-    )
+def clean_product(item, keyword, region=""):
+
+    rating = item.get("rating", 0)
 
     try:
 
@@ -707,56 +550,30 @@ def clean_product(
 
         rating = 0
 
-    raw_title = item.get(
-        "title",
-        ""
-    )
+    raw_title = item.get("title", "")
 
-    snippet = item.get( 
-        "snippet",
-        ""
-    )
+    snippet = item.get("snippet", "")
     if DEBUG_SEARCH:
 
-        print(
-            "\n========== Item Keys =========="
-        )
+        print("\n========== Item Keys ==========")
 
-        print(
-            item.keys()
-        )
+        print(item.keys())
 
-        print(
-            "================================"
-        )
+        print("================================")
 
-    feature_text = (
-        raw_title +
-        " " +
-        snippet
-    ).lower()
+    feature_text = (raw_title + " " + snippet).lower()
 
     if DEBUG_SEARCH:
 
-        print(
-            "[Desc]",
-            snippet
-        )
+        print("[Desc]", snippet)
 
-    clean_name = clean_title(
-        raw_title
-    )
+    clean_name = clean_title(raw_title)
 
-    metadata = extract_product_metadata(
-        raw_title
-    )
+    metadata = extract_product_metadata(raw_title)
 
     if DEBUG_SEARCH:
-        print(
-            "[Metadata]",
-            metadata
-        )
-    
+        print("[Metadata]", metadata)
+
     # =========================
     # 黑名單
     # =========================
@@ -771,13 +588,10 @@ def clean_product(
     if matched:
 
         if DEBUG_SEARCH:
-            print(
-                f"[Accessory] "
-                f"{matched} -> {clean_name}"
-            )
+            print(f"[Accessory] " f"{matched} -> {clean_name}")
 
         return None
-    
+
     # =========================
     # Wearable White List
     # =========================
@@ -788,20 +602,15 @@ def clean_product(
     ):
 
         if DEBUG_SEARCH:
-            print(
-                f"[Not Wearable] "
-                f"{clean_name}"
-            )
+            print(f"[Not Wearable] " f"{clean_name}")
 
         return None
-    
+
     # =========================
     # Feature Extraction
     # =========================
 
-    features = extract_features(
-        feature_text
-    )
+    features = extract_features(feature_text)
 
     raw_price = item.get("price", "")
 
@@ -819,46 +628,17 @@ def clean_product(
 
     if DEBUG_SEARCH:
 
-        print(
-            "[Link Source]"
-        )
+        print("[Link Source]")
 
-        print(
-            "product_link:",
-            item.get(
-                "product_link",
-                ""
-            )
-        )
+        print("product_link:", item.get("product_link", ""))
 
-        print(
-            "link:",
-            item.get(
-                "link",
-                ""
-            )
-        )
+        print("link:", item.get("link", ""))
 
-        print(
-            "immersive_product_api:",
-            item.get(
-                "serpapi_immersive_product_api",
-                ""
-            )
-        )
+        print("immersive_product_api:", item.get("serpapi_immersive_product_api", ""))
 
-        print(
-            "source:",
-            item.get(
-                "source",
-                ""
-            )
-        )
+        print("source:", item.get("source", ""))
 
-    price_info = parse_price(
-        raw_price,
-        region=region
-    )
+    price_info = parse_price(raw_price, region=region)
 
     price = item.get("extracted_price")
 
@@ -869,102 +649,37 @@ def clean_product(
 
     currency = price_info["currency"]
 
-    print(
-        "[Price Result]",
-        "price =", price,
-        "currency =", currency
-    )
+    print("[Price Result]", "price =", price, "currency =", currency)
 
     display_price = raw_price
 
     return {
-
         "title": clean_name,
-
         "raw_title": raw_title,
-                
         "price": price,
-
         "currency": currency,
-
         "display_price": display_price,
-
-        "product_id": item.get(
-            "product_id",
-            ""
-        ),
-        
-        "immersive_product_api": item.get(
-            "serpapi_immersive_product_api",
-            ""
-        ),
-
-        "reviews": item.get(
-            "reviews",
-            0
-        ),
-
-        "multiple_sources": item.get(
-            "multiple_sources",
-            False
-        ),
-
-        "platform": item.get(
-            "source",
-            ""
-        ),
-
+        "product_id": item.get("product_id", ""),
+        "immersive_product_api": item.get("serpapi_immersive_product_api", ""),
+        "reviews": item.get("reviews", 0),
+        "multiple_sources": item.get("multiple_sources", False),
+        "platform": item.get("source", ""),
         "source": "web",
-
-        "shop": item.get(
-            "source",
-            ""
-        ),
-
+        "shop": item.get("source", ""),
         "desc": snippet,
-
-        "product_link": item.get(
-            "product_link",
-            ""
-        ),
-
-        "link": item.get(
-            "product_link"
-        ) or item.get(
-            "link",
-            ""
-        ),
-
-        "image": item.get(
-            "thumbnail",
-            ""
-        ),
-
+        "product_link": item.get("product_link", ""),
+        "link": item.get("product_link") or item.get("link", ""),
+        "image": item.get("thumbnail", ""),
         "features": features,
-
         "tags": [],
-
         "rating": rating,
-
-        "match": int(
-            rating * 10
-        ),
-
-        "brand": detect_brand(
-            clean_name
-        ),
-
+        "match": int(rating * 10),
+        "brand": detect_brand(clean_name),
         "series": metadata["series"],
-
         "series_number": metadata["series_number"],
-
         "gps": metadata["gps"],
-
         "cellular": metadata["cellular"],
-
         "size": metadata["size"],
-        
         "tier": metadata["tier"],
-
-        "isTop": False
+        "isTop": False,
     }

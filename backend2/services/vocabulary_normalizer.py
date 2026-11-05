@@ -52,25 +52,21 @@ def normalize_device_type(value):
         return None
 
     mapping = {
-
         "smartwatch": "smartwatch",
         "smart_watch": "smartwatch",
         "watch": "smartwatch",
         "智慧手錶": "smartwatch",
         "手錶": "smartwatch",
-
         "smart band": "smart_band",
         "smart_band": "smart_band",
         "band": "smart_band",
         "智慧手環": "smart_band",
         "手環": "smart_band",
-
         "smart ring": "smart_ring",
         "smart_ring": "smart_ring",
         "ring": "smart_ring",
         "智慧戒指": "smart_ring",
         "戒指": "smart_ring",
-
         "藍牙耳機": "earbuds",
         "earbuds": "earbuds",
     }
@@ -86,30 +82,25 @@ def normalize_usage(value):
         return None
 
     mapping = {
-
         # Running
         "running": "running",
         "run": "running",
         "跑步": "running",
-
         # Sport
         "運動": "運動",
         "運動（跑步 / 健身 / 戶外）": "運動",
         "運動（跑步/健身/戶外）": "運動",
-
         # Hiking / Outdoor
         "hiking": "hiking",
         "outdoor": "hiking",
         "登山": "hiking",
         "戶外": "hiking",
         "戶外 / 登山": "hiking",
-
         # Health
         "health": "health_monitoring",
         "health_monitoring": "health_monitoring",
         "健康": "health_monitoring",
         "健康監測": "health_monitoring",
-
         # Sleep
         "sleep": "sleep",
         "sleep_monitoring": "sleep",
@@ -129,25 +120,19 @@ def normalize_feature(value):
         return None
 
     mapping = {
-
         "gps": "gps",
-
         "heart_rate": "heart_rate",
         "heart rate": "heart_rate",
         "心率": "heart_rate",
-
         "blood_oxygen": "blood_oxygen",
         "spo2": "blood_oxygen",
         "血氧": "blood_oxygen",
-
         "ecg": "ecg",
         "心電圖": "ecg",
-
         "sleep": "sleep_tracking",
         "sleep_tracking": "sleep_tracking",
         "睡眠": "sleep_tracking",
         "睡眠監測": "sleep_tracking",
-
         "waterproof": "water_resistance",
         "water_resistance": "water_resistance",
         "防水": "water_resistance",
@@ -164,12 +149,9 @@ def normalize_os(value):
         return None
 
     mapping = {
-
         "ios": "iOS",
         "iphone": "iOS",
-
         "android": "Android",
-
         "cross": "Cross",
         "不限": "Cross",
     }
@@ -185,13 +167,10 @@ def normalize_style(value):
         return None
 
     mapping = {
-
         "sport": "sport",
         "運動": "sport",
-
         "fashion": "fashion",
         "時尚": "fashion",
-
         "business": "business",
         "商務": "business",
     }
@@ -221,9 +200,7 @@ def normalize_battery(value):
     ):
         return "medium"
 
-    if text in (
-        "low",
-    ):
+    if text in ("low",):
         return "low"
 
     return value
@@ -237,22 +214,17 @@ def normalize_priority(value):
         return None
 
     mapping = {
-
         "battery_life": "battery_life",
         "續航": "battery_life",
         "長續航": "battery_life",
-
         "location_accuracy": "location_accuracy",
         "定位精準": "location_accuracy",
         "gps": "location_accuracy",
-
         "value": "value",
         "cp": "value",
         "cp值": "value",
-
         "durability": "durability",
         "耐用": "durability",
-
         "ease_of_use": "ease_of_use",
         "操作簡單": "ease_of_use",
     }
@@ -268,13 +240,10 @@ def normalize_occupation(value):
         return None
 
     mapping = {
-
         "student": "student",
         "學生": "student",
-
         "office_worker": "office_worker",
         "上班族": "office_worker",
-
         "athlete": "athlete",
         "運動員": "athlete",
     }
@@ -290,14 +259,11 @@ def normalize_age_group(value):
         return None
 
     mapping = {
-
         "senior": "senior",
         "長者": "senior",
         "長輩": "senior",
-
         "adult": "adult",
         "成人": "adult",
-
         "child": "child",
         "兒童": "child",
     }

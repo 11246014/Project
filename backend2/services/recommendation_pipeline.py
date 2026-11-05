@@ -32,7 +32,6 @@ from services.backend1_client import (
     save_product,
 )
 
-
 # ==================================================
 # Pipeline Config
 # ==================================================
@@ -44,20 +43,19 @@ DEBUG_PIPELINE = True
 # Product Format
 # ==================================================
 
+
 def format_products(products, limit=3):
     """
     將商品轉換成 Frontend 格式
     """
 
-    return [
-        format_product(product)
-        for product in products[:limit]
-    ]
+    return [format_product(product) for product in products[:limit]]
 
 
 # ==================================================
 # Recommendation Pipeline
 # ==================================================
+
 
 def recommend_from_need(
     need,
@@ -94,15 +92,11 @@ def recommend_from_need(
 
         # Brand
         if need.preferences.brand:
-            query_parts.append(
-                need.preferences.brand
-            )
+            query_parts.append(need.preferences.brand)
 
         # Device Type
         if need.device_type:
-            query_parts.append(
-                need.device_type
-            )
+            query_parts.append(need.device_type)
 
         # Usage
         for usage in need.usage:
@@ -113,21 +107,13 @@ def recommend_from_need(
             )
 
             if mapped_usage:
-                query_parts.append(
-                    mapped_usage
-                )
+                query_parts.append(mapped_usage)
 
         # Remove Duplicate
-        query_parts = list(
-            dict.fromkeys(
-                query_parts
-            )
-        )
+        query_parts = list(dict.fromkeys(query_parts))
 
         search_query = " ".join(
-            str(part).strip()
-            for part in query_parts
-            if part and str(part).strip()
+            str(part).strip() for part in query_parts if part and str(part).strip()
         )
 
     # =========================
@@ -142,15 +128,10 @@ def recommend_from_need(
     )
 
     if DEBUG_PIPELINE:
-        print(
-            f"[Timing] Search: "
-            f"{time.perf_counter() - search_start:.2f}s"
-        )
+        print(f"[Timing] Search: " f"{time.perf_counter() - search_start:.2f}s")
 
     if DEBUG_PIPELINE:
-        print(
-            f"[Candidates] {len(candidates)}"
-        )
+        print(f"[Candidates] {len(candidates)}")
 
     # =========================
     # Search Filter
@@ -158,18 +139,13 @@ def recommend_from_need(
 
     filter_start = time.perf_counter()
 
-    filtered, budget_fallback = (
-        hard_filter_candidates(
-            candidates,
-            need,
-        )
+    filtered, budget_fallback = hard_filter_candidates(
+        candidates,
+        need,
     )
 
     if DEBUG_PIPELINE:
-        print(
-            f"[Timing] Search Filter: "
-            f"{time.perf_counter() - filter_start:.2f}s"
-        )
+        print(f"[Timing] Search Filter: " f"{time.perf_counter() - filter_start:.2f}s")
     # =========================
     # Ranking
     # =========================
@@ -180,14 +156,11 @@ def recommend_from_need(
         filtered,
         need,
     )
-     # 排序後再次去重
+    # 排序後再次去重
     ranked = deduplicate_products(ranked)
 
     if DEBUG_PIPELINE:
-        print(
-            f"[Timing] Ranking: "
-            f"{time.perf_counter() - ranking_start:.2f}s"
-        )
+        print(f"[Timing] Ranking: " f"{time.perf_counter() - ranking_start:.2f}s")
 
     if DEBUG_PIPELINE:
 
@@ -207,9 +180,7 @@ def recommend_from_need(
 
         print("============================")
 
-        print(
-            f"[After Ranking] {len(ranked)}"
-        )
+        print(f"[After Ranking] {len(ranked)}")
 
     # =========================
     # Top Products
@@ -218,9 +189,7 @@ def recommend_from_need(
     top_products = ranked[:limit]
 
     if DEBUG_PIPELINE:
-        print(
-            f"[Top Products] {len(top_products)}"
-        )
+        print(f"[Top Products] {len(top_products)}")
 
     # =========================
     # Resolve Product Links
@@ -264,7 +233,7 @@ def recommend_from_need(
                         product.get(
                             "title",
                             "",
-                        )
+                        ),
                     )
 
                     print(
@@ -279,7 +248,7 @@ def recommend_from_need(
                     product.get(
                         "title",
                         "",
-                    )
+                    ),
                 )
 
         elif DEBUG_PIPELINE:
@@ -289,7 +258,7 @@ def recommend_from_need(
                 product.get(
                     "title",
                     "",
-                )
+                ),
             )
 
         # =========================
@@ -310,7 +279,7 @@ def recommend_from_need(
                     product.get(
                         "title",
                         "",
-                    )
+                    ),
                 )
 
             new_id = save_product(product)
@@ -336,10 +305,7 @@ def recommend_from_need(
     )
 
     if DEBUG_PIPELINE:
-        print(
-            f"[Timing] Format: "
-            f"{time.perf_counter() - format_start:.2f}s"
-        )
+        print(f"[Timing] Format: " f"{time.perf_counter() - format_start:.2f}s")
 
     # =========================
     # Log Recommendation Event
@@ -355,18 +321,12 @@ def recommend_from_need(
     )
 
     if DEBUG_PIPELINE:
-        print(
-            f"[Timing] Analytics: "
-            f"{time.perf_counter() - analytics_start:.2f}s"
-        )
+        print(f"[Timing] Analytics: " f"{time.perf_counter() - analytics_start:.2f}s")
 
     if DEBUG_PIPELINE:
+        print(f"[Formatted] {len(formatted_products)}")
         print(
-            f"[Formatted] {len(formatted_products)}"
-        )
-        print(
-            f"[Timing] Pipeline Total: "
-            f"{time.perf_counter() - pipeline_start:.2f}s"
+            f"[Timing] Pipeline Total: " f"{time.perf_counter() - pipeline_start:.2f}s"
         )
 
     return {

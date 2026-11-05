@@ -21,6 +21,7 @@ from services.ranking.helper import (
 # Requirement Score
 # ==================================================
 
+
 def score_requirement(
     product,
     need,
@@ -59,16 +60,11 @@ def score_requirement(
             [device_term],
         )
 
-        if any(
-            keyword.lower() in text
-            for keyword in keywords
-        ):
+        if any(keyword.lower() in text for keyword in keywords):
 
             requirement_score += weights["device"]
 
-            debug_score.append(
-                f"Device +{weights['device']}"
-            )
+            debug_score.append(f"Device +{weights['device']}")
 
     return (
         requirement_score,

@@ -23,6 +23,7 @@ from services.backend1_client import (
 # Match Score
 # ==================================================
 
+
 def calculate_match_score(raw_score):
     """
     將 Raw Score 轉成前端展示用 Match (%)
@@ -46,14 +47,13 @@ def calculate_match_score(raw_score):
 
     score = round(score)
 
-    return max(
-        60,
-        min(score, 99)
-    )
+    return max(60, min(score, 99))
+
 
 # ==================================================
 # Final Score
 # ==================================================
+
 
 def calculate_final_score(
     base_score,
@@ -67,14 +67,13 @@ def calculate_final_score(
     再使用實際的 boost rate。
     """
 
-    return base_score + (
-        base_score * sponsor_boost_rate
-    )
+    return base_score + (base_score * sponsor_boost_rate)
 
 
 # ==================================================
 # Product Ranking
 # ==================================================
+
 
 def rank_products(
     products,
@@ -95,7 +94,6 @@ def rank_products(
 
     review_summary_map = get_all_review_summaries()
 
-
     for product in products:
 
         product = product.copy()
@@ -111,17 +109,13 @@ def rank_products(
         )
         product["raw_score"] = result["raw_score"]
 
-        product["required_feature_status"] = result[
-            "required_feature_status"
-        ]
+        product["required_feature_status"] = result["required_feature_status"]
 
         # ==================================================
         # Base Score
         # ==================================================
 
-        base_score = calculate_match_score(
-            result["raw_score"]
-        )
+        base_score = calculate_match_score(result["raw_score"])
 
         product["base_score"] = base_score
 
@@ -134,34 +128,17 @@ def rank_products(
         sponsor_boost_rate = 0
         is_sponsored = False
 
-        product_brand = str(
-            product.get(
-                "brand",
-                ""
-            )
-        ).strip().lower()
+        product_brand = str(product.get("brand", "")).strip().lower()
 
         for sponsor in sponsors:
 
-            sponsor_brand = str(
-                sponsor.get(
-                    "brand_name",
-                    ""
-                )
-            ).strip().lower()
+            sponsor_brand = str(sponsor.get("brand_name", "")).strip().lower()
 
             if product_brand == sponsor_brand:
 
-                sponsor_boost_rate = float(
-                    sponsor.get(
-                        "boost_rate",
-                        0
-                    )
-                )
+                sponsor_boost_rate = float(sponsor.get("boost_rate", 0))
 
-                is_sponsored = (
-                    sponsor_boost_rate > 0
-                )
+                is_sponsored = sponsor_boost_rate > 0
 
                 break
 
@@ -193,11 +170,7 @@ def rank_products(
 
     budget_max = None
 
-    if (
-        user_need
-        and user_need.budget
-        and user_need.budget.max
-    ):
+    if user_need and user_need.budget and user_need.budget.max:
         budget_max = user_need.budget.max
 
     # ==================================================
@@ -210,25 +183,15 @@ def rank_products(
             return float("inf")
 
         try:
-            price = float(
-                product.get(
-                    "price",
-                    0
-                )
-            )
+            price = float(product.get("price", 0))
 
-        except (
-            TypeError,
-            ValueError
-        ):
+        except (TypeError, ValueError):
             return float("inf")
 
         if price <= 0:
             return float("inf")
 
-        return abs(
-            price - budget_max
-        )
+        return abs(price - budget_max)
 
     # ==================================================
     # Budget Fallback
@@ -241,10 +204,7 @@ def rank_products(
     budget_fallback = (
         budget_max is not None
         and len(ranked) > 0
-        and all(
-            price_distance(product) > 0
-            for product in ranked
-        )
+        and all(price_distance(product) > 0 for product in ranked)
     )
 
     # ==================================================
@@ -255,15 +215,9 @@ def rank_products(
 
         ranked.sort(
             key=lambda item: (
-                item.get(
-                    "final_score",
-                    0
-                ),
+                item.get("final_score", 0),
                 -price_distance(item),
-                item.get(
-                    "rating",
-                    0
-                ),
+                item.get("rating", 0),
             ),
             reverse=True,
         )
@@ -272,14 +226,8 @@ def rank_products(
 
         ranked.sort(
             key=lambda item: (
-                item.get(
-                    "final_score",
-                    0
-                ),
-                item.get(
-                    "rating",
-                    0
-                ),
+                item.get("final_score", 0),
+                item.get("rating", 0),
             ),
             reverse=True,
         )
@@ -295,20 +243,14 @@ def rank_products(
 
     for product in ranked:
 
-        current_raw_score = product.get(
-            "raw_score",
-            0
-        )
+        current_raw_score = product.get("raw_score", 0)
 
         if current_raw_score == previous_raw_score:
             tie_offset += 1
         else:
             tie_offset = 0
 
-        display_score = max(
-            60,
-            product.get("base_score", 60) - tie_offset
-        )
+        display_score = max(60, product.get("base_score", 60) - tie_offset)
 
         product["match"] = display_score
 

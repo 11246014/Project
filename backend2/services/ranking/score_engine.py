@@ -98,6 +98,7 @@ USER_BRAND_MAPPING = {
 # Preference Score
 # ==================================================
 
+
 def score_preferences(
     product,
     need,
@@ -117,10 +118,7 @@ def score_preferences(
     ):
         battery_terms = PRIORITY_TERMS["battery_life"]
 
-        battery_matched = any(
-            term.lower() in text
-            for term in battery_terms
-        )
+        battery_matched = any(term.lower() in text for term in battery_terms)
 
         if DEBUG_RANKING:
             print(
@@ -139,6 +137,7 @@ def score_preferences(
 # ==================================================
 # Product Score Engine
 # ==================================================
+
 
 def calculate_product_score(
     product,
@@ -164,12 +163,7 @@ def calculate_product_score(
 
     text = _text(product)
 
-    features = {
-        str(item).lower()
-        for item in _list(
-            product.get("features")
-        )
-    }
+    features = {str(item).lower() for item in _list(product.get("features"))}
     if DEBUG_RANKING:
         print(
             f"[Ranking Debug] "
@@ -188,9 +182,7 @@ def calculate_product_score(
 
     reason_parts.extend(reason_part)
 
-    debug_score.extend(
-        requirement_debug
-    )
+    debug_score.extend(requirement_debug)
 
     # ==================================================
     # Usage
@@ -203,10 +195,7 @@ def calculate_product_score(
             [usage],
         )
 
-        usage_matched = any(
-            keyword.lower() in text
-            for keyword in keywords
-        )
+        usage_matched = any(keyword.lower() in text for keyword in keywords)
 
         if DEBUG_RANKING:
             print(
@@ -220,25 +209,16 @@ def calculate_product_score(
 
             requirement_score += weights["usage"]
 
-            debug_score.append(
-                f"Usage({usage}) +{weights['usage']}"
-            )
+            debug_score.append(f"Usage({usage}) +{weights['usage']}")
 
-            reason = USAGE_REASON.get(
-                usage
-            )
+            reason = USAGE_REASON.get(usage)
 
-            if (
-                reason
-                and reason not in reason_parts
-            ):
+            if reason and reason not in reason_parts:
                 reason_parts.append(reason)
 
         else:
 
-            debug_score.append(
-                f"Usage({usage}) UNKNOWN"
-            )
+            debug_score.append(f"Usage({usage}) UNKNOWN")
     # ==================================================
     # Required Feature
     # ==================================================
@@ -265,14 +245,9 @@ def calculate_product_score(
         # Feature Match
         # --------------------------------------------------
 
-        feature_text_match = any(
-            keyword.lower() in text
-            for keyword in keywords
-        )
+        feature_text_match = any(keyword.lower() in text for keyword in keywords)
 
-        feature_list_match = (
-            feature_name.lower() in features
-        )
+        feature_list_match = feature_name.lower() in features
 
         # --------------------------------------------------
         # GPS 使用獨立 metadata
@@ -315,10 +290,7 @@ def calculate_product_score(
                 f"status={feature_status}"
             )
 
-            print(
-                f"[Required Feature Status] "
-                f"{feature_status}"
-            )
+            print(f"[Required Feature Status] " f"{feature_status}")
 
         # --------------------------------------------------
         # Required Feature Ranking Policy
@@ -336,43 +308,29 @@ def calculate_product_score(
 
             requirement_score += weight
 
-            debug_score.append(
-                f"Feature({feature_name}) +{weight}"
-            )
+            debug_score.append(f"Feature({feature_name}) +{weight}")
 
-            reason = FEATURE_REASON.get(
-                feature_name
-            )
+            reason = FEATURE_REASON.get(feature_name)
 
-            if (
-                reason
-                and reason not in reason_parts
-            ):
+            if reason and reason not in reason_parts:
                 reason_parts.append(reason)
 
         elif feature_status == "unknown":
 
             required_feature_unknown = True
 
-            debug_score.append(
-                f"Feature({feature_name}) UNKNOWN +0"
-            )
+            debug_score.append(f"Feature({feature_name}) UNKNOWN +0")
 
         elif feature_status == "failed":
 
             required_feature_failed = True
 
-            adjustment_score -= (
-                weight * 2
-            )
+            adjustment_score -= weight * 2
 
-            debug_score.append(
-                f"Feature({feature_name}) FAILED -{weight * 2}"
-            )
+            debug_score.append(f"Feature({feature_name}) FAILED -{weight * 2}")
 
             required_feature_failed = True
 
-            
     # ==================================================
     # Priority
     # ==================================================
@@ -384,16 +342,11 @@ def calculate_product_score(
             [priority],
         )
 
-        if any(
-            term.lower() in text
-            for term in evidence_terms
-        ):
+        if any(term.lower() in text for term in evidence_terms):
 
             requirement_score += weights["priority"]
 
-            debug_score.append(
-                f"Priority({priority}) +{weights['priority']}"
-            )
+            debug_score.append(f"Priority({priority}) +{weights['priority']}")
 
     # ==================================================
     # Core Factor
@@ -406,10 +359,7 @@ def calculate_product_score(
             [],
         )
 
-        if any(
-            keyword.lower() in text
-            for keyword in keywords
-        ):
+        if any(keyword.lower() in text for keyword in keywords):
 
             weight = FEATURE_BONUS.get(
                 priority,
@@ -418,9 +368,7 @@ def calculate_product_score(
 
             requirement_score += weight
 
-            debug_score.append(
-                f"CoreFactor({priority}) +{weight}"
-            )
+            debug_score.append(f"CoreFactor({priority}) +{weight}")
 
     # ==================================================
     # Preference
@@ -435,9 +383,7 @@ def calculate_product_score(
 
     if preference_score:
 
-        debug_score.append(
-            f"Preference +{preference_score}"
-        )
+        debug_score.append(f"Preference +{preference_score}")
 
     # ==================================================
     # Metadata
@@ -451,20 +397,14 @@ def calculate_product_score(
 
     base_score += metadata_score
 
-    debug_score.extend(
-        metadata_debug
-    )
+    debug_score.extend(metadata_debug)
 
     # ==================================================
     # Budget
     # ==================================================
 
     price = _price(product)
-    budget_max = (
-        need.budget.max
-        if need.budget
-        else None
-    )
+    budget_max = need.budget.max if need.budget else None
 
     if budget_max and price:
 
@@ -472,31 +412,20 @@ def calculate_product_score(
 
             requirement_score += weights["budget"]
 
-            debug_score.append(
-                f"Budget +{weights['budget']}"
-            )
+            debug_score.append(f"Budget +{weights['budget']}")
 
         else:
 
-            over_ratio = (
-                price - budget_max
-            ) / budget_max
+            over_ratio = (price - budget_max) / budget_max
 
             budget_penalty = min(
-                weights["budget"] * 2,
-                round(
-                    over_ratio
-                    * weights["budget"]
-                    * 2
-                )
+                weights["budget"] * 2, round(over_ratio * weights["budget"] * 2)
             )
 
             requirement_score -= budget_penalty
 
-            debug_score.append(
-                f"Budget Over -{budget_penalty}"
-            )
-            
+            debug_score.append(f"Budget Over -{budget_penalty}")
+
     # ==================================================
     # Rating
     # ==================================================
@@ -517,9 +446,7 @@ def calculate_product_score(
 
     base_score += rating_score
 
-    debug_score.append(
-        f"Rating +{rating_score}"
-    )
+    debug_score.append(f"Rating +{rating_score}")
 
     # ==================================================
     # Community Review
@@ -530,23 +457,17 @@ def calculate_product_score(
     if review_summary_map:
 
         product_id = (
-            product.get("id")
-            or product.get("product_id")
-            or product.get("productId")
+            product.get("id") or product.get("product_id") or product.get("productId")
         )
 
         summary = None
 
         if product_id is not None:
 
-            summary = review_summary_map.get(
-                str(product_id)
-            )
+            summary = review_summary_map.get(str(product_id))
 
             if summary is None:
-                summary = review_summary_map.get(
-                    product_id
-                )
+                summary = review_summary_map.get(product_id)
 
         if summary:
 
@@ -570,18 +491,13 @@ def calculate_product_score(
 
                 base_score += community_score
 
-                debug_score.append(
-                    "社群好評 +2"
-                )
+                debug_score.append("社群好評 +2")
 
     # ==================================================
     # OS
     # ==================================================
 
-    if (
-        need.preferences
-        and need.preferences.os
-    ):
+    if need.preferences and need.preferences.os:
 
         brands = OS_BRAND_MAPPING.get(
             need.preferences.os,
@@ -597,9 +513,7 @@ def calculate_product_score(
 
             requirement_score += weights["os"]
 
-            debug_score.append(
-                f"OS({need.preferences.os}) +{weights['os']}"
-            )
+            debug_score.append(f"OS({need.preferences.os}) +{weights['os']}")
 
     # ==================================================
     # Brand
@@ -619,19 +533,13 @@ def calculate_product_score(
 
     if brand_score:
 
-        debug_score.append(
-            f"Brand({brand}) +{brand_score}"
-        )
+        debug_score.append(f"Brand({brand}) +{brand_score}")
 
     # ==================================================
     # User Brand
     # ==================================================
 
-    user_brand = (
-        need.preferences.brand
-        if need and need.preferences
-        else None
-    )
+    user_brand = need.preferences.brand if need and need.preferences else None
 
     if user_brand:
 
@@ -640,21 +548,16 @@ def calculate_product_score(
             user_brand,
         )
 
-    if (
-        user_brand
-        and brand.lower() == user_brand.lower()
-    ):
+    if user_brand and brand.lower() == user_brand.lower():
 
         requirement_score += USER_BRAND_MATCH_SCORE
 
-        debug_score.append(
-            f"UserBrand({user_brand}) +{USER_BRAND_MATCH_SCORE}"
-        )
+        debug_score.append(f"UserBrand({user_brand}) +{USER_BRAND_MATCH_SCORE}")
 
     # ==================================================
     # Final Score
     # ==================================================
-    
+
     required_feature_status = "ok"
 
     if required_feature_failed:
@@ -665,18 +568,11 @@ def calculate_product_score(
 
         required_feature_status = "unknown"
 
-    score = (
-        base_score
-        + requirement_score
-        + adjustment_score
-    )
+    score = base_score + requirement_score + adjustment_score
 
     if DEBUG_RANKING:
 
-        print(
-            "[Required Feature Status]",
-            required_feature_status
-        )
+        print("[Required Feature Status]", required_feature_status)
 
     # ==================================================
     # Debug
@@ -708,7 +604,6 @@ def calculate_product_score(
 
         reason = generate_reason(product)
 
-
     # ==================================================
     # Community Review Summary
     # ==================================================
@@ -718,38 +613,25 @@ def calculate_product_score(
     if review_summary_map:
 
         product_id = (
-            product.get("id")
-            or product.get("product_id")
-            or product.get("productId")
+            product.get("id") or product.get("product_id") or product.get("productId")
         )
 
         summary = None
 
         if product_id is not None:
 
-            summary = review_summary_map.get(
-                str(product_id)
-            )
+            summary = review_summary_map.get(str(product_id))
 
             if summary is None:
-                summary = review_summary_map.get(
-                    product_id
-                )
+                summary = review_summary_map.get(product_id)
 
             if summary:
 
-                raw_summary_text = summary.get(
-                    "summary_text"
-                )
+                raw_summary_text = summary.get("summary_text")
 
-                summary_text = str(
-                    raw_summary_text
-                ).strip() if raw_summary_text else ""
+                summary_text = str(raw_summary_text).strip() if raw_summary_text else ""
 
-            if (
-                summary_text
-                and summary_text.lower() not in ("none", "null")
-            ):
+            if summary_text and summary_text.lower() not in ("none", "null"):
 
                 reason = f"{reason}、{summary_text}"
 

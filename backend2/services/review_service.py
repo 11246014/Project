@@ -1,4 +1,4 @@
-#review_service.py
+# review_service.py
 import json
 from collections import Counter
 
@@ -13,7 +13,6 @@ from services.backend1_client import (
     upsert_review_summary,
 )
 from services.ranking.constants import REVIEW_KEYWORD_OPTIONS
-
 
 BATCH_THRESHOLD = 5
 
@@ -39,8 +38,8 @@ REVIEW_KEYWORD_SCHEMA = {
         "pros",
         "cons",
     ],
-    "additionalProperties": False,
 }
+
 
 def extract_review_keywords(content: str) -> dict:
     """
@@ -127,17 +126,9 @@ def extract_review_keywords(content: str) -> dict:
         # 不論 AI 回傳什麼，最後只允許固定清單中的關鍵字。
         # ---------------------------------------------------------
 
-        valid_pros = [
-            keyword
-            for keyword in raw_pros
-            if keyword in pros_options
-        ]
+        valid_pros = [keyword for keyword in raw_pros if keyword in pros_options]
 
-        valid_cons = [
-            keyword
-            for keyword in raw_cons
-            if keyword in cons_options
-        ]
+        valid_cons = [keyword for keyword in raw_cons if keyword in cons_options]
 
         # 去除重複，同時保留原本順序
         valid_pros = list(dict.fromkeys(valid_pros))
@@ -192,9 +183,7 @@ def aggregate_top_keywords(
         # Backend1 儲存格式為逗號分隔字串；同時保留對 list 的相容處理。
         if isinstance(keywords, str):
             keywords = [
-                keyword.strip()
-                for keyword in keywords.split(",")
-                if keyword.strip()
+                keyword.strip() for keyword in keywords.split(",") if keyword.strip()
             ]
         elif not isinstance(keywords, list):
             continue
@@ -203,10 +192,7 @@ def aggregate_top_keywords(
             if keyword:
                 counter[keyword] += 1
 
-    return [
-        keyword
-        for keyword, _count in counter.most_common(top_n)
-    ]
+    return [keyword for keyword, _count in counter.most_common(top_n)]
 
 
 def generate_summary_text(
@@ -243,10 +229,7 @@ def generate_summary_text(
     pros_text = "、".join(top_pros) if top_pros else "無明顯優點"
     cons_text = "、".join(top_cons) if top_cons else "無明顯缺點"
 
-    reviews_text = "\n".join(
-        f"- {content}"
-        for content in review_contents
-    )
+    reviews_text = "\n".join(f"- {content}" for content in review_contents)
 
     prompt = f"""
 你是一個智慧穿戴產品的社群評論摘要助手。
@@ -311,9 +294,9 @@ def process_single_review(
         cons = keywords.get("cons", [])
 
         review_data = {
-            'pros': ','.join(pros),
-            'cons': ','.join(cons),
-            'process_status': 'done',
+            "pros": ",".join(pros),
+            "cons": ",".join(cons),
+            "process_status": "done",
         }
 
         # ---------------------------------------------------------
@@ -326,10 +309,7 @@ def process_single_review(
         )
 
         if not review:
-            print(
-                f"[Review Process] "
-                f"review_id={review_id} 更新 Backend1 失敗"
-            )
+            print(f"[Review Process] " f"review_id={review_id} 更新 Backend1 失敗")
             return
 
         # ---------------------------------------------------------
@@ -339,16 +319,10 @@ def process_single_review(
         # 因此依序嘗試常見欄位。
         # ---------------------------------------------------------
 
-        product_id = (
-            review.get("product_id")
-            or review.get("productId")
-        )
+        product_id = review.get("product_id") or review.get("productId")
 
         if not product_id:
-            print(
-                f"[Review Process] "
-                f"review_id={review_id} 找不到 product_id"
-            )
+            print(f"[Review Process] " f"review_id={review_id} 找不到 product_id")
             return
 
         # ---------------------------------------------------------
@@ -358,10 +332,7 @@ def process_single_review(
         reviews = get_reviews_by_product(product_id)
 
         if not reviews:
-            print(
-                f"[Review Process] "
-                f"product_id={product_id} 沒有評論資料"
-            )
+            print(f"[Review Process] " f"product_id={product_id} 沒有評論資料")
             return
 
         # ---------------------------------------------------------
@@ -388,20 +359,14 @@ def process_single_review(
         # 第 10、15、20...則時再次執行
         # ---------------------------------------------------------
 
-        if (
-            processed_count <= BATCH_THRESHOLD
-            or processed_count % BATCH_THRESHOLD == 0
-        ):
+        if processed_count <= BATCH_THRESHOLD or processed_count % BATCH_THRESHOLD == 0:
             run_batch_aggregation(
                 product_id,
                 processed_reviews,
             )
 
     except Exception as e:
-        print(
-            f"[Review Process Error] "
-            f"review_id={review_id}, error={e}"
-        )
+        print(f"[Review Process Error] " f"review_id={review_id}, error={e}")
 
 
 def run_batch_aggregation(
@@ -457,18 +422,18 @@ def run_batch_aggregation(
             top_cons,
         )
         total = len(reviews)
-        positive = sum(1 for r in reviews if r.get('rating') == 3)
+        positive = sum(1 for r in reviews if r.get("rating") == 3)
 
         # ---------------------------------------------------------
         # 4. 更新 product_review_summary
         # ---------------------------------------------------------
 
         summary_data = {
-            'review_count': total,
-            'positive_ratio': round(positive / total, 2) if total else 0.0,
-            'top_pros': top_pros,
-            'top_cons': top_cons,
-            'summary_text': summary_text,
+            "review_count": total,
+            "positive_ratio": round(positive / total, 2) if total else 0.0,
+            "top_pros": top_pros,
+            "top_cons": top_cons,
+            "summary_text": summary_text,
         }
 
         result = upsert_review_summary(
@@ -477,10 +442,7 @@ def run_batch_aggregation(
         )
 
         if not result:
-            print(
-                f"[Review Batch] "
-                f"product_id={product_id} summary 更新失敗"
-            )
+            print(f"[Review Batch] " f"product_id={product_id} summary 更新失敗")
             return
 
         print(
@@ -492,7 +454,4 @@ def run_batch_aggregation(
         )
 
     except Exception as e:
-        print(
-            f"[Review Batch Error] "
-            f"product_id={product_id}, error={e}"
-        )
+        print(f"[Review Batch Error] " f"product_id={product_id}, error={e}")

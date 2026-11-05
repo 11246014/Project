@@ -1,5 +1,6 @@
 # services/keyword_prompt.py
 
+
 def build_keyword_prompt(user_message):
     return f"""
 你是「智慧穿戴商品需求分析助手」。

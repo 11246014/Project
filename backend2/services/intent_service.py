@@ -5,7 +5,6 @@ import re
 from services.ai_service import ask_ai
 from config.settings import KEYWORD_MODEL
 
-
 # ==================================================
 # Quick Intent Keywords
 # ==================================================
@@ -30,7 +29,6 @@ RECOMMEND_KEYWORDS = (
     "哪一款",
     "比較一下",
     "比較看看",
-
     # 商品
     "智慧手錶",
     "智能手錶",
@@ -46,7 +44,6 @@ RECOMMEND_KEYWORDS = (
     "smart band",
     "earbuds",
     "airpods",
-
     # 品牌
     "apple watch",
     "garmin",
@@ -61,7 +58,6 @@ RECOMMEND_KEYWORDS = (
     "suunto",
     "oura",
     "ringconn",
-
     # 常見需求條件
     "預算",
     "價格",
@@ -125,6 +121,7 @@ CHAT_KEYWORDS = (
 # ==================================================
 # Helpers
 # ==================================================
+
 
 def _normalize_message(message):
     """
@@ -272,9 +269,7 @@ def _quick_intent(message, in_recommendation=False):
         return "recommend"
 
     if re.search(
-        r"(一萬|兩萬|二萬|三萬|四萬|五萬)"
-        r".{0,6}"
-        r"(內|以下|以內|左右|上下)",
+        r"(一萬|兩萬|二萬|三萬|四萬|五萬)" r".{0,6}" r"(內|以下|以內|左右|上下)",
         text,
     ):
         return "recommend"
@@ -298,6 +293,7 @@ def _quick_intent(message, in_recommendation=False):
 # ==================================================
 # Main Intent Detection
 # ==================================================
+
 
 def detect_intent(message, in_recommendation=False):
     """
@@ -341,11 +337,7 @@ def detect_intent(message, in_recommendation=False):
 
     if quick_result is not None:
 
-        print(
-            f"[Intent Quick] "
-            f"{quick_result} "
-            f"(skip AI)"
-        )
+        print(f"[Intent Quick] " f"{quick_result} " f"(skip AI)")
 
         return quick_result
 
@@ -506,19 +498,14 @@ chat
 
     try:
 
-        result = ask_ai(
-            prompt,
-            model_name=KEYWORD_MODEL
-        )
+        result = ask_ai(prompt, model_name=KEYWORD_MODEL)
 
         if not isinstance(result, str):
             result = ""
 
         result = result.lower().strip()
 
-        print(
-            f"[Intent Raw] {result}"
-        )
+        print(f"[Intent Raw] {result}")
 
         # ==================================================
         # Final Intent
@@ -552,9 +539,7 @@ chat
 
     except Exception as e:
 
-        print(
-            f"[Intent Error] {e}"
-        )
+        print(f"[Intent Error] {e}")
 
         # 與原本版本保持一致：
         # Intent 判斷失敗時，

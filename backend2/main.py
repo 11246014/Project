@@ -27,16 +27,16 @@ app.add_middleware(
 
 # ===== 測試首頁 =====
 
+
 @app.get("/")
 def home():
-    return {
-        "status": "AI Brain Online",
-        "version": "W6 Modular Version"
-    }
-    
+    return {"status": "AI Brain Online", "version": "W6 Modular Version"}
+
+
 # =========================
 # 圖片代理 API
 # =========================
+
 
 @app.get("/image-proxy")
 async def image_proxy(url: str = Query(..., description="原始圖片網址")):

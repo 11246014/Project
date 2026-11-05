@@ -9,80 +9,37 @@ BASE_URL = "https://champion-sandpit-rash.ngrok-free.dev"
 # 儲存商品
 # =========================
 
+
 def save_product(product):
 
     try:
 
         payload = {
-
-            "name": product.get(
-                "title",
-                ""
-            ),
-
-            "price": product.get(
-                "price",
-                0
-            ),
-
-            "description": product.get(
-                "desc",
-                ""
-            ),
-
-            "platform": product.get(
-                "platform",
-                ""
-            ),
-
-            "image": product.get(
-                "image",
-                ""
-            ),
-
-            "rating": int(
-                product.get(
-                    "rating",
-                    0
-                )
-            ),
-
-            "reason": product.get(
-                "reason",
-                ""
-            ),
-
-            "link": product.get(
-                "link",
-                ""
-            )
+            "name": product.get("title", ""),
+            "price": product.get("price", 0),
+            "description": product.get("desc", ""),
+            "platform": product.get("platform", ""),
+            "image": product.get("image", ""),
+            "rating": int(product.get("rating", 0)),
+            "reason": product.get("reason", ""),
+            "link": product.get("link", ""),
         }
 
-        response = requests.post(
+        response = requests.post(f"{BASE_URL}/products", json=payload, timeout=10)
 
-            f"{BASE_URL}/products",
-
-            json=payload,
-
-            timeout=10
-        )
-
-        print(
-            f"[Save Product] {response.status_code}"
-        )
+        print(f"[Save Product] {response.status_code}")
         response.raise_for_status()
-        return response.json().get('id')
+        return response.json().get("id")
 
     except Exception as e:
 
-        print(
-            f"[Save Error] {e}"
-        )
+        print(f"[Save Error] {e}")
 
 
 # =========================
 # 紀錄推薦事件
 # =========================
+
 
 def log_recommendation_event(user_need, recommend_results):
 
@@ -91,70 +48,25 @@ def log_recommendation_event(user_need, recommend_results):
         # Filter 流程會把原始問卷放在 user_need.raw.filters；
         # Chat 流程則放在 user_need.raw.text。
         source = (
-            "filter"
-            if getattr(user_need.raw, "filters", None) is not None
-            else "chat"
+            "filter" if getattr(user_need.raw, "filters", None) is not None else "chat"
         )
 
         payload = {
             "source": source,
-
             # UserNeed -> Persona
-            "age_range": getattr(
-                user_need.persona,
-                "age_range",
-                None
-            ),
-
-            "occupation": getattr(
-                user_need.persona,
-                "occupation",
-                None
-            ),
-
-            "usage_scope": getattr(
-                user_need.persona,
-                "usage_scope",
-                None
-            ),
-
+            "age_range": getattr(user_need.persona, "age_range", None),
+            "occupation": getattr(user_need.persona, "occupation", None),
+            "usage_scope": getattr(user_need.persona, "usage_scope", None),
             # UserNeed 直接欄位
             "device_type": user_need.device_type,
-
-            "usage": ",".join(
-                user_need.usage or []
-            ),
-
-            "features": ",".join(
-                user_need.features or []
-            ),
-
+            "usage": ",".join(user_need.usage or []),
+            "features": ",".join(user_need.features or []),
             # UserNeed -> Preferences
-            "os": getattr(
-                user_need.preferences,
-                "os",
-                None
-            ),
-
-            "brand_preference": getattr(
-                user_need.preferences,
-                "brand",
-                None
-            ),
-
+            "os": getattr(user_need.preferences, "os", None),
+            "brand_preference": getattr(user_need.preferences, "brand", None),
             # UserNeed -> Budget
-            "budget_min": getattr(
-                user_need.budget,
-                "min",
-                None
-            ),
-
-            "budget_max": getattr(
-                user_need.budget,
-                "max",
-                None
-            ),
-
+            "budget_min": getattr(user_need.budget, "min", None),
+            "budget_max": getattr(user_need.budget, "max", None),
             # 本次最終推薦前 3 名
             "top_brands": ",".join(
                 [
@@ -163,7 +75,6 @@ def log_recommendation_event(user_need, recommend_results):
                     if product.get("brand")
                 ]
             ),
-
             "top_platforms": ",".join(
                 [
                     str(product.get("platform", ""))
@@ -171,44 +82,31 @@ def log_recommendation_event(user_need, recommend_results):
                     if product.get("platform")
                 ]
             ),
-
-            "product_count": len(
-                recommend_results
-            ),
+            "product_count": len(recommend_results),
         }
 
         response = requests.post(
-            f"{BASE_URL}/analytics/events",
-            json=payload,
-            timeout=10
+            f"{BASE_URL}/analytics/events", json=payload, timeout=10
         )
 
-        print(
-            f"[Analytics Event] {response.status_code}"
-        )
+        print(f"[Analytics Event] {response.status_code}")
 
     except Exception as e:
 
         # 統計紀錄失敗不能讓推薦 API 整個失敗。
-        print(
-            f"[Analytics Error] {e}"
-        )
+        print(f"[Analytics Error] {e}")
 
 
 # =========================
 # 查詢資料庫商品
 # =========================
 
+
 async def get_db_products():
 
     try:
 
-        response = requests.get(
-
-            f"{BASE_URL}/products",
-
-            timeout=10
-        )
+        response = requests.get(f"{BASE_URL}/products", timeout=10)
 
         data = response.json()
 
@@ -216,9 +114,7 @@ async def get_db_products():
 
     except Exception as e:
 
-        print(
-            f"[DB Search Error] {e}"
-        )
+        print(f"[DB Search Error] {e}")
 
         return []
 
@@ -226,6 +122,7 @@ async def get_db_products():
 # =========================
 # 查詢產品評論
 # =========================
+
 
 def get_reviews_by_product(product_id):
     """
@@ -240,10 +137,7 @@ def get_reviews_by_product(product_id):
 
     try:
 
-        response = requests.get(
-            f"{BASE_URL}/products/{product_id}/reviews",
-            timeout=10
-        )
+        response = requests.get(f"{BASE_URL}/products/{product_id}/reviews", timeout=10)
 
         response.raise_for_status()
 
@@ -255,26 +149,19 @@ def get_reviews_by_product(product_id):
 
         # 如果 API 回傳 {"reviews": [...]}
         if isinstance(data, dict):
-            return data.get(
-                "reviews",
-                []
-            )
+            return data.get("reviews", [])
 
         return []
 
     except requests.RequestException as e:
 
-        print(
-            f"[Backend1 Reviews Error] {e}"
-        )
+        print(f"[Backend1 Reviews Error] {e}")
 
         return []
 
     except ValueError as e:
 
-        print(
-            f"[Backend1 Reviews JSON Error] {e}"
-        )
+        print(f"[Backend1 Reviews JSON Error] {e}")
 
         return []
 
@@ -282,6 +169,7 @@ def get_reviews_by_product(product_id):
 # =========================
 # 查詢所有商品評論摘要
 # =========================
+
 
 def get_all_review_summaries():
     """
@@ -299,10 +187,7 @@ def get_all_review_summaries():
 
     try:
 
-        response = requests.get(
-            f"{BASE_URL}/review_summaries",
-            timeout=10
-        )
+        response = requests.get(f"{BASE_URL}/review_summaries", timeout=10)
 
         response.raise_for_status()
 
@@ -317,18 +202,14 @@ def get_all_review_summaries():
 
             # 如果 API 使用 summaries 包裝
             if "summaries" in data:
-                summaries = data.get(
-                    "summaries",
-                    []
-                )
+                summaries = data.get("summaries", [])
 
                 if isinstance(summaries, list):
 
                     return {
                         str(item.get("product_id")): item
                         for item in summaries
-                        if isinstance(item, dict)
-                        and item.get("product_id") is not None
+                        if isinstance(item, dict) and item.get("product_id") is not None
                     }
 
                 if isinstance(summaries, dict):
@@ -346,25 +227,20 @@ def get_all_review_summaries():
             return {
                 str(item.get("product_id")): item
                 for item in data
-                if isinstance(item, dict)
-                and item.get("product_id") is not None
+                if isinstance(item, dict) and item.get("product_id") is not None
             }
 
         return {}
 
     except requests.RequestException as e:
 
-        print(
-            f"[Backend1 Review Summary Error] {e}"
-        )
+        print(f"[Backend1 Review Summary Error] {e}")
 
         return {}
 
     except ValueError as e:
 
-        print(
-            f"[Backend1 Review Summary JSON Error] {e}"
-        )
+        print(f"[Backend1 Review Summary JSON Error] {e}")
 
         return {}
 
@@ -372,6 +248,7 @@ def get_all_review_summaries():
 # =========================
 # 更新單則評論
 # =========================
+
 
 def update_review(review_id, data: dict):
     """
@@ -390,9 +267,7 @@ def update_review(review_id, data: dict):
     try:
 
         response = requests.patch(
-            f"{BASE_URL}/reviews/{review_id}",
-            json=data,
-            timeout=10
+            f"{BASE_URL}/reviews/{review_id}", json=data, timeout=10
         )
 
         response.raise_for_status()
@@ -401,17 +276,13 @@ def update_review(review_id, data: dict):
 
     except requests.RequestException as e:
 
-        print(
-            f"[Backend1 Review Update Error] {e}"
-        )
+        print(f"[Backend1 Review Update Error] {e}")
 
         return None
 
     except ValueError as e:
 
-        print(
-            f"[Backend1 Review Update JSON Error] {e}"
-        )
+        print(f"[Backend1 Review Update JSON Error] {e}")
 
         return None
 
@@ -419,6 +290,7 @@ def update_review(review_id, data: dict):
 # =========================
 # 新增 / 更新商品評論摘要
 # =========================
+
 
 def upsert_review_summary(product_id, data: dict):
     """
@@ -446,9 +318,7 @@ def upsert_review_summary(product_id, data: dict):
         }
 
         response = requests.post(
-            f"{BASE_URL}/products/{product_id}/review_summary",
-            json=payload,
-            timeout=15
+            f"{BASE_URL}/products/{product_id}/review_summary", json=payload, timeout=15
         )
 
         response.raise_for_status()
@@ -456,23 +326,21 @@ def upsert_review_summary(product_id, data: dict):
 
     except requests.RequestException as e:
 
-        print(
-            f"[Backend1 Review Summary Update Error] {e}"
-        )
+        print(f"[Backend1 Review Summary Update Error] {e}")
 
         return None
 
     except ValueError as e:
 
-        print(
-            f"[Backend1 Review Summary Update JSON Error] {e}"
-        )
+        print(f"[Backend1 Review Summary Update JSON Error] {e}")
 
         return None
-    
+
+
 # =========================
 # 查詢合作廠商
 # =========================
+
 
 def get_sponsors():
     """
@@ -490,32 +358,22 @@ def get_sponsors():
 
     try:
 
-        response = requests.get(
-            f"{BASE_URL}/sponsors",
-            timeout=10
-        )
+        response = requests.get(f"{BASE_URL}/sponsors", timeout=10)
 
         response.raise_for_status()
 
         data = response.json()
 
-        return data.get(
-            "sponsors",
-            []
-        )
+        return data.get("sponsors", [])
 
     except requests.RequestException as e:
 
-        print(
-            f"[Backend1 Sponsor Error] {e}"
-        )
+        print(f"[Backend1 Sponsor Error] {e}")
 
         return []
 
     except ValueError as e:
 
-        print(
-            f"[Backend1 Sponsor JSON Error] {e}"
-        )
+        print(f"[Backend1 Sponsor JSON Error] {e}")
 
         return []

@@ -2,13 +2,13 @@ from fastapi import APIRouter, BackgroundTasks
 
 from services.review_service import process_single_review
 
-
 router = APIRouter()
 
 
 # =========================
 # 接收評論 AI 處理請求
 # =========================
+
 
 @router.post("/internal/process_review/{review_id}")
 def process_review(
@@ -25,10 +25,7 @@ def process_review(
     收到請求後立即回覆。
     """
 
-    content = payload.get(
-        "content",
-        ""
-    )
+    content = payload.get("content", "")
 
     background_tasks.add_task(
         process_single_review,
@@ -36,6 +33,4 @@ def process_review(
         content,
     )
 
-    return {
-        "message": "已接收，背景處理中"
-    }
+    return {"message": "已接收，背景處理中"}

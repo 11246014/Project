@@ -1,6 +1,5 @@
-#summary_validator.py
+# summary_validator.py
 from typing import Any
-
 
 # 摘要基本設定
 MIN_SUMMARY_LENGTH = 10

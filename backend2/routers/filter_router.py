@@ -1,8 +1,6 @@
 from fastapi import APIRouter
 
-from services.filter_service import (
-    filter_products
-)
+from services.filter_service import filter_products
 
 router = APIRouter()
 
@@ -18,33 +16,23 @@ def product_filter(filters: dict):
 
     try:
 
-        result = filter_products(
-            filters
-        )
+        result = filter_products(filters)
 
         print("\n========== API RESPONSE ==========")
         print(result)
         print("==================================\n")
 
-        print(
-            "[Filter Router] Success"
-        )
+        print("[Filter Router] Success")
 
         return result
 
     except Exception as e:
 
-        print(
-            f"[Filter Router Error] {e}"
-        )
+        print(f"[Filter Router Error] {e}")
 
         return {
-
             "success": False,
-
             "reply": "商品篩選系統暫時發生問題",
-
             "results": [],
-
-            "error": str(e)
+            "error": str(e),
         }

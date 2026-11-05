@@ -17,11 +17,11 @@ streamlit run app.py
 
 ```toml
 password      = "你的密碼"
-api_base      = "https://你的ngrok網址"   # 後端1網址；免費版 ngrok 每次重啟都會變，變了只改這裡
+api_base      = "https://你的ngrok網址"   # 後端1網址
 use_mock_data = true                       # true＝假資料展示；接真實資料改成 false
 ```
 
-> secrets.toml 含密碼，**不要 commit 到 GitHub**（請確認 `.gitignore` 有排除）。
+> secrets.toml 含密碼，**不要 commit 到 GitHub**（確認 `.gitignore` 有排除）。
 
 ## 畫面結構（兩種模式）
 
@@ -93,6 +93,3 @@ Amazfit 曝光逐步上升（合作品牌為 Garmin 與 Apple）、Ultrahuman �
 - `.streamlit/secrets.toml`：密碼、後端網址、假資料開關（不要上傳）
 - `requirements.txt`：Python 套件需求
 
-## 外觀（改版）
-
-版面參考 `mock_dashboard.html`：卡片式區塊、橫向長條、受眾指數 100 虛線、勝率 50% 虛線；字體 Noto Sans TC（需連網載入，離線改用系統字體）。只改呈現層，所有數字與計算不變。真實模式的合作品牌來自後端 `/sponsors`，資料庫需有 Garmin 與 Apple。

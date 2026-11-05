@@ -26,7 +26,6 @@ USAGE_QUERY_TERMS = {
     "hiking": "登山",
     "health_monitoring": "健康",
     "sleep": "睡眠",
-
     "日常": "",
     "商務": "",
     "戶外": "",
@@ -36,16 +35,12 @@ USAGE_QUERY_TERMS = {
 
 FEATURE_QUERY_TERMS = {
     "gps": "GPS",
-
     "heart_rate": "心率",
     "心率監測": "心率",
-
     "blood_oxygen": "血氧",
     "ecg": "ECG",
-
     "sleep_tracking": "睡眠",
     "睡眠監測": "睡眠",
-
     "water_resistance": "防水",
 }
 
@@ -54,7 +49,6 @@ FEATURE_QUERY_TERMS = {
 # ==================================================
 
 DEVICE_KEYWORDS = {
-
     "smartwatch": [
         "智慧手錶",
         "智慧腕錶",
@@ -75,7 +69,6 @@ DEVICE_KEYWORDS = {
         "xiaomi watch",
         "mi watch",
     ],
-
     "smart_band": [
         "智慧手環",
         "手環",
@@ -90,7 +83,6 @@ DEVICE_KEYWORDS = {
         "vivosmart",
         "fitbit inspire",
     ],
-
     "smart_ring": [
         "智慧戒指",
         "戒指",
@@ -100,7 +92,6 @@ DEVICE_KEYWORDS = {
         "oura",
         "ringconn",
     ],
-
     "earbuds": [
         "藍牙耳機",
         "airpods",
@@ -121,7 +112,6 @@ USAGE_KEYWORDS = {
         "forerunner",
         "runner",
     ],
-
     "hiking": [
         "登山",
         "戶外",
@@ -129,31 +119,26 @@ USAGE_KEYWORDS = {
         "instinct",
         "fenix",
     ],
-
     "health_monitoring": [
         "健康",
         "健康監測",
         "health",
     ],
-
     "sleep": [
         "睡眠",
         "sleep",
     ],
-
     "運動": [
         "運動",
         "跑步",
         "跑錶",
         "runner",
     ],
-
     "健康": [
         "健康",
         "心率",
         "血氧",
     ],
-
     # 新增
     "日常生活（看時間 / 通知）": [
         "看時間",
@@ -178,35 +163,29 @@ USAGE_REASON = {
 # ==================================================
 
 FEATURE_KEYWORDS = {
-
     "GPS": [
         "gps",
         "定位",
         "導航",
         "衛星",
     ],
-
     "睡眠": [
         "睡眠",
         "sleep",
     ],
-
     "血氧": [
         "血氧",
         "spo2",
     ],
-
     "ECG": [
         "ecg",
         "心電圖",
     ],
-
     "防水": [
         "防水",
         "ip68",
         "5atm",
     ],
-
     "心率": [
         "心率",
         "heart rate",
@@ -227,13 +206,11 @@ FEATURE_REASON = {
 # ==================================================
 
 CORE_FACTOR_KEYWORDS = {
-
     "battery_life": [
         "續航",
         "長續航",
         "電池",
     ],
-
     "location_accuracy": [
         "gps",
         "定位",
@@ -241,13 +218,11 @@ CORE_FACTOR_KEYWORDS = {
         "精準",
         "感測",
     ],
-
     "durability": [
         "軍規",
         "防摔",
         "耐用",
     ],
-
     "value": [
         "cp值",
         "超值",
@@ -255,7 +230,6 @@ CORE_FACTOR_KEYWORDS = {
 }
 
 PRIORITY_TERMS = {
-
     "battery_life": [
         "長續航",
         "強勢續航",
@@ -264,20 +238,17 @@ PRIORITY_TERMS = {
         "solar",
         "太陽能",
     ],
-
     "location_accuracy": [
         "gps",
         "gps定位",
         "定位",
     ],
-
     "durability": [
         "耐用",
         "堅固",
         "軍規",
         "防摔",
     ],
-
     "ease_of_use": [
         "操作簡單",
         "簡單操作",
