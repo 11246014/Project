@@ -224,11 +224,14 @@ def register_user(user: UserCreate):
     # =========================
 
     new_user = User(
-
+ 
         email=user.email,
-
-        hashed_password=hashed_password
+ 
+        hashed_password=hashed_password,
+ 
+        username=(user.username or "").strip() or None
     )
+
 
     db.add(new_user)
 
