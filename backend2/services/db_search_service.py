@@ -1,5 +1,107 @@
+import re
+from urllib.parse import urlparse
+
 from services.backend1_client import get_db_products
 from services.product_filter_service import detect_brand
+
+# ==================================================
+# DB 商品的「來源平台」
+# ==================================================
+#
+# 注意：
+# products 資料表的 platform 欄位，存的是商品當初從網路搜尋存入時的
+# 真實來源平台（例如 momo購物網、蝦皮購物、Garmin 官網）。
+# 以前這裡把 platform 寫死成 "MySQL"，導致：
+#   1. 前端 / 購物車 / 歷史紀錄顯示的來源平台是資料庫名稱，不是電商
+#   2. 後台儀表板「來源平台曝光次數」出現 MySQL
+# 現在改成直接使用商品自己的 platform；欄位空白或舊資料殘留 "MySQL"
+# 時，改由商品連結的網域推回平台名稱，再不行才用 shop，最後才留空字串。
+
+# 內部資料來源標記，不是真實外部平台（比對時不分大小寫、忽略空白 _ -）
+INTERNAL_PLATFORM_KEYS = {
+    "mysql",
+    "sql",
+    "database",
+    "db",
+    "local",
+    "internal",
+    "資料庫",
+}
+
+# 網域關鍵字 → 平台顯示名稱（名稱需與網路搜尋流程產生的平台名稱一致，
+# 儀表板才會把同一個平台算在同一條）
+DOMAIN_PLATFORM_MAP = [
+    ("momoshop.com.tw", "momo購物網"),
+    ("momo.com.tw", "momo購物網"),
+    ("shopee.tw", "蝦皮購物"),
+    ("shopee.", "蝦皮購物"),
+    ("coupang.com", "Coupang 酷澎"),
+    ("pchome.com.tw", "PChome 24h購物"),
+    ("books.com.tw", "博客來"),
+    ("rakuten.com.tw", "樂天市場購物網"),
+    ("fetnet.net", "friDay購物"),
+    ("friday.tw", "friDay購物"),
+    ("garmin.com", "Garmin"),
+    ("amazfit.com", "Amazfit智慧穿戴品牌官方網站"),
+    ("store.google.com", "Google Store"),
+    ("apple.com", "Apple 官方網站"),
+    ("samsung.com", "Samsung 官方網站"),
+    ("decathlon.tw", "台灣迪卡儂"),
+    ("ebay.com", "eBay"),
+    ("etmall.com.tw", "東森網路購物"),
+    ("landtop.com.tw", "地標網通 - 挑戰手機最低價"),
+    ("bikeinn.com", "Bikeinn.com"),
+    ("humehealth.com", "Hume Health"),
+]
+
+
+def is_internal_platform(name) -> bool:
+    """判斷是否為內部資料來源標記（例如 MySQL），不是真實外部平台"""
+
+    key = re.sub(r"[\s_\-]+", "", str(name or "").lower())
+
+    return (not key) or key in INTERNAL_PLATFORM_KEYS or "mysql" in key
+
+
+def platform_from_link(link: str) -> str:
+    """從商品連結的網域推回平台名稱；對不到已知平台就回傳網域本身"""
+
+    if not link:
+        return ""
+
+    host = (urlparse(link).netloc or "").lower()
+
+    if not host:
+        return ""
+
+    for keyword, platform_name in DOMAIN_PLATFORM_MAP:
+        if keyword in host:
+            return platform_name
+
+    # 未知網站：保留網域（去掉 www.），至少是真實的外部來源
+    return host[4:] if host.startswith("www.") else host
+
+
+def resolve_db_platform(product: dict) -> str:
+    """決定 DB 商品要顯示 / 統計的來源平台（優先順序：商品 platform → 連結網域 → shop → 空字串）"""
+
+    stored = str(product.get("platform") or "").strip()
+
+    if not is_internal_platform(stored):
+        return stored
+
+    from_link = platform_from_link(str(product.get("link") or ""))
+
+    if from_link:
+        return from_link
+
+    shop = str(product.get("shop") or "").strip()
+
+    if not is_internal_platform(shop):
+        return shop
+
+    return ""
+
 
 # ==================================================
 # Search Config
@@ -599,7 +701,7 @@ async def search_db_products(keyword):
                     "title": product.get("name", ""),
                     "price": product.get("price", 0),
                     "desc": product.get("description", ""),
-                    "platform": "MySQL",
+                    "platform": resolve_db_platform(product),  # 真實來源平台，不再寫死 MySQL
                     "rating": product.get("rating", 5),
                     # 注意：
                     # 這裡的 match 是 DB Keyword Match Score，
