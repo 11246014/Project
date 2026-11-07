@@ -300,6 +300,24 @@ def count_multi_value_column(df: pd.DataFrame, column: str, sep: str = ",") -> C
 # 同一種情境拆成好幾條 bar。這裡統一對應回問卷的 5 個分類。
 # 不修改後端2的邏輯，避免影響 AI 比對/評分。
 # ============================================================
+# 簡體 → 繁體對照（只放這份資料會出現的字）。
+# 為什麼需要：Gemini 偶爾會回簡體（例如「户外」，注意「户」是簡體、問卷是「戶」），
+# 字串長得幾乎一樣但字元不同，字典與關鍵字都比對不到，就會被當成新分類獨立成一條 bar。
+# 所有標籤比對前先過這張表，簡繁寫法就會歸到同一類。
+_S2T_TABLE = str.maketrans({
+    "户": "戶", "运": "運", "动": "動", "务": "務", "时": "時", "间": "間",
+    "办": "辦", "历": "曆", "讯": "訊", "测": "測", "觉": "覺", "银": "銀",
+    "电": "電", "话": "話", "图": "圖", "护": "護", "师": "師", "练": "練",
+    "费": "費", "线": "線", "径": "徑", "监": "監", "钟": "鐘", "声": "聲",
+    "语": "語", "统": "統", "应": "應", "择": "擇", "础": "礎", "击": "擊",
+})
+
+
+def to_trad(text: str) -> str:
+    """把字串中的簡體字轉成繁體（僅涵蓋本專案標籤會用到的字）"""
+    return text.translate(_S2T_TABLE) if isinstance(text, str) else text
+
+
 USAGE_LABEL_MAP = {
     # 運動（跑步 / 健身 / 戶外）
     "運動": "運動（跑步 / 健身 / 戶外）",
@@ -374,7 +392,7 @@ def normalize_usage_label(raw: str) -> str:
     而不是被吃掉查不出問題）"""
     if not raw:
         return raw
-    stripped = raw.strip()
+    stripped = to_trad(raw.strip())  # 先簡轉繁，「户外」「运动」才會對到字典與關鍵字
     hit = USAGE_LABEL_MAP.get(stripped) or USAGE_LABEL_MAP.get(stripped.lower())
     if hit:
         return hit
@@ -384,6 +402,95 @@ def normalize_usage_label(raw: str) -> str:
         if any(k in low for k in keywords):
             return label
     return stripped  # 仍然對不上：保留原字串，方便在資料品質區發現並補字典
+
+
+# ============================================================
+# 功能需求 標籤正規化（顯示層）
+# ------------------------------------------------------------
+# 問卷送的是完整中文選項（GPS（定位 / 路線）、心率監測…），
+# AI 聊天室（backend2）送的是英文 enum（gps、heart_rate、sleep_tracking、blood_oxygen…），
+# 同一個功能因此被拆成兩條 bar。這裡統一對應回問卷的 12 個標準選項。
+# 規則：先看是不是已經是標準名稱 → 再用「關鍵字」歸類（順序＝優先順序）→ 都對不到就保留原字串，
+# 方便在資料品質區發現後回來補規則。
+# ============================================================
+FEATURE_OPTIONS_STD = [
+    "GPS（定位 / 路線）", "心率監測", "血氧（SpO2）", "心電圖（ECG）", "睡眠追蹤",
+    "運動分析（卡路里 / VO2max）", "通知（LINE / 電話）", "通話功能", "行動支付",
+    "AI 語音助理", "App 下載 / 擴充", "防水需求（游泳）",
+]
+
+# (關鍵字們, 標準名稱)；比對對象是「轉小寫、去掉空白 _ - 」後的字串（所以 sleep_tracking → sleeptracking）。
+# 後端 2 normalize_feature() 會送出的代號：
+#   gps / heart_rate / blood_oxygen / ecg / sleep_tracking / water_resistance
+# 其餘功能（運動分析、通知、通話、行動支付…）後端不轉換，會是 Gemini 或問卷的原文，
+# 所以下面也列了常見的英文寫法。順序＝優先順序（越具體的越前面）。
+FEATURE_KEYWORD_RULES = [
+    (("ecg", "ekg", "心電圖"), "心電圖（ECG）"),
+    (("bloodoxygen", "spo2", "血氧"), "血氧（SpO2）"),
+    (("gps", "定位", "路線"), "GPS（定位 / 路線）"),
+    (("heartrate", "心率"), "心率監測"),
+    (("sleeptracking", "sleepmonitoring", "sleep", "睡眠"), "睡眠追蹤"),
+    (("運動分析", "vo2max", "卡路里", "calorie", "workout", "sportsanalysis", "fitnessanalysis"),
+     "運動分析（卡路里 / VO2max）"),
+    (("通話", "phonecall", "voicecall", "calling"), "通話功能"),
+    (("通知", "notification"), "通知（LINE / 電話）"),
+    (("行動支付", "支付", "mobilepayment", "payment", "nfc"), "行動支付"),
+    (("語音助理", "語音", "voiceassistant", "aiassistant"), "AI 語音助理"),
+    (("擴充", "appstore", "appdownload", "apps"), "App 下載 / 擴充"),
+    (("waterresistance", "waterproof", "waterresist", "防水", "swim"), "防水需求（游泳）"),
+]
+
+
+def normalize_feature_label(raw: str) -> str:
+    """把單一功能字串對應回問卷的標準選項；對不到就保留原字串"""
+    if not raw:
+        return raw
+    text = to_trad(raw.strip())
+    if text in FEATURE_OPTIONS_STD:
+        return text
+    key = re.sub(r"[\s_\-]+", "", text.lower())
+    for keywords, label in FEATURE_KEYWORD_RULES:
+        if any(k in key for k in keywords):
+            return label
+    return text
+
+
+def normalize_feature_column(value: str) -> str:
+    """features 欄位是逗號分隔的多選字串：逐一正規化後去重（同一事件同時有 gps 與 GPS 只算一次）"""
+    if not value or not isinstance(value, str):
+        return value
+    for sep in ("、", "，", "；", ";"):
+        value = value.replace(sep, ",")
+    items = [normalize_feature_label(v) for v in value.split(",") if v.strip()]
+    return ",".join(dict.fromkeys(items))
+
+
+# ============================================================
+# 來源平台 清理：只保留「真實外部平台」
+# ------------------------------------------------------------
+# 推薦商品若是從自己的資料庫撈的，後端會把平台寫成 MySQL，
+# 這不是外部電商 / 品牌官網，不該出現在「來源平台曝光次數」。
+# 這裡在顯示層直接過濾掉（比對時不分大小寫、忽略空白符號）；
+# 之後若發現其他內部標記（例如 local、internal），補進下面的集合即可。
+# ============================================================
+INTERNAL_PLATFORM_KEYS = {
+    "mysql", "sql", "sqlite", "database", "db", "localdb", "local", "internal",
+    "資料庫", "本地資料庫", "自家資料庫", "內部資料庫", "本地", "內部",
+}
+
+
+def is_internal_platform(name: str) -> bool:
+    """是否為內部資料來源（非真實外部平台）"""
+    key = re.sub(r"[\s_\-]+", "", to_trad(name).lower())
+    return key in INTERNAL_PLATFORM_KEYS or "mysql" in key
+
+
+def clean_platform_column(value: str) -> str:
+    """top_platforms 是逗號分隔字串：拿掉內部來源（MySQL 等）與重複值"""
+    if not value or not isinstance(value, str):
+        return value
+    items = [p.strip() for p in value.split(",") if p.strip() and not is_internal_platform(p)]
+    return ",".join(dict.fromkeys(items))
 
 
 def normalize_usage_column(value: str) -> str:
@@ -583,7 +690,9 @@ def normalize_sponsor_name(name: str, mapping: dict) -> str:
 # ============================================================
 OCCUPATION_LABEL_MAP = [
     ("學生", ["學生", "大學", "研究所", "研究生", "高中", "國中", "碩士", "博士", "在學", "student"]),
-    ("運動 / 健身", ["運動", "教練", "健身", "選手", "trainer", "coach", "athlete"]),
+    # 只放「職業」關鍵字。單獨的「運動」「健身」是興趣不是職業（使用者常把偏好填進職業欄），
+    # 不再硬歸成「運動 / 健身」，會落到「其他」，避免職業圖出現不合理的類別。
+    ("運動 / 健身", ["運動員", "教練", "健身教練", "選手", "trainer", "coach", "athlete"]),
     ("工程師 / 科技業", ["工程", "程式", "軟體", "資訊", "科技", "研發", "設計", "資料", "產品經理",
                      "pm", "developer", "engineer", "designer", "r&d"]),
     ("教育 / 醫療", ["教師", "老師", "教授", "講師", "教育", "護理", "醫", "藥", "治療",
@@ -1028,6 +1137,11 @@ events_df.loc[skipped_budget, "budget_bucket"] = ""
 # 使用情境 / 裝置類型 正規化，統一對應回問卷的分類文字，
 # 這樣不管資料是問卷送的還是 AI 聊天室送的，圖表都會歸到同一類
 events_df["usage"] = events_df["usage"].apply(normalize_usage_column)
+# 功能需求：英文 enum（gps / heart_rate…）與問卷中文選項統一成同一個標準名稱
+events_df["features_raw"] = events_df["features"]  # 保留原始寫法供資料品質檢查
+events_df["features"] = events_df["features"].apply(normalize_feature_column)
+# 來源平台：移除內部資料庫來源（MySQL 等），只保留真實外部平台
+events_df["top_platforms"] = events_df["top_platforms"].apply(clean_platform_column)
 events_df["device_type"] = events_df["device_type"].apply(
     lambda v: normalize_device_label(v) if v else ""
 )
@@ -1435,10 +1549,14 @@ with tab_overview:
             share_blocks += '<div class="gwrap">' + grouped_block(
                 esc(metric), [(g, c, v / share_scale, f"{v:.1f}%") for g, c, v in lines]) + '</div>'
         share_note = ""
+        if abs(my_metrics["top1_share"] - my_metrics["top3_rate"]) < 1e-9 and my_metrics["n_hit"] > 0:
+            # Top1＝Top3 是合理現象（尤其合作品牌有贊助加權），但要說明，免得被當成計算錯誤
+            share_note += (f'<p class="foot">ℹ️ {esc(my_brand)} 的 Top1 份額與 Top3 出現率相同：'
+                           '代表它只要進前三名，就是排第一名（排名含贊助加權）。</p>')
         if not rivals:
-            share_note = '<p class="foot">尚未選擇競品組，圖中只有本品牌與品類平均。</p>'
+            share_note += '<p class="foot">尚未選擇競品組，圖中只有本品牌與品類平均。</p>'
         elif len(ok_rivals) < len(rivals):
-            share_note = (f'<p class="foot">樣本不足未納入競品組平均：'
+            share_note += (f'<p class="foot">樣本不足未納入競品組平均：'
                           f'{esc("、".join(r for r in rivals if r not in ok_rivals))}</p>')
         html_out(sec_card(
             f"推薦份額：{my_brand} vs 競品組 vs 品類平均",
@@ -1495,7 +1613,7 @@ with tab_overview:
         df_tr = pd.DataFrame(trend_rows)
         df_plot = pd.DataFrame(plot_rows)
         trend_how = (
-            "<b>怎麼讀：</b>藍實線是本品牌 Top3 出現率，淺藍線是 Top1 份額，灰虛線是競品組平均。"
+            "<b>怎麼讀：</b>藍實線是本品牌 Top3 出現率，淺藍點線（菱形標記）是 Top1 份額，灰虛線是競品組平均；兩者數值相同時會重疊。"
             f"斷掉的地方是該時段樣本數低於左側的「最小樣本數」。資料不足 2 週時改用日。排名含贊助加權。"
         )
         if df_tr.empty:
@@ -1508,7 +1626,10 @@ with tab_overview:
             # 配色與線型對齊預覽：本品牌藍實線、競品組平均灰虛線
             series_style = {
                 "本品牌 Top3 出現率": dict(color=COLOR_ME, width=2.6, dash="solid"),
-                "本品牌 Top1 份額": dict(color=BLUE_LIGHT, width=2, dash="solid"),
+                # Top1 用點線 + 較大的菱形標記，並在 Top3 之後繪製（疊在上層）：
+                # 當某品牌「一進前三名就是第一名」時，兩條數值完全相同，
+                # 原本同為實線會被完全蓋住，看起來像少一條線。
+                "本品牌 Top1 份額": dict(color=BLUE_LIGHT, width=2, dash="dot"),
                 "競品組平均 Top3 出現率": dict(color=COLOR_RIVAL, width=2, dash="dash"),
             }
             fig = go.Figure()
@@ -1518,6 +1639,8 @@ with tab_overview:
                         x=df_plot["期間"], y=df_plot[col], name=col, mode="lines+markers",
                         connectgaps=False,  # 樣本不足的時段斷線
                         line=series_style[col],
+                        marker=dict(size=11 if col == "本品牌 Top1 份額" else 7,
+                                    symbol="diamond-open" if col == "本品牌 Top1 份額" else "circle"),
                         hovertemplate="%{x}<br>%{y:.1f}%<extra>" + col + "</extra>",
                     ))
                 else:  # 只有 1 個期間 → 改用長條圖（教訓：單點資料畫不出線 / 面積圖）
@@ -1528,8 +1651,15 @@ with tab_overview:
             fig.update_xaxes(type="category")
             fig.update_layout(yaxis_title="百分比（%）", xaxis_title="", barmode="group")
             show_chart(fig, "t1_share_trend", 340, card=True)
+            # Top1 與 Top3 完全相同 → 兩條線重疊，明確告知，避免被誤會成資料漏畫
+            overlap_note = ""
+            if {"本品牌 Top3 出現率", "本品牌 Top1 份額"} <= set(df_tr.columns) and \
+                    (df_tr["本品牌 Top3 出現率"] - df_tr["本品牌 Top1 份額"]).abs().max() < 1e-9:
+                overlap_note = (f"{my_brand} 每次進前三名都是第一名，所以 Top1 份額與 Top3 出現率數值相同、兩條線重疊"
+                                "（藍色圓點線＋淺藍菱形標記疊在一起）。")
             st.caption(
-                f"每個{unit}的分母＝當{unit}有品牌資料的事件數。"
+                f"每個{unit}的分母＝當{unit}有品牌資料的事件數。" + overlap_note
+                + ""
                 + (f"事件數低於 {min_n} 的{unit}未顯示：{'、'.join(small_periods)}" if small_periods else "")
             )
             with st.expander("查看原始統計數字"):
@@ -1584,7 +1714,7 @@ with tab_audience:
             "<b>怎麼讀：</b>指數＝這群人在「推薦到本品牌的事件」中的占比 ÷ 在「全體事件」中的占比 ×100。"
             "虛線是 100，代表和整體一樣；例如全體有 20% 是 26–35 歲，但本品牌的推薦對象有 30% 是，指數就是 150。"
             f"藍色（≥{AUDIENCE_UP}）＝這群人特別常被推薦到本品牌；灰色（≤{AUDIENCE_LOW}）＝較少；中間＝差不多。"
-            "樣本不足的類別不顯示。排名含贊助加權。",
+            "樣本不足的類別不顯示，排名含贊助加權。",
         ))
         with st.expander("查看原始統計數字"):
             for label, tbl in raw_tables:
@@ -1668,6 +1798,13 @@ with tab_audience:
             # 機會區間：全體需求高（>=15%），但本品牌占比比全體低 5 個百分點以上
             opportunity = [b for b in BUDGET_OPTIONS
                            if all_share.get(b, 0) >= 15 and all_share.get(b, 0) - hit_share.get(b, 0) >= 5]
+            # 沒有任何區間達標時，要讓使用者知道「不是壞掉」：說明條件，並列出最接近的區間
+            near_miss = [
+                f"{b}（全體 {all_share.get(b, 0):.0f}%、本品牌 {hit_share.get(b, 0):.0f}%）"
+                for b in BUDGET_OPTIONS
+                if b not in opportunity
+                and all_share.get(b, 0) >= 10 and all_share.get(b, 0) - hit_share.get(b, 0) >= 5
+            ]
             budget_scale = max(float(df_b["占比"].max()) / 100, 0.05)
             bud_html = ""
             for b in BUDGET_OPTIONS:
@@ -1681,7 +1818,10 @@ with tab_audience:
                 key_html([("本品牌", "var(--accent)"), ("全體", "var(--bar-all)")])
                 + f'<div class="gwrap">{bud_html}</div>'
                 + (f'<p class="foot">💡 機會區間：{esc("、".join(opportunity))}（使用者需求高，但較少推薦到 {esc(my_brand)}）</p>'
-                   if opportunity else ""),
+                   if opportunity else
+                   '<p class="foot">目前沒有機會區間（條件：全體占比 ≥ 15%，且本品牌比全體低 5 個百分點以上）。'
+                   + (f'接近條件但未達標：{esc("；".join(near_miss))}。' if near_miss else "")
+                   + '</p>'),
                 f"本品牌 n={len(hit_budget)}　全體 n={len(all_budget)}", budget_how,
             ))
             with st.expander("查看原始統計數字"):
@@ -1930,6 +2070,26 @@ with st.expander("🔍 資料品質檢查（品牌名稱 / Top1 失真 / 事件�
         st.caption(f"原始寫法 {len(df_occ_check)} 種；歸到「其他」{len(others)} 種"
                    + ("（若其中有常見職業，請補進 OCCUPATION_LABEL_MAP 關鍵字）" if len(others) else ""))
         st.dataframe(df_occ_check.head(60), use_container_width=True, hide_index=True)
+
+    # 功能需求歸類檢查：列出每種原始寫法被歸到哪個標準名稱，沒歸到的要補 FEATURE_KEYWORD_RULES
+    raw_feat = Counter()
+    for _cell in events_df["features_raw"]:
+        for _it in str(_cell).replace("、", ",").replace("，", ",").split(","):
+            if _it.strip():
+                raw_feat[_it.strip()] += 1
+    if raw_feat:
+        st.markdown("**功能需求歸類結果**")
+        df_feat_check = pd.DataFrame(
+            [(k, normalize_feature_label(k), v) for k, v in raw_feat.items()],
+            columns=["原始寫法", "歸類", "出現次數"],
+        ).sort_values(["歸類", "出現次數"], ascending=[True, False]).reset_index(drop=True)
+        unmatched_feat = df_feat_check[~df_feat_check["歸類"].isin(FEATURE_OPTIONS_STD)]
+        if len(unmatched_feat):
+            st.warning("以下功能沒有對到問卷的 12 個標準選項，已維持原樣（若是別名請補進 FEATURE_KEYWORD_RULES）："
+                       + "、".join(unmatched_feat["原始寫法"].tolist()[:30]))
+        else:
+            st.caption(f"原始寫法 {len(df_feat_check)} 種，全部都已歸到標準選項。")
+        st.dataframe(df_feat_check.head(80), use_container_width=True, hide_index=True)
 
     # ---- Q2 Top1 失真 ----
     st.markdown("**Q2　缺品牌商品是否讓 Top1 失真**")
